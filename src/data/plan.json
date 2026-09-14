@@ -1,0 +1,111 @@
+{
+  "people": [
+    {
+      "id": "kenji",
+      "label": "Kenji",
+      "netMonthly": 6500,
+      "annualTax": 9000
+    },
+    {
+      "id": "partner",
+      "label": "Ma femme",
+      "netMonthly": 5500,
+      "annualTax": 7000
+    }
+  ],
+  "subgroups": [
+    {
+      "id": "home",
+      "label": "Logement",
+      "color": "1",
+      "scope": "shared"
+    },
+    {
+      "id": "daily",
+      "label": "Quotidien",
+      "color": "3",
+      "scope": "shared"
+    },
+    {
+      "id": "kenji-fun",
+      "label": "Loisirs",
+      "color": "5",
+      "scope": "kenji"
+    }
+  ],
+  "categories": [
+    {
+      "id": "housing",
+      "label": "Loyer",
+      "amount": 2200,
+      "parent": "home"
+    },
+    {
+      "id": "insurance",
+      "label": "Assurance maladie",
+      "amount": 800,
+      "parent": "home"
+    },
+    {
+      "id": "groceries",
+      "label": "Courses",
+      "amount": 900,
+      "parent": "daily"
+    },
+    {
+      "id": "transport",
+      "label": "Transports",
+      "amount": 250,
+      "parent": "daily"
+    },
+    {
+      "id": "sport",
+      "label": "Sport",
+      "amount": 120,
+      "parent": "kenji-fun"
+    },
+    {
+      "id": "clothes",
+      "label": "Vêtements",
+      "amount": 150,
+      "parent": "partner"
+    }
+  ],
+  "savingGroups": [
+    {
+      "id": "retirement",
+      "label": "Retraite",
+      "color": "7",
+      "scope": "kenji"
+    }
+  ],
+  "savings": [
+    {
+      "id": "etf",
+      "label": "ETF",
+      "amount": 1000,
+      "parent": "shared"
+    },
+    {
+      "id": "emergency",
+      "label": "Fonds d'urgence",
+      "amount": 300,
+      "parent": "shared"
+    },
+    {
+      "id": "pillar3",
+      "label": "3e pilier",
+      "amount": 588,
+      "parent": "retirement"
+    },
+    {
+      "id": "pillar3b",
+      "label": "3e pilier",
+      "amount": 588,
+      "parent": "partner"
+    }
+  ],
+  "settings": {
+    "taxTiming": "monthly"
+  }
+}

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FBF6EF;font-family:Outfit,system-ui,sans-serif;color:#2A2520;-webkit-font-smoothing:antialiased}
+a{color:oklch(0.60 0.16 265);text-decoration:none}
+a:hover{color:oklch(0.50 0.17 265)}
+input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit}
+input[type=range]{-webkit-appearance:none;appearance:none;height:8px;border-radius:99px;background:#EDE4D8}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid oklch(0.66 0.15 265);box-shadow:0 2px 6px rgba(0,0,0,.18);cursor:pointer}
+@keyframes pop{from{transform:translateY(12px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:28px 24px 64px;background:radial-gradient(900px 420px at 12% -8%, oklch(0.93 0.07 95) 0%, rgba(0,0,0,0) 70%), radial-gradient(760px 400px at 92% 4%, oklch(0.93 0.06 300) 0%, rgba(0,0,0,0) 70%)">
+<div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px">
+
+  <header style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;font:600 12px/1 Outfit,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8A7F70">
+        <span style="width:9px;height:9px;border-radius:50%;background:oklch(0.72 0.17 150)"></span>Shared household plan
+      </div>
+      <h1 style="margin:8px 0 0;font:700 40px/1.05 'Bricolage Grotesque',Outfit,sans-serif;letter-spacing:-0.02em">Our money, September</h1>
+      <p style="margin:8px 0 0;font:400 15px/1.4 Outfit,sans-serif;color:#7A7064;max-width:46ch;text-wrap:pretty">{{ statusLine }}</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onClick="{{ openExpense }}" style="display:flex;align-items:center;gap:8px;padding:13px 20px;border:none;border-radius:99px;background:#2A2520;color:#FFFDF9;font:600 15px/1 Outfit,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(42,37,32,.22)" style-hover="transform:translateY(-1px)">
+        <span style="font-size:17px">＋</span>Add expense
+      </button>
+      <button onClick="{{ openCategory }}" style="display:flex;align-items:center;gap:8px;padding:13px 20px;border:1.5px solid #E2D7C7;border-radius:99px;background:#FFFDF9;font:600 15px/1 Outfit,sans-serif;cursor:pointer" style-hover="border-color:#2A2520">
+        <span style="font-size:17px">＋</span>Add category
+      </button>
+    </div>
+  </header>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+    <sc-for list="{{ people }}" as="p" hint-placeholder-count="2">
+      <div style="position:relative;padding:20px;border-radius:24px;background:#FFFDF9;border:1.5px solid #EFE5D7;box-shadow:0 10px 26px rgba(120,100,70,.08);display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:700 15px/1 Outfit,sans-serif;color:#fff;background:{{ p.color }}">{{ p.initial }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 16px/1.1 Outfit,sans-serif">{{ p.name }}</div>
+            <div style="font:400 12.5px/1.2 Outfit,sans-serif;color:#948977">gross {{ p.grossLabel }} / mo</div>
+          </div>
+          <button onClick="{{ p.edit }}" style="padding:7px 12px;border:1.5px solid #EFE5D7;border-radius:99px;background:#FBF6EF;font:600 12.5px/1 Outfit,sans-serif;cursor:pointer" style-hover="border-color:#2A2520">Edit</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;font:500 12.5px/1 Outfit,sans-serif;color:#7A7064">
+            <span>Tax estimate</span><span style="font-weight:700;color:#2A2520">{{ p.taxLabel }}</span>
+          </div>
+          <input type="range" min="0" max="60" step="1" value="{{ p.tax }}" onChange="{{ p.setTax }}" style="width:100%">
+        </div>
+        <div style="padding:14px 16px;border-radius:16px;background:{{ p.tint }};display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font:500 13px/1 Outfit,sans-serif;color:#6D6354">Net take-home</span>
+          <span style="font:700 24px/1 'Bricolage Grotesque',Outfit,sans-serif;letter-spacing:-0.01em">{{ p.netLabel }}</span>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="padding:20px;border-radius:24px;background:#2A2520;color:#FFFDF9;box-shadow:0 12px 30px rgba(42,37,32,.26);display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="font:600 12px/1 Outfit,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#B9AE9C">Household net income</div>
+      <div style="font:800 40px/1 'Bricolage Grotesque',Outfit,sans-serif;letter-spacing:-0.025em">{{ totalNetLabel }}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font:400 13px/1.5 Outfit,sans-serif;color:#CFC5B4">
+        <div style="display:flex;justify-content:space-between"><span>Allocated to categories</span><span style="color:#FFFDF9;font-weight:600">{{ allocLabel }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Unallocated</span><span style="color:#FFFDF9;font-weight:600">{{ unallocLabel }}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;padding:24px;border-radius:28px;background:linear-gradient(115deg, oklch(0.74 0.16 150) 0%, oklch(0.78 0.15 185) 55%, oklch(0.74 0.15 235) 100%);box-shadow:0 16px 38px oklch(0.74 0.13 175 / 0.32)">
+    <div style="display:flex;flex-direction:column;gap:10px;color:#0E2A22">
+      <div style="display:flex;align-items:center;gap:9px;font:700 12px/1 Outfit,sans-serif;letter-spacing:.13em;text-transform:uppercase">
+        <span style="padding:5px 9px;border-radius:99px;background:rgba(255,253,249,.75)">Live</span>Projected savings
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end">
+        <div>
+          <div style="font:500 13px/1 Outfit,sans-serif;opacity:.8">per month</div>
+          <div style="font:800 46px/1 'Bricolage Grotesque',Outfit,sans-serif;letter-spacing:-0.03em">{{ saveMonthLabel }}</div>
+        </div>
+        <div>
+          <div style="font:500 13px/1 Outfit,sans-serif;opacity:.8">per year</div>
+          <div style="font:800 46px/1 'Bricolage Grotesque',Outfit,sans-serif;letter-spacing:-0.03em">{{ saveYearLabel }}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;font:600 14px/1.3 Outfit,sans-serif">
+        <span style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#0E2A22;color:oklch(0.85 0.16 150);font-size:13px">{{ trendArrow }}</span>
+        {{ trendLine }}
+      </div>
+    </div>
+    <sc-if value="{{ showSparkline }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:16px;border-radius:20px;background:rgba(255,253,249,.62)">
+        <div style="display:flex;justify-content:space-between;font:600 11.5px/1 Outfit,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#3A5147"><span>Last 6 months saved</span><span>{{ sparkRange }}</span></div>
+        <svg viewBox="0 0 300 84" preserveAspectRatio="none" style="width:100%;height:84px;display:block">
+          <polyline points="{{ sparkFill }}" fill="#0E2A22" opacity="0.10"></polyline>
+          <polyline points="{{ sparkPts }}" fill="none" stroke="#0E2A22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <circle cx="{{ sparkLastX }}" cy="{{ sparkLastY }}" r="6" fill="#0E2A22"></circle>
+          <circle cx="{{ sparkLastX }}" cy="{{ sparkLastY }}" r="2.4" fill="#FFFDF9"></circle>
+        </svg>
+      </div>
+    </sc-if>
+  </section>
+
+  <section style="display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:16px;align-items:start">
+    <div style="padding:22px;border-radius:24px;background:#FFFDF9;border:1.5px solid #EFE5D7;box-shadow:0 10px 26px rgba(120,100,70,.08)">
+      <h2 style="margin:0 0 4px;font:700 20px/1.1 'Bricolage Grotesque',Outfit,sans-serif">Budget split</h2>
+      <p style="margin:0 0 14px;font:400 13px/1.4 Outfit,sans-serif;color:#8A7F70">Share of household net income</p>
+      <div style="position:relative;width:100%;max-width:250px;margin:0 auto">
+        <svg viewBox="0 0 200 200" style="width:100%;display:block;transform:rotate(-90deg)">
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#F2EAE0" stroke-width="26"></circle>
+          <sc-for list="{{ segments }}" as="s" hint-placeholder-count="5">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="{{ s.color }}" stroke-width="26" stroke-dasharray="{{ s.dash }}" stroke-dashoffset="{{ s.offset }}" stroke-linecap="butt"></circle>
+          </sc-for>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="font:500 12px/1 Outfit,sans-serif;color:#8A7F70">allocated</div>
+          <div style="font:800 26px/1.1 'Bricolage Grotesque',Outfit,sans-serif">{{ allocPctLabel }}</div>
+          <div style="font:500 12px/1 Outfit,sans-serif;color:#8A7F70">of income</div>
+        </div>
+      </div>
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ categories }}" as="c" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:9px;font:500 13.5px/1 Outfit,sans-serif">
+            <span style="width:11px;height:11px;border-radius:4px;background:{{ c.color }};flex:none"></span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+            <span style="color:#8A7F70">{{ c.sharePct }}</span>
+            <span style="font-weight:600;min-width:64px;text-align:right">{{ c.allocLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between">
+        <h2 style="margin:0;font:700 20px/1.1 'Bricolage Grotesque',Outfit,sans-serif">Categories</h2>
+        <div style="font:500 13px/1 Outfit,sans-serif;color:#8A7F70">{{ spentLabel }} spent of {{ allocLabel }} allocated</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px">
+        <sc-for list="{{ categories }}" as="c" hint-placeholder-count="9">
+          <div style="padding:17px;border-radius:22px;background:#FFFDF9;border:1.5px solid #EFE5D7;box-shadow:0 6px 18px rgba(120,100,70,.07);display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-size:20px;background:{{ c.tint }}">{{ c.icon }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font:600 15.5px/1.15 Outfit,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</div>
+                <div style="font:400 12.5px/1.2 Outfit,sans-serif;color:#948977">{{ c.allocLabel }} allocated</div>
+              </div>
+              <button onClick="{{ c.edit }}" style="width:28px;height:28px;border:none;border-radius:50%;background:#F4ECE1;cursor:pointer;font-size:13px;color:#7A7064" style-hover="background:#E7DBCB">✎</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="height:10px;border-radius:99px;background:#F2EAE0;overflow:hidden">
+                <div style="height:100%;border-radius:99px;width:{{ c.pctWidth }};background:{{ c.barColor }};transition:width .35s ease"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font:500 12.5px/1 Outfit,sans-serif;color:#7A7064">
+                <span>{{ c.spentLabel }} spent</span>
+                <span style="font-weight:700;color:{{ c.barColor }}">{{ c.remainLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <button onClick="{{ openCategory }}" style="min-height:132px;border:2px dashed #DED2C0;border-radius:22px;background:rgba(255,253,249,.5);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#8A7F70;font:600 14px/1 Outfit,sans-serif" style-hover="border-color:#2A2520;color:#2A2520">
+          <span style="font-size:24px">＋</span>New category
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:50;background:rgba(38,32,26,.44);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px" onClick="{{ closeModal }}">
+    <div onClick="{{ stop }}" style="width:100%;max-width:440px;max-height:90vh;overflow:auto;padding:24px;border-radius:26px;background:#FFFDF9;box-shadow:0 26px 60px rgba(30,24,18,.35);animation:pop .22s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:21px;background:{{ modalTint }};flex:none">{{ modalIcon }}</div>
+        <div style="flex:1">
+          <h3 style="margin:0;font:700 22px/1.15 'Bricolage Grotesque',Outfit,sans-serif">{{ modalTitle }}</h3>
+          <p style="margin:4px 0 0;font:400 13.5px/1.4 Outfit,sans-serif;color:#8A7F70">{{ modalSub }}</p>
+        </div>
+        <button onClick="{{ closeModal }}" style="width:32px;height:32px;border:none;border-radius:50%;background:#F4ECE1;cursor:pointer;font-size:15px;color:#7A7064" style-hover="background:#E7DBCB">✕</button>
+      </div>
+
+      <sc-if value="{{ isIncome }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Name
+            <input value="{{ f.name }}" onChange="{{ setFName }}" style="padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF;font-size:15px" style-focus="outline:none;border-color:oklch(0.66 0.15 265)">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Gross monthly income
+            <div style="display:flex;align-items:center;gap:8px;padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF">
+              <span style="color:#948977;font-weight:600">{{ currency }}</span>
+              <input type="number" value="{{ f.gross }}" onChange="{{ setFGross }}" style="flex:1;min-width:0;border:none;background:none;font:700 20px/1 'Bricolage Grotesque',Outfit,sans-serif" style-focus="outline:none">
+            </div>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;justify-content:space-between;font:600 13px/1 Outfit,sans-serif;color:#6D6354"><span>Approx. tax rate</span><span style="color:#2A2520">{{ fTaxLabel }}</span></div>
+            <input type="range" min="0" max="60" step="1" value="{{ f.tax }}" onChange="{{ setFTax }}" style="width:100%">
+            <div style="display:flex;justify-content:space-between;font:400 11.5px/1 Outfit,sans-serif;color:#A39886"><span>0%</span><span>60%</span></div>
+          </div>
+          <div style="padding:15px;border-radius:16px;background:oklch(0.94 0.05 150);display:flex;align-items:baseline;justify-content:space-between">
+            <span style="font:500 13px/1 Outfit,sans-serif;color:#4A5B4E">Estimated net</span>
+            <span style="font:700 24px/1 'Bricolage Grotesque',Outfit,sans-serif">{{ fNetLabel }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Category name
+            <input value="{{ f.name }}" onChange="{{ setFName }}" placeholder="e.g. Groceries" style="padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF;font-size:15px" style-focus="outline:none;border-color:oklch(0.66 0.15 265)">
+          </label>
+          <div style="display:flex;flex-direction:column;gap:8px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Icon
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ iconChoices }}" as="ic" hint-placeholder-count="8">
+                <button onClick="{{ ic.pick }}" style="width:42px;height:42px;border-radius:13px;font-size:19px;cursor:pointer;background:#FBF6EF;border:{{ ic.border }}">{{ ic.icon }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Color
+            <div style="display:flex;flex-wrap:wrap;gap:9px">
+              <sc-for list="{{ colorChoices }}" as="cc" hint-placeholder-count="8">
+                <button onClick="{{ cc.pick }}" style="width:34px;height:34px;border-radius:50%;cursor:pointer;background:{{ cc.color }};border:none;box-shadow:{{ cc.ring }}"></button>
+              </sc-for>
+            </div>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Monthly allocation
+            <div style="display:flex;align-items:center;gap:8px;padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF">
+              <span style="color:#948977;font-weight:600">{{ currency }}</span>
+              <input type="number" value="{{ f.alloc }}" onChange="{{ setFAlloc }}" style="flex:1;min-width:0;border:none;background:none;font:700 20px/1 'Bricolage Grotesque',Outfit,sans-serif" style-focus="outline:none">
+            </div>
+          </label>
+          <div style="font:400 12.5px/1.4 Outfit,sans-serif;color:#8A7F70">{{ allocHint }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isExpense }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:8px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Category
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ catChoices }}" as="cq" hint-placeholder-count="6">
+                <button onClick="{{ cq.pick }}" style="display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:99px;cursor:pointer;font:600 13.5px/1 Outfit,sans-serif;background:{{ cq.bg }};border:{{ cq.border }};color:{{ cq.fg }}">
+                  <span style="font-size:15px">{{ cq.icon }}</span>{{ cq.name }}
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Amount
+            <div style="display:flex;align-items:center;gap:8px;padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF">
+              <span style="color:#948977;font-weight:600">{{ currency }}</span>
+              <input type="number" value="{{ f.amount }}" onChange="{{ setFAmount }}" style="flex:1;min-width:0;border:none;background:none;font:700 24px/1 'Bricolage Grotesque',Outfit,sans-serif" style-focus="outline:none">
+            </div>
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Date
+              <input type="date" value="{{ f.date }}" onChange="{{ setFDate }}" style="padding:12px 14px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF;font-size:14.5px" style-focus="outline:none;border-color:oklch(0.66 0.15 265)">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Paid by
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ payerChoices }}" as="pc" hint-placeholder-count="2">
+                  <button onClick="{{ pc.pick }}" style="flex:1;padding:12px 6px;border-radius:14px;cursor:pointer;font:600 13.5px/1 Outfit,sans-serif;background:{{ pc.bg }};border:{{ pc.border }};color:{{ pc.fg }}">{{ pc.name }}</button>
+                </sc-for>
+              </div>
+            </label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:7px;font:600 13px/1 Outfit,sans-serif;color:#6D6354">Note
+            <input value="{{ f.note }}" onChange="{{ setFNote }}" placeholder="Weekly shop, farmers market…" style="padding:13px 15px;border:1.5px solid #E8DECE;border-radius:14px;background:#FBF6EF;font-size:15px" style-focus="outline:none;border-color:oklch(0.66 0.15 265)">
+          </label>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <sc-if value="{{ canDelete }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ removeCat }}" style="padding:14px 16px;border:1.5px solid #EFD7D2;border-radius:99px;background:#FFF8F6;color:oklch(0.55 0.17 25);font:600 14.5px/1 Outfit,sans-serif;cursor:pointer" style-hover="border-color:oklch(0.6 0.17 25)">Remove</button>
+        </sc-if>
+        <button onClick="{{ closeModal }}" style="flex:1;padding:14px;border:1.5px solid #E8DECE;border-radius:99px;background:#FBF6EF;font:600 14.5px/1 Outfit,sans-serif;cursor:pointer" style-hover="border-color:#2A2520">Cancel</button>
+        <button onClick="{{ save }}" style="flex:1.4;padding:14px;border:none;border-radius:99px;background:#2A2520;color:#FFFDF9;font:600 14.5px/1 Outfit,sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(42,37,32,.22)" style-hover="transform:translateY(-1px)">{{ saveLabel }}</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currency&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showSparkline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;warnThreshold&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:85,&quot;min&quot;:50,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;}}">
+const PALETTE = [
+  "oklch(0.68 0.15 25)","oklch(0.72 0.15 60)","oklch(0.74 0.14 100)","oklch(0.70 0.14 150)",
+  "oklch(0.70 0.13 195)","oklch(0.66 0.14 240)","oklch(0.66 0.15 285)","oklch(0.68 0.15 330)"
+];
+const ICONS = ["🏡","🛒","💡","🚲","🐖","🛟","🩺","🎈","🧩","🎬","☕","✈️","🐕","📚"];
+
+class Component extends DCLogic {
+  state = {
+    people: [
+      { name: "Maja", gross: 6200, tax: 31, color: "oklch(0.66 0.15 285)", tint: "oklch(0.95 0.04 285)" },
+      { name: "Ilan", gross: 4750, tax: 26, color: "oklch(0.70 0.14 195)", tint: "oklch(0.95 0.04 195)" }
+    ],
+    cats: [
+      { id: 1, name: "Housing", icon: "🏡", color: PALETTE[5], alloc: 2450, spent: 2450 },
+      { id: 2, name: "Groceries", icon: "🛒", color: PALETTE[3], alloc: 900, spent: 612 },
+      { id: 3, name: "Utilities", icon: "💡", color: PALETTE[2], alloc: 320, spent: 288 },
+      { id: 4, name: "Transport", icon: "🚲", color: PALETTE[4], alloc: 410, spent: 395 },
+      { id: 5, name: "Savings", icon: "🐖", color: PALETTE[6], alloc: 1600, spent: 1600 },
+      { id: 6, name: "Insurance", icon: "🛟", color: PALETTE[1], alloc: 285, spent: 285 },
+      { id: 7, name: "Health", icon: "🩺", color: PALETTE[7], alloc: 240, spent: 96 },
+      { id: 8, name: "Leisure", icon: "🎈", color: PALETTE[0], alloc: 520, spent: 498 },
+      { id: 9, name: "Misc", icon: "🧩", color: "oklch(0.66 0.05 60)", alloc: 260, spent: 141 }
+    ],
+    history: [980, 1120, 860, 1290, 1180, 1410],
+    modal: null, editId: null, f: {}
+  };
+
+  cur() { return this.props.currency ?? "€"; }
+  money(n) { return this.cur() + Math.round(n).toLocaleString("en-US"); }
+  net(p) { return p.gross * (1 - p.tax / 100); }
+
+  open(kind, f, editId) { this.setState({ modal: kind, f: f || {}, editId: editId ?? null }); }
+  setF(k, v) { this.setState(s => ({ f: Object.assign({}, s.f, { [k]: v }) })); }
+
+  save = () => {
+    const { modal, f, editId } = this.state;
+    if (modal === "income") {
+      this.setState(s => ({
+        people: s.people.map((p, i) => i === editId ? Object.assign({}, p, { name: f.name, gross: +f.gross || 0, tax: +f.tax || 0 }) : p),
+        modal: null
+      }));
+    } else if (modal === "category") {
+      this.setState(s => {
+        const next = editId
+          ? s.cats.map(c => c.id === editId ? Object.assign({}, c, { name: f.name, icon: f.icon, color: f.color, alloc: +f.alloc || 0 }) : c)
+          : s.cats.concat([{ id: Date.now(), name: f.name || "New category", icon: f.icon, color: f.color, alloc: +f.alloc || 0, spent: 0 }]);
+        return { cats: next, modal: null };
+      });
+    } else {
+      this.setState(s => ({
+        cats: s.cats.map(c => c.id === f.catId ? Object.assign({}, c, { spent: c.spent + (+f.amount || 0) }) : c),
+        modal: null
+      }));
+    }
+  };
+
+  removeCat = () => this.setState(s => ({ cats: s.cats.filter(c => c.id !== s.editId), modal: null }));
+
+  renderVals() {
+    const s = this.state, f = s.f, C = 2 * Math.PI * 70;
+    const warn = this.props.warnThreshold ?? 85;
+    const totalNet = s.people.reduce((a, p) => a + this.net(p), 0);
+    const alloc = s.cats.reduce((a, c) => a + c.alloc, 0);
+    const spent = s.cats.reduce((a, c) => a + c.spent, 0);
+    const unalloc = totalNet - alloc;
+    const savingsCat = s.cats.filter(c => /saving/i.test(c.name)).reduce((a, c) => a + c.alloc, 0);
+    const saveMonth = Math.max(0, totalNet - spent - Math.max(0, alloc - spent) + savingsCat);
+    const prev = s.history[s.history.length - 1];
+    const delta = saveMonth - prev;
+
+    let acc = 0;
+    const segments = s.cats.map(c => {
+      const len = alloc ? (c.alloc / Math.max(alloc, totalNet)) * C : 0;
+      const seg = { color: c.color, dash: len.toFixed(1) + " " + (C - len).toFixed(1), offset: -acc };
+      acc += len;
+      return seg;
+    });
+
+    const barFor = (pct) => pct >= 100 ? "oklch(0.60 0.19 25)" : pct >= warn ? "oklch(0.72 0.16 65)" : "oklch(0.66 0.15 150)";
+
+    const categories = s.cats.map(c => {
+      const pct = c.alloc ? (c.spent / c.alloc) * 100 : 0;
+      return {
+        name: c.name, icon: c.icon, color: c.color,
+        tint: c.color.replace(/^oklch\(([\d.]+) ([\d.]+)/, (m, l, ch) => "oklch(0.94 0.05"),
+        allocLabel: this.money(c.alloc), spentLabel: this.money(c.spent),
+        remainLabel: c.spent > c.alloc ? this.money(c.spent - c.alloc) + " over" : this.money(c.alloc - c.spent) + " left",
+        sharePct: (alloc ? Math.round((c.alloc / alloc) * 100) : 0) + "%",
+        pctWidth: Math.min(100, pct).toFixed(1) + "%", barColor: barFor(pct),
+        edit: () => this.open("category", { name: c.name, icon: c.icon, color: c.color, alloc: c.alloc }, c.id)
+      };
+    });
+
+    const pts = s.history.concat([saveMonth]);
+    const lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts);
+    const xy = pts.map((v, i) => [i * (300 / (pts.length - 1)), 76 - ((v - lo) / Math.max(1, hi - lo)) * 66]);
+    const pstr = xy.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+
+    return {
+      currency: this.cur(),
+      showSparkline: this.props.showSparkline ?? true,
+      statusLine: spent > alloc
+        ? "You're over budget this month — Housing and Leisure are running hot."
+        : "On track. " + this.money(Math.max(0, alloc - spent)) + " still unspent across categories.",
+      people: s.people.map((p, i) => ({
+        name: p.name, initial: p.name.slice(0, 1), color: p.color, tint: p.tint,
+        grossLabel: this.money(p.gross), taxLabel: p.tax + "%", tax: p.tax,
+        netLabel: this.money(this.net(p)),
+        setTax: e => { const v = +e.target.value; this.setState(st => ({ people: st.people.map((q, j) => j === i ? Object.assign({}, q, { tax: v }) : q) })); },
+        edit: () => this.open("income", { name: p.name, gross: p.gross, tax: p.tax }, i)
+      })),
+      totalNetLabel: this.money(totalNet), allocLabel: this.money(alloc),
+      unallocLabel: (unalloc < 0 ? "−" : "") + this.money(Math.abs(unalloc)),
+      spentLabel: this.money(spent),
+      saveMonthLabel: this.money(saveMonth), saveYearLabel: this.money(saveMonth * 12),
+      trendArrow: delta >= 0 ? "↑" : "↓",
+      trendLine: (delta >= 0 ? "+" : "−") + this.money(Math.abs(delta)) + " vs. last month",
+      sparkPts: pstr, sparkFill: "0,84 " + pstr + " 300,84",
+      sparkLastX: xy[xy.length - 1][0], sparkLastY: xy[xy.length - 1][1],
+      sparkRange: this.money(lo) + " – " + this.money(hi),
+      segments, categories,
+      allocPctLabel: (totalNet ? Math.round((alloc / totalNet) * 100) : 0) + "%",
+
+      openExpense: () => this.open("expense", { catId: s.cats[1] && s.cats[1].id, amount: 48, note: "", date: "2026-09-12", payer: 0 }),
+      openCategory: () => this.open("category", { name: "", icon: ICONS[10], color: PALETTE[4], alloc: 200 }),
+      closeModal: () => this.setState({ modal: null }),
+      stop: e => e.stopPropagation(),
+      modalOpen: !!s.modal, isIncome: s.modal === "income", isCategory: s.modal === "category", isExpense: s.modal === "expense",
+      modalTitle: s.modal === "income" ? "Edit income" : s.modal === "category" ? (s.editId ? "Edit category" : "New category") : "Log an expense",
+      modalSub: s.modal === "income" ? "Gross pay and estimated tax rate" : s.modal === "category" ? "Name it, give it a look, set the monthly budget" : "It lands in this month's tracking right away",
+      modalIcon: s.modal === "income" ? "💸" : s.modal === "category" ? (f.icon || "🧩") : "🧾",
+      modalTint: s.modal === "income" ? "oklch(0.94 0.05 150)" : s.modal === "expense" ? "oklch(0.94 0.05 60)" : "oklch(0.94 0.05 285)",
+      saveLabel: s.modal === "expense" ? "Log expense" : "Save",
+      canDelete: s.modal === "category" && !!s.editId,
+      removeCat: this.removeCat, save: this.save,
+      f: { name: f.name ?? "", gross: f.gross ?? "", tax: f.tax ?? 0, alloc: f.alloc ?? "", amount: f.amount ?? "", note: f.note ?? "", date: f.date ?? "" },
+      fTaxLabel: (f.tax || 0) + "%",
+      fNetLabel: this.money((+f.gross || 0) * (1 - (+f.tax || 0) / 100)),
+      allocHint: "Leaves " + this.money(totalNet - alloc - (+f.alloc || 0) + (s.editId ? (s.cats.find(c => c.id === s.editId) || {}).alloc || 0 : 0)) + " unallocated of your household net income.",
+      setFName: e => this.setF("name", e.target.value),
+      setFGross: e => this.setF("gross", e.target.value),
+      setFTax: e => this.setF("tax", +e.target.value),
+      setFAlloc: e => this.setF("alloc", e.target.value),
+      setFAmount: e => this.setF("amount", e.target.value),
+      setFNote: e => this.setF("note", e.target.value),
+      setFDate: e => this.setF("date", e.target.value),
+      iconChoices: ICONS.map(ic => ({ icon: ic, border: f.icon === ic ? "2px solid #2A2520" : "1.5px solid #E8DECE", pick: () => this.setF("icon", ic) })),
+      colorChoices: PALETTE.map(col => ({ color: col, ring: f.color === col ? "0 0 0 3px #FFFDF9, 0 0 0 5px #2A2520" : "none", pick: () => this.setF("color", col) })),
+      catChoices: s.cats.map(c => ({
+        name: c.name, icon: c.icon,
+        bg: f.catId === c.id ? c.color : "#FBF6EF",
+        fg: f.catId === c.id ? "#FFFDF9" : "#2A2520",
+        border: f.catId === c.id ? "1.5px solid transparent" : "1.5px solid #E8DECE",
+        pick: () => this.setF("catId", c.id)
+      })),
+      payerChoices: s.people.map((p, i) => ({
+        name: p.name,
+        bg: f.payer === i ? p.color : "#FBF6EF",
+        fg: f.payer === i ? "#FFFDF9" : "#2A2520",
+        border: f.payer === i ? "1.5px solid transparent" : "1.5px solid #E8DECE",
+        pick: () => this.setF("payer", i)
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
