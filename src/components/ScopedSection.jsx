@@ -30,6 +30,7 @@ function toggleIn(ids, id) {
  * @param {number} props.total
  * @param {number} props.annualTotal
  * @param {{ id: string, label: string }[]} props.scopes - common first, then one per person
+ * @param {string[]} [props.editableScopes] - scopes the viewer may change, all of them when omitted
  * @param {{ id: string, label: string, color: string, scope: string }[]} props.subgroups
  * @param {{ id: string, label: string, amount: number, parent: string }[]} props.items
  * @param {Record<string, number>} [props.lockedByScope] - derived amounts shown but not editable
@@ -48,6 +49,7 @@ export default function ScopedSection({
   total,
   annualTotal,
   scopes,
+  editableScopes,
   subgroups,
   items,
   lockedByScope = {},
@@ -87,8 +89,20 @@ export default function ScopedSection({
     setOverId(undefined)
   }
 
-  // Lines move between scopes and sub-groups by being dropped on one of them
-  function dropProps(targetId) {
+  function canEdit(scopeId) {
+    if (!editableScopes) {
+      return true
+    }
+
+    return editableScopes.includes(scopeId)
+  }
+
+  // Lines move between scopes and sub-groups by being dropped on one of them, read-only scopes accept nothing
+  function dropProps(targetId, editable) {
+    if (!editable) {
+      return {}
+    }
+
     return {
       onDragOver: (event) => {
         event.preventDefault()
@@ -132,6 +146,25 @@ export default function ScopedSection({
     }
 
     return 'line'
+  }
+
+  // Another person's line, shown as plain text
+  function renderReadOnlyLine(item, index) {
+    return (
+      <li key={`line-${item.id}-${index}`} className="line line--locked">
+        <span className="line__name">{item.label}</span>
+        <span className="line__total">{formatAmount(item.amount)}</span>
+      </li>
+    )
+  }
+
+  // Picks the line renderer matching the viewer's rights on the scope
+  function lineRenderer(editable) {
+    if (!editable) {
+      return renderReadOnlyLine
+    }
+
+    return renderLine
   }
 
   function renderLine(item, index) {
@@ -201,110 +234,130 @@ export default function ScopedSection({
         Glissez une ligne par sa poignée pour la déposer dans un autre groupe ou sous-groupe.
       </p>
 
-      {tree.map((scope, scopeIndex) => (
-        <article
-          key={`scope-${scope.id}-${scopeIndex}`}
-          className={blockClass('scope', scope.id)}
-          {...dropProps(scope.id)}
-        >
-          <header className="scope__header">
-            <button
-              type="button"
-              className="scope__toggle"
-              onClick={() => fold(scope.id)}
-              aria-expanded={isOpen(scope.id)}
-            >
-              <span className="chevron" aria-hidden="true" />
-              <h3 className="scope__title">{scope.label}</h3>
-            </button>
+      {tree.map((scope, scopeIndex) => {
+        const editable = canEdit(scope.id)
 
-            <span className="scope__total">
-              {formatAmount(scope.total + (lockedByScope[scope.id] ?? 0))} / mois
-            </span>
-          </header>
+        return (
+          <article
+            key={`scope-${scope.id}-${scopeIndex}`}
+            className={blockClass('scope', scope.id)}
+            {...dropProps(scope.id, editable)}
+          >
+            <header className="scope__header">
+              <button
+                type="button"
+                className="scope__toggle"
+                onClick={() => fold(scope.id)}
+                aria-expanded={isOpen(scope.id)}
+              >
+                <span className="chevron" aria-hidden="true" />
+                <h3 className="scope__title">{scope.label}</h3>
+              </button>
 
-          {isOpen(scope.id) && (
-            <>
-              {scope.subgroups.map((subgroup, index) => (
-                <article
-                  key={`subgroup-${subgroup.id}-${index}`}
-                  className={blockClass(`subgroup subgroup--${subgroup.color}`, subgroup.id)}
-                  {...dropProps(subgroup.id)}
-                >
-                  <header className="subgroup__header">
-                    <ColorPicker
-                      color={subgroup.color}
-                      title={`Couleur du sous-groupe ${subgroup.label}`}
-                      onPick={(color) => onUpdateSubgroup(subgroup.id, 'color', color)}
-                    />
+              {!editable && <span className="scope__badge">Lecture seule</span>}
 
-                    <button
-                      type="button"
-                      className="subgroup__toggle"
-                      onClick={() => fold(subgroup.id)}
-                      aria-expanded={isOpen(subgroup.id)}
-                      aria-label={`Replier ${subgroup.label}`}
-                    >
-                      <span className="chevron" aria-hidden="true" />
-                    </button>
+              <span className="scope__total">
+                {formatAmount(scope.total + (lockedByScope[scope.id] ?? 0))} / mois
+              </span>
+            </header>
 
-                    <input
-                      className="subgroup__name"
-                      value={subgroup.label}
-                      onChange={(event) =>
-                        onUpdateSubgroup(subgroup.id, 'label', event.target.value)
-                      }
-                      aria-label="Nom du sous-groupe"
-                      autoFocus={subgroup.id === focusId}
-                    />
+            {isOpen(scope.id) && (
+              <>
+                {scope.subgroups.map((subgroup, index) => (
+                  <article
+                    key={`subgroup-${subgroup.id}-${index}`}
+                    className={blockClass(`subgroup subgroup--${subgroup.color}`, subgroup.id)}
+                    {...dropProps(subgroup.id, editable)}
+                  >
+                    <header className="subgroup__header">
+                      {editable && (
+                        <ColorPicker
+                          color={subgroup.color}
+                          title={`Couleur du sous-groupe ${subgroup.label}`}
+                          onPick={(color) => onUpdateSubgroup(subgroup.id, 'color', color)}
+                        />
+                      )}
 
-                    <span className="subgroup__total">{formatAmount(subgroup.total)}</span>
+                      {!editable && <span className={`swatch swatch--${subgroup.color}`} aria-hidden="true" />}
 
-                    <button
-                      type="button"
-                      className="list__remove"
-                      onClick={() => onRemoveSubgroup(subgroup.id)}
-                      aria-label={`Supprimer le sous-groupe ${subgroup.label}`}
-                    >
-                      ×
-                    </button>
-                  </header>
-
-                  {isOpen(subgroup.id) && (
-                    <>
-                      <ul className="lines">{subgroup.items.map(renderLine)}</ul>
-
-                      <button type="button" className="add" onClick={() => addLine(subgroup.id)}>
-                        + {addLabel}
+                      <button
+                        type="button"
+                        className="subgroup__toggle"
+                        onClick={() => fold(subgroup.id)}
+                        aria-expanded={isOpen(subgroup.id)}
+                        aria-label={`Replier ${subgroup.label}`}
+                      >
+                        <span className="chevron" aria-hidden="true" />
                       </button>
-                    </>
-                  )}
-                </article>
-              ))}
 
-              <ul className="lines">{scope.items.map(renderLine)}</ul>
+                      {editable && (
+                        <input
+                          className="subgroup__name"
+                          value={subgroup.label}
+                          onChange={(event) =>
+                            onUpdateSubgroup(subgroup.id, 'label', event.target.value)
+                          }
+                          aria-label="Nom du sous-groupe"
+                          autoFocus={subgroup.id === focusId}
+                        />
+                      )}
 
-              {!!lockedByScope[scope.id] && (
-                <p className="line line--locked">
-                  <span className="line__name">{lockedLabel}</span>
-                  <span className="line__meta">Calculé depuis les revenus</span>
-                  <span className="line__total">{formatAmount(lockedByScope[scope.id])}</span>
-                </p>
-              )}
+                      {!editable && <h4 className="subgroup__name">{subgroup.label}</h4>}
 
-              <footer className="scope__actions">
-                <button type="button" className="add" onClick={() => addLine(scope.id)}>
-                  + {addLabel}
-                </button>
+                      <span className="subgroup__total">{formatAmount(subgroup.total)}</span>
 
-                <button type="button" className="add" onClick={() => addSubgroup(scope.id)}>
-                  + Sous-groupe
-                </button>
-              </footer>
-            </>
-          )}
-        </article>
-      ))}
+                      {editable && (
+                        <button
+                          type="button"
+                          className="list__remove"
+                          onClick={() => onRemoveSubgroup(subgroup.id)}
+                          aria-label={`Supprimer le sous-groupe ${subgroup.label}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </header>
+
+                    {isOpen(subgroup.id) && (
+                      <>
+                        <ul className="lines">{subgroup.items.map(lineRenderer(editable))}</ul>
+
+                        {editable && (
+                          <button type="button" className="add" onClick={() => addLine(subgroup.id)}>
+                            + {addLabel}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </article>
+                ))}
+
+                <ul className="lines">{scope.items.map(lineRenderer(editable))}</ul>
+
+                {!!lockedByScope[scope.id] && (
+                  <p className="line line--locked">
+                    <span className="line__name">{lockedLabel}</span>
+                    <span className="line__meta">Calculé depuis les revenus</span>
+                    <span className="line__total">{formatAmount(lockedByScope[scope.id])}</span>
+                  </p>
+                )}
+
+                {editable && (
+                  <footer className="scope__actions">
+                    <button type="button" className="add" onClick={() => addLine(scope.id)}>
+                      + {addLabel}
+                    </button>
+
+                    <button type="button" className="add" onClick={() => addSubgroup(scope.id)}>
+                      + Sous-groupe
+                    </button>
+                  </footer>
+                )}
+              </>
+            )}
+          </article>
+        )
+      })}
     </Section>
   )
 }

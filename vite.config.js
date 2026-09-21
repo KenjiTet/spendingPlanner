@@ -6,5 +6,9 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    // The API is served by the Node server, on the same origin once built
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
   },
 })

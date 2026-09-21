@@ -14,6 +14,7 @@ function taxHintFor(taxTiming) {
  * Net income of each person, their annual tax, and when the tax is deducted
  * @param {object} props
  * @param {{ id: string, label: string, netMonthly: number, annualTax: number }[]} props.people
+ * @param {string} props.currentUserId - only this person's figures are editable, names come from the accounts
  * @param {'monthly' | 'yearly'} props.taxTiming
  * @param {number} props.monthlyNetIncome
  * @param {number} props.annualTax
@@ -22,6 +23,7 @@ function taxHintFor(taxTiming) {
  */
 export default function IncomeSection({
   people,
+  currentUserId,
   taxTiming,
   monthlyNetIncome,
   annualTax,
@@ -40,11 +42,7 @@ export default function IncomeSection({
           <li key={`person-${person.id}-${index}`} className="list__item list__item--fields">
             <label className="form__field form__field--grow">
               <span>Personne</span>
-              <input
-                value={person.label}
-                onChange={(event) => onUpdatePerson(person.id, 'label', event.target.value)}
-                placeholder="Prénom"
-              />
+              <input value={person.label} disabled />
             </label>
 
             <label className="form__field">
@@ -56,6 +54,7 @@ export default function IncomeSection({
                 value={person.netMonthly}
                 onChange={(event) => onUpdatePerson(person.id, 'netMonthly', event.target.value)}
                 placeholder="0"
+                disabled={person.id !== currentUserId}
               />
             </label>
 
@@ -68,6 +67,7 @@ export default function IncomeSection({
                 value={person.annualTax}
                 onChange={(event) => onUpdatePerson(person.id, 'annualTax', event.target.value)}
                 placeholder="0"
+                disabled={person.id !== currentUserId}
               />
             </label>
           </li>

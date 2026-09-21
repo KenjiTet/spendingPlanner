@@ -1,42 +1,52 @@
-import { isValidPlan } from './plan.js'
+// Browser persistence for small per-device preferences (current plan, last category), never for shared data
 
-// Browser persistence for the plan, isolated so the hook stays readable
-
-const STORAGE_KEY = 'spending-planner.plan'
+const PREFIX = 'spending-planner.'
 
 /**
- * Reads the stored plan, falling back to the given plan when nothing usable is saved
- * @param {object} fallback
+ * Reads a stored preference, undefined when missing or when storage is unavailable
+ * @param {string} key
  */
-export function loadPlan(fallback) {
+export function loadPreference(key) {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-
-    if (!stored) {
-      return fallback
-    }
-
-    const parsed = JSON.parse(stored)
-
-    if (!isValidPlan(parsed)) {
-      return fallback
-    }
-
-    return parsed
+    return window.localStorage.getItem(PREFIX + key) ?? undefined
   } catch {
-    // Private mode, quota or corrupted content: start from the defaults rather than crash
-    return fallback
+    // Private mode or blocked storage: behave as if nothing was saved
+    return undefined
   }
 }
 
 /**
- * Persists the plan, ignoring storage failures
- * @param {object} plan
+ * Plan saved by the single-user version of the app, offered once for import
+ * @returns {object | undefined}
  */
-export function savePlan(plan) {
+export function loadLegacyPlan() {
+  const stored = loadPreference('plan')
+
+  if (!stored) {
+    return undefined
+  }
+
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plan))
+    return JSON.parse(stored)
   } catch {
-    // Nothing to do, the app keeps working from memory
+    return undefined
+  }
+}
+
+/**
+ * Persists a preference, removing it when the value is empty
+ * @param {string} key
+ * @param {string | undefined} value
+ */
+export function savePreference(key, value) {
+  try {
+    if (!value) {
+      window.localStorage.removeItem(PREFIX + key)
+      return
+    }
+
+    window.localStorage.setItem(PREFIX + key, value)
+  } catch {
+    // Nothing to do, the preference simply is not remembered
   }
 }

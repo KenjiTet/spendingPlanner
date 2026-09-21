@@ -1,26 +1,92 @@
-import { useEffect, useMemo, useState } from 'react'
-import defaultPlan from '../data/plan.json'
-import { loadPlan, savePlan } from '../utils/storage.js'
-import { computeTotals, withDefaults } from '../utils/plan.js'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '../lib/api.js'
+import { computeTotals, toAmount, withDefaults } from '../utils/plan.js'
+import { itemToRow, LISTS, rowsToPlan, toImportPayload } from '../utils/planMapper.js'
+
+// Typing is saved once the person pauses, not on every keystroke
+const SAVE_DELAY_MS = 400
 
 // Replaces one list of the plan without touching the rest
 function withList(plan, listKey, items) {
   return { ...plan, [listKey]: items }
 }
 
-// The only stateful module of the app: the whole plan lives here and is mirrored to the browser
-export default function usePlan() {
-  const [plan, setPlan] = useState(() => withDefaults(loadPlan(defaultPlan)))
+// Loads every row of a plan and shapes it for the components
+async function fetchPlan(planId) {
+  const { data, error } = await api.get(`/plans/${planId}`)
 
-  // Every edit is persisted, so a refresh keeps the plan
+  if (!!error) {
+    throw new Error(error.message)
+  }
+
+  return rowsToPlan(data)
+}
+
+/**
+ * The plan being viewed: edits are applied locally right away, then written to the server
+ * @param {string} planId
+ */
+export default function usePlan(planId) {
+  const [plan, setPlan] = useState(undefined)
+  const [error, setError] = useState('')
+  const latest = useRef(undefined)
+  const timers = useRef({})
+
+  // Writers read the freshest state, not the one captured when they were scheduled
+  latest.current = plan
+
+  const reload = useCallback(async () => {
+    try {
+      setPlan(await fetchPlan(planId))
+    } catch (failure) {
+      setError(failure.message)
+    }
+  }, [planId])
+
   useEffect(() => {
-    savePlan(plan)
-  }, [plan])
+    setPlan(undefined)
+    reload()
+  }, [reload])
+
+  // Pending debounced writes are dropped when the plan changes or the page unmounts
+  useEffect(() => {
+    const pending = timers.current
+
+    return () => Object.values(pending).forEach(clearTimeout)
+  }, [planId])
+
+  // A rejected write means the local state is wrong: surface it and resync from the server
+  const persist = useCallback(
+    async (request) => {
+      const { error: failure } = await request
+
+      if (!failure) {
+        return
+      }
+
+      setError(failure.message)
+      reload()
+    },
+    [reload]
+  )
 
   /**
-   * Updates one numeric or text field of a person
+   * Runs a write once no other change to the same key happened for a moment
+   * @param {string} key
+   * @param {() => PromiseLike<object>} write
+   */
+  function debounce(key, write) {
+    clearTimeout(timers.current[key])
+    timers.current[key] = setTimeout(() => {
+      delete timers.current[key]
+      persist(write())
+    }, SAVE_DELAY_MS)
+  }
+
+  /**
+   * Updates the income or tax of the signed-in person, the only member row they may edit
    * @param {string} id
-   * @param {'label' | 'netMonthly' | 'annualTax'} field
+   * @param {'netMonthly' | 'annualTax'} field
    * @param {string | number} value
    */
   function updatePerson(id, field, value) {
@@ -34,31 +100,44 @@ export default function usePlan() {
         return { ...person, [field]: value }
       }),
     }))
+
+    debounce(`person-${id}`, () => {
+      const person = latest.current.people.find((candidate) => candidate.id === id)
+
+      return api.patch(`/plans/${planId}/members/me`, {
+        net_monthly: toAmount(person.netMonthly),
+        annual_tax: toAmount(person.annualTax),
+      })
+    })
   }
 
   /**
-   * Updates one setting, such as when the tax is deducted
-   * @param {string} key
+   * Updates one shared setting, such as when the tax is deducted
+   * @param {'taxTiming'} key
    * @param {string} value
    */
   function updateSetting(key, value) {
     setPlan((current) => ({ ...current, settings: { ...current.settings, [key]: value } }))
+    persist(api.patch(`/plans/${planId}`, { tax_timing: value }))
   }
 
   /**
-   * Appends a budget line to `categories` or `savings`
-   * @param {'categories' | 'savings'} listKey
-   * @param {{ id: string, label: string, amount: number }} item
+   * Appends a line or a sub-group
+   * @param {keyof LISTS} listKey
+   * @param {object} item
    */
   function addItem(listKey, item) {
-    setPlan((current) => withList(current, listKey, [...current[listKey], item]))
+    const next = withList(latest.current, listKey, [...latest.current[listKey], item])
+
+    setPlan(next)
+    persist(api.post(`/plans/${planId}/${LISTS[listKey].resource}`, itemToRow(next, listKey, item)))
   }
 
   /**
-   * Updates one field of a budget line
-   * @param {'categories' | 'savings'} listKey
+   * Updates one field of a line or a sub-group
+   * @param {keyof LISTS} listKey
    * @param {string} id
-   * @param {'label' | 'amount'} field
+   * @param {string} field
    * @param {string | number} value
    */
   function updateItem(listKey, id, field, value) {
@@ -75,14 +154,21 @@ export default function usePlan() {
         })
       )
     )
+
+    debounce(`${listKey}-${id}`, () => {
+      const item = latest.current[listKey].find((candidate) => candidate.id === id)
+
+      return api.put(`/plans/${planId}/${LISTS[listKey].resource}/${id}`, itemToRow(latest.current, listKey, item))
+    })
   }
 
   /**
-   * Drops a budget line
+   * Drops a line
    * @param {'categories' | 'savings'} listKey
    * @param {string} id
    */
   function removeItem(listKey, id) {
+    clearTimeout(timers.current[`${listKey}-${id}`])
     setPlan((current) =>
       withList(
         current,
@@ -90,10 +176,11 @@ export default function usePlan() {
         current[listKey].filter((item) => item.id !== id)
       )
     )
+    persist(api.remove(`/plans/${planId}/lines/${id}`))
   }
 
   /**
-   * Drops a sub-group, its lines moving up to the scope it belonged to
+   * Drops a sub-group, its lines moving up to the scope it belonged to (the server does the same on delete)
    * @param {'subgroups' | 'savingGroups'} groupKey
    * @param {'categories' | 'savings'} listKey
    * @param {string} id
@@ -114,30 +201,46 @@ export default function usePlan() {
         }),
       }
     })
+    persist(api.remove(`/plans/${planId}/groups/${id}`))
   }
 
-  // Swaps the whole plan, used by the JSON import
-  function replacePlan(nextPlan) {
-    setPlan(withDefaults(nextPlan))
+  /**
+   * Appends a plan read from a JSON file, each JSON person mapped to a member or to the common part
+   * @param {object} source
+   * @param {Record<string, string>} scopeByPerson
+   * @returns {Promise<string | undefined>} an error message, if any
+   */
+  async function importPlan(source, scopeByPerson) {
+    const payload = toImportPayload(withDefaults(source), scopeByPerson)
+    const { error: failure } = await api.post(`/plans/${planId}/import`, payload)
+
+    if (failure) {
+      return failure.message
+    }
+
+    await reload()
+    return undefined
   }
 
-  // Back to the plan shipped in src/data/plan.json
-  function resetPlan() {
-    setPlan(defaultPlan)
-  }
+  const totals = useMemo(() => {
+    if (!plan) {
+      return undefined
+    }
 
-  const totals = useMemo(() => computeTotals(plan), [plan])
+    return computeTotals(plan)
+  }, [plan])
 
   return {
     plan,
     totals,
+    error,
+    dismissError: () => setError(''),
     updatePerson,
     updateSetting,
     addItem,
     updateItem,
     removeItem,
     removeSubgroup,
-    replacePlan,
-    resetPlan,
+    importPlan,
   }
 }

@@ -97,44 +97,68 @@ stylesheet. Keep the markup semantic first and reach for a wrapper only when lay
 
 ## Repository Structure
 
-A single-page React app, no backend.
+A single-page React app served by a small Express API, backed by SQLite on a Railway volume.
 
 ```
-index.html            page shell, mounts #root
-vite.config.js        dev server and build config
-src/main.jsx          React entry point
-src/App.jsx           page composition
-src/components/       UI pieces (Header, Summary, ExpenseForm, ExpenseList)
-src/hooks/            stateful logic (useExpenses)
-src/data/             static lists (categories, people)
-src/utils/            helpers (currency formatting)
-src/styles/           global stylesheet and design tokens
-public/               static assets served as-is
+index.html                     page shell, mounts #root
+vite.config.js                 dev server, build config, /api proxy
+Dockerfile                     image built by Railway: vite build, then the API serving dist/
+server/index.js                Express app: API routes, static front-end, error handler
+server/schema.sql              SQLite tables, created on every boot
+server/db.js                   the single database connection, on DATA_DIR
+server/auth.js                 password hashing and the signed session cookie
+server/access.js               who may read and edit what, the former RLS policies
+server/routes/                 auth, plans (and their groups, lines, import), expenses
+src/main.jsx                   React entry point, router
+src/App.jsx                    routing: login → plan choice → app
+src/lib/api.js                 the single API client
+src/pages/                     LoginPage, PlanPicker, PlanPage (budget editor), ExpensesPage (tracking)
+src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, ExpenseHistory…)
+src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses)
+src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
+src/data/plan.json             sample plan, importable from the Plan page
+src/styles/                    global stylesheet and design tokens
+public/                        static assets served as-is
 ```
 
 ## Commands
 
 ```bash
 npm install     # once
-npm run dev     # dev server on http://localhost:5173
+npm run server  # API and database on http://localhost:3000
+npm run dev     # front-end on http://localhost:5173, proxying /api
 npm run build   # production build into dist/
-npm run preview # serve the production build
+npm start       # the API serving the built front-end
 ```
+
+`.env` must define `SESSION_SECRET`, and may set `PORT` and `DATA_DIR` (see `.env.example`).
+Schema changes go in `server/schema.sql`, written so that re-running it on an existing database is harmless.
 
 There is no test runner, linter or formatter configured yet. Do not add one without being asked.
 
 ## Architecture
 
-**Stack:** React 19, Vite 7, plain CSS. No TypeScript, no router, no state library, no UI kit.
+**Stack:** React 19, Vite 7, plain CSS, `react-router-dom`; Express 5 and `better-sqlite3` on the server. No
+TypeScript, no state library, no UI kit, no ORM.
 
-**State:** all expense state lives in `src/hooks/useExpenses.js`. It is deliberately the only stateful module,
-so persistence (localStorage, an API, a shared database) can be added there without touching the components.
-State is in memory only today, so a refresh clears the list.
+**Data model:** a plan has members (`plan_members`), sub-groups (`plan_groups`) and lines (`plan_lines`); a NULL
+`owner_id` means the common part. `expenses` are booked by one member on one expense line. Security lives in
+`server/access.js` and the routes: members read the whole plan, edit only the common part and their own; personal
+expenses are visible to their author only, expenses on common lines to every member. Rows sent by the browser are
+rebuilt from allowed fields, never inserted as received, and nothing is filtered on the front-end side for privacy.
 
-**Components** are presentational and receive data and callbacks through props. They read the static lists from
-`src/data/` and format values through `src/utils/format.js`. Keep new business logic out of them.
+**State:** `useAuth` (session), `usePlans` (plans list, current plan), `usePlan` (the open plan, optimistic edits
+with debounced writes) and `useExpenses` (one month of expenses) are the only stateful modules. `Layout` loads the
+plan once and passes it to the pages through the router outlet context.
 
-**Currency** is formatted in one place, `src/utils/format.js`, currently `en-US` / USD.
+**Plan shape:** `src/utils/planMapper.js` turns the API rows into the in-memory shape
+(`people / subgroups / categories / savingGroups / savings / settings`) used by `computeTotals` and the plan
+components, and back into rows. Keep that shape stable rather than leaking column names into components.
+
+**Components** are presentational and receive data and callbacks through props. Business logic stays in
+`src/utils/plan.js` and `src/utils/tracking.js` (gauge thresholds, month ranges).
+
+**Currency and dates** are formatted in one place, `src/utils/format.js`, currently `fr-CH` / CHF.
 
 ## Git workflow
 
