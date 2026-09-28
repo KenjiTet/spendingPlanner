@@ -1,5 +1,8 @@
-import { createHmac } from 'node:crypto'
+import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto'
 
+// Marks a password stored by the first schema, see server/migrations.js
+export const LEGACY_HASH_PREFIX = 'scrypt:'
+const LEGACY_KEY_LENGTH = 64
 const COOKIE_NAME = 'sp_session'
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000
 const secret = process.env.SESSION_SECRET
@@ -23,6 +26,13 @@ export function hashPassword(password) {
  * @param {string} stored
  */
 export function verifyPassword(password, stored) {
+  // Accounts migrated from the first schema keep their salted scrypt hash
+  if (stored.startsWith(LEGACY_HASH_PREFIX)) {
+    const [salt, hash] = stored.slice(LEGACY_HASH_PREFIX.length).split(':')
+
+    return timingSafeEqual(Buffer.from(hash, 'hex'), scryptSync(password, salt, LEGACY_KEY_LENGTH))
+  }
+
   return password === stored
 }
 

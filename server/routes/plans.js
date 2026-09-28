@@ -1,18 +1,15 @@
-import { randomInt, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { canEditScope, isPlanCreator, requireMembership, slotOf } from '../access.js'
 import { requireUser } from '../auth.js'
 import { db } from '../db.js'
 import { fail } from '../errors.js'
 import { readAmount, readFlag, readId, readKind, readPosition } from '../input.js'
+import { randomShareCode, SHARE_CODE_PATTERN } from '../shareCode.js'
 import expensesRouter from './expenses.js'
 
 const TAX_TIMINGS = ['monthly', 'yearly']
 const MAX_SLOTS = 2
-// Ambiguous characters left out: the code is read aloud and typed by hand
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-const CODE_LENGTH = 6
-const CODE_PATTERN = /^[A-Z2-9]{6}$/
 const CODE_ATTEMPTS = 5
 
 const router = Router()
@@ -95,7 +92,7 @@ function readCode(value) {
     .trim()
     .toUpperCase()
 
-  if (!CODE_PATTERN.test(code)) {
+  if (!SHARE_CODE_PATTERN.test(code)) {
     fail(400, 'Ce code n’est pas valide.')
   }
 
@@ -107,11 +104,7 @@ function newShareCode() {
   let attempt = 0
 
   while (attempt < CODE_ATTEMPTS) {
-    let code = ''
-
-    while (code.length < CODE_LENGTH) {
-      code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]
-    }
+    const code = randomShareCode()
 
     if (!findByCode.get(code)) {
       return code

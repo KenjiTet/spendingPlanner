@@ -106,6 +106,8 @@ Dockerfile                     image built by Railway: vite build, then the API 
 server/index.js                Express app: API routes, static front-end, error handler
 server/schema.sql              SQLite tables, created on every boot
 server/db.js                   the single database connection, on DATA_DIR
+server/migrations.js           one-off rebuild of a database from the first schema (members → slots)
+server/shareCode.js            random plan share codes
 server/auth.js                 the password seam (clear text for now) and the signed session cookie
 server/access.js               who may read and edit what, the former RLS policies
 server/input.js                shared readers for values coming from the browser
