@@ -11,6 +11,24 @@ function withList(plan, listKey, items) {
   return { ...plan, [listKey]: items }
 }
 
+/**
+ * Where the writes stand: being sent, waiting for the typing pause, or all done
+ * @param {number} waiting
+ * @param {number} inFlight
+ * @returns {'saving' | 'pending' | 'saved'}
+ */
+function saveStatusOf(waiting, inFlight) {
+  if (!!inFlight) {
+    return 'saving'
+  }
+
+  if (!!waiting) {
+    return 'pending'
+  }
+
+  return 'saved'
+}
+
 // Loads every row of a plan and shapes it for the components
 async function fetchPlan(planId) {
   const { data, error } = await api.get(`/plans/${planId}`)
@@ -31,6 +49,10 @@ export default function usePlan(planId) {
   const [error, setError] = useState('')
   const latest = useRef(undefined)
   const timers = useRef({})
+  // Writes waiting for the typing pause, by key, so they can also be sent early
+  const queued = useRef({})
+  const [waiting, setWaiting] = useState(0)
+  const [inFlight, setInFlight] = useState(0)
 
   // Writers read the freshest state, not the one captured when they were scheduled
   latest.current = plan
@@ -48,17 +70,14 @@ export default function usePlan(planId) {
     reload()
   }, [reload])
 
-  // Pending debounced writes are dropped when the plan changes or the page unmounts
-  useEffect(() => {
-    const pending = timers.current
-
-    return () => Object.values(pending).forEach(clearTimeout)
-  }, [planId])
-
   // A rejected write means the local state is wrong: surface it and resync from the server
   const persist = useCallback(
     async (request) => {
+      setInFlight((count) => count + 1)
+
       const { error: failure } = await request
+
+      setInFlight((count) => count - 1)
 
       if (!failure) {
         return
@@ -70,6 +89,51 @@ export default function usePlan(planId) {
     [reload]
   )
 
+  // Drops a queued write, for a row about to be deleted anyway
+  const cancel = useCallback((key) => {
+    clearTimeout(timers.current[key])
+    delete timers.current[key]
+    delete queued.current[key]
+    setWaiting(Object.keys(queued.current).length)
+  }, [])
+
+  // Sends one queued write right away
+  const send = useCallback(
+    (key) => {
+      const write = queued.current[key]
+
+      cancel(key)
+
+      if (!!write) {
+        persist(write())
+      }
+    },
+    [cancel, persist]
+  )
+
+  // Sends every queued write without waiting for the typing pause
+  const flush = useCallback(() => {
+    Object.keys(queued.current).forEach(send)
+  }, [send])
+
+  // Leaving the plan sends what is still queued rather than dropping it
+  useEffect(() => () => flush(), [flush])
+
+  // Closing the tab cannot wait for a request, so the browser asks for confirmation instead
+  useEffect(() => {
+    if (!waiting && !inFlight) {
+      return undefined
+    }
+
+    function warn(event) {
+      event.preventDefault()
+    }
+
+    window.addEventListener('beforeunload', warn)
+
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [waiting, inFlight])
+
   /**
    * Runs a write once no other change to the same key happened for a moment
    * @param {string} key
@@ -77,19 +141,17 @@ export default function usePlan(planId) {
    */
   function debounce(key, write) {
     clearTimeout(timers.current[key])
-    timers.current[key] = setTimeout(() => {
-      delete timers.current[key]
-      persist(write())
-    }, SAVE_DELAY_MS)
+    queued.current[key] = write
+    setWaiting(Object.keys(queued.current).length)
+    timers.current[key] = setTimeout(() => send(key), SAVE_DELAY_MS)
   }
 
   /**
-   * Updates the income or tax of the signed-in person, the only member row they may edit
-   * @param {string} id
-   * @param {'netMonthly' | 'annualTax'} field
+   * Updates the annual tax of one place of the plan
+   * @param {string} id - the place being edited
    * @param {string | number} value
    */
-  function updatePerson(id, field, value) {
+  function updateTax(id, value) {
     setPlan((current) => ({
       ...current,
       people: current.people.map((person) => {
@@ -97,17 +159,14 @@ export default function usePlan(planId) {
           return person
         }
 
-        return { ...person, [field]: value }
+        return { ...person, annualTax: value }
       }),
     }))
 
-    debounce(`person-${id}`, () => {
+    debounce(`tax-${id}`, () => {
       const person = latest.current.people.find((candidate) => candidate.id === id)
 
-      return api.patch(`/plans/${planId}/members/me`, {
-        net_monthly: toAmount(person.netMonthly),
-        annual_tax: toAmount(person.annualTax),
-      })
+      return api.patch(`/plans/${planId}/slots/${id}/tax`, { annual_tax: toAmount(person.annualTax) })
     })
   }
 
@@ -168,7 +227,7 @@ export default function usePlan(planId) {
    * @param {string} id
    */
   function removeItem(listKey, id) {
-    clearTimeout(timers.current[`${listKey}-${id}`])
+    cancel(`${listKey}-${id}`)
     setPlan((current) =>
       withList(
         current,
@@ -235,7 +294,9 @@ export default function usePlan(planId) {
     totals,
     error,
     dismissError: () => setError(''),
-    updatePerson,
+    saveStatus: saveStatusOf(waiting, inFlight),
+    flush,
+    updateTax,
     updateSetting,
     addItem,
     updateItem,

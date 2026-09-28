@@ -1,11 +1,13 @@
 import { useState } from 'react'
+import { sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
 import Section from './Section.jsx'
 
 // The figures shown above the leftover line
 const ROWS = [
   { id: 'income', label: 'Revenu net', field: 'income' },
-  { id: 'expenses', label: 'Dépenses (impôts inclus)', field: 'expenses' },
+  { id: 'expenses', label: 'Dépenses', field: 'expenses' },
+  { id: 'tax', label: 'Impôts', field: 'tax' },
   { id: 'savings', label: 'Épargne', field: 'savings' },
 ]
 
@@ -51,7 +53,7 @@ export default function SummarySection({ columns }) {
   )
 
   return (
-    <Section title="Récapitulatif" tone="summary" actions={switcher}>
+    <Section title="Récapitulatif" id={sectionAnchor('summary')} tone="summary" actions={switcher}>
 
       <table className="summary">
         <thead>

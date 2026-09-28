@@ -16,7 +16,9 @@ export default function MonthSwitcher({ month, onChange }) {
         onClick={() => onChange(shiftMonth(month, -1))}
         aria-label="Mois précédent"
       >
-        ‹
+        <svg className="month__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
       </button>
 
       <h1 className="month__label">{formatMonth(month)}</h1>
@@ -27,7 +29,9 @@ export default function MonthSwitcher({ month, onChange }) {
         onClick={() => onChange(shiftMonth(month, 1))}
         aria-label="Mois suivant"
       >
-        ›
+        <svg className="month__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
       </button>
     </nav>
   )

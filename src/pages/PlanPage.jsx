@@ -1,11 +1,13 @@
 import { useOutletContext } from 'react-router-dom'
 import WarningBanner from '../components/WarningBanner.jsx'
-import IncomeSection from '../components/IncomeSection.jsx'
 import ScopedSection from '../components/ScopedSection.jsx'
 import ChartsSection from '../components/ChartsSection.jsx'
 import SummarySection from '../components/SummarySection.jsx'
+import TaxSection from '../components/TaxSection.jsx'
 import PlanActions from '../components/PlanActions.jsx'
-import { SHARED } from '../utils/plan.js'
+import PlanTree from '../components/PlanTree.jsx'
+import SavePanel from '../components/SavePanel.jsx'
+import { MONTHS_PER_YEAR, SHARED, toAmount, toScopeTree } from '../utils/plan.js'
 
 // The fixed scopes, which drive how the recap splits common from personal amounts
 function scopesOf(people, commonLabel, personLabel) {
@@ -17,19 +19,42 @@ function scopesOf(people, commonLabel, personLabel) {
   return [{ id: SHARED, label: commonLabel }, ...personal]
 }
 
-// Each person carries their own tax, shown inside their personal scope
-function taxByScopeOf(people, monthlyTax, annualTax) {
-  if (!monthlyTax) {
+// Monthly tax of each person, for the charts; nothing leaves the account monthly when it is paid once a year
+function taxByPersonOf(people, taxTiming) {
+  if (taxTiming !== 'monthly') {
     return {}
   }
 
-  return people.reduce(
-    (byScope, person) => ({
-      ...byScope,
-      [person.id]: (Number(person.annualTax) / annualTax) * monthlyTax,
-    }),
-    {}
-  )
+  return Object.fromEntries(people.map((person) => [person.id, toAmount(person.annualTax) / MONTHS_PER_YEAR]))
+}
+
+/**
+ * Places whose tax this person may change: their own, and any free one when they created the plan
+ * @param {object} plan
+ * @param {string} userId
+ */
+function editableIdsOf(plan, userId) {
+  const canEdit = (person) => person.userId === userId || (!person.userId && plan.createdBy === userId)
+
+  return plan.people.filter(canEdit).map((person) => person.id)
+}
+
+// A solo plan has no personal part: its lines all stay common, ready for a second person
+function visibleScopesOf(scopes, isSolo) {
+  if (isSolo) {
+    return scopes.slice(0, 1)
+  }
+
+  return scopes
+}
+
+// With a single person their column and the household one hold the same figures
+function summaryColumnsOf(columns, isSolo) {
+  if (isSolo) {
+    return columns.slice(-1)
+  }
+
+  return columns
 }
 
 // The budget editor: everyone sees the whole plan and edits the common part and their own
@@ -38,83 +63,119 @@ export default function PlanPage() {
     plan,
     totals,
     userId,
-    updatePerson,
+    slotId,
+    updateTax,
     updateSetting,
     addItem,
     updateItem,
     removeItem,
     removeSubgroup,
     importPlan,
+    saveStatus,
+    flush,
   } = useOutletContext()
 
+  const isSolo = plan.people.length < 2
   const expenseScopes = scopesOf(plan.people, 'Dépenses communes', 'Dépenses personnelles')
   const savingScopes = scopesOf(plan.people, 'Épargne commune', 'Épargne')
-  const taxByScope = taxByScopeOf(plan.people, totals.monthlyTax, totals.annualTax)
-  const editableScopes = [SHARED, userId]
+  const taxByPerson = taxByPersonOf(plan.people, plan.settings.taxTiming)
+  const editableScopes = [SHARED, slotId]
+  const visibleExpenseScopes = visibleScopesOf(expenseScopes, isSolo)
+  const visibleSavingScopes = visibleScopesOf(savingScopes, isSolo)
+
+  // What the outline beside the editor lists, in the order of the page
+  const outline = [
+    {
+      id: 'expenses',
+      title: 'Dépenses mensuelles',
+      tone: 'expense',
+      total: totals.monthlyExpenses,
+      scopes: toScopeTree(visibleExpenseScopes, plan.subgroups, plan.categories),
+    },
+    {
+      id: 'savings',
+      title: 'Épargne et investissements',
+      tone: 'savings',
+      total: totals.monthlySavings,
+      scopes: toScopeTree(visibleSavingScopes, plan.savingGroups, plan.savings),
+    },
+  ]
+  const extras = [
+    { id: 'tax', title: 'Impôts' },
+    { id: 'summary', title: 'Récapitulatif' },
+  ]
 
   return (
-    <>
-      <WarningBanner monthlyRemaining={totals.monthlyRemaining} annualRemaining={totals.annualRemaining} />
+    <div className="plan-layout">
+      <div className="plan-layout__side">
+        <PlanTree sections={outline} extras={extras} />
+        <SavePanel status={saveStatus} onSave={flush} />
+      </div>
 
-      <IncomeSection
-        people={plan.people}
-        currentUserId={userId}
-        taxTiming={plan.settings.taxTiming}
-        monthlyNetIncome={totals.monthlyNetIncome}
-        annualTax={totals.annualTax}
-        onUpdatePerson={updatePerson}
-        onUpdateSetting={updateSetting}
-      />
+      <div className="plan-layout__main">
+        <WarningBanner monthlyRemaining={totals.monthlyRemaining} annualRemaining={totals.annualRemaining} />
 
-      <ScopedSection
-        title="Dépenses mensuelles"
-        tone="expense"
-        addLabel="Dépense"
-        total={totals.monthlyExpenses}
-        annualTotal={totals.annualExpenses}
-        scopes={expenseScopes}
-        editableScopes={editableScopes}
-        subgroups={plan.subgroups}
-        items={plan.categories}
-        lockedByScope={taxByScope}
-        lockedLabel="Impôts"
-        onAddLine={(line) => addItem('categories', line)}
-        onUpdateLine={(id, field, value) => updateItem('categories', id, field, value)}
-        onRemoveLine={(id) => removeItem('categories', id)}
-        onAddSubgroup={(subgroup) => addItem('subgroups', subgroup)}
-        onUpdateSubgroup={(id, field, value) => updateItem('subgroups', id, field, value)}
-        onRemoveSubgroup={(id) => removeSubgroup('subgroups', 'categories', id)}
-      />
+        <ScopedSection
+          title="Dépenses mensuelles"
+          anchor="expenses"
+          tone="expense"
+          addLabel="Dépense"
+          autoBookable
+          total={totals.monthlyExpenses}
+          scopes={visibleExpenseScopes}
+          editableScopes={editableScopes}
+          shareCount={plan.people.length}
+          subgroups={plan.subgroups}
+          items={plan.categories}
+          onAddLine={(line) => addItem('categories', line)}
+          onUpdateLine={(id, field, value) => updateItem('categories', id, field, value)}
+          onRemoveLine={(id) => removeItem('categories', id)}
+          onAddSubgroup={(subgroup) => addItem('subgroups', subgroup)}
+          onUpdateSubgroup={(id, field, value) => updateItem('subgroups', id, field, value)}
+          onRemoveSubgroup={(id) => removeSubgroup('subgroups', 'categories', id)}
+        />
 
-      <ScopedSection
-        title="Épargne et investissements"
-        tone="savings"
-        addLabel="Ligne d’épargne"
-        total={totals.monthlySavings}
-        annualTotal={totals.annualSavings}
-        scopes={savingScopes}
-        editableScopes={editableScopes}
-        subgroups={plan.savingGroups}
-        items={plan.savings}
-        onAddLine={(line) => addItem('savings', line)}
-        onUpdateLine={(id, field, value) => updateItem('savings', id, field, value)}
-        onRemoveLine={(id) => removeItem('savings', id)}
-        onAddSubgroup={(subgroup) => addItem('savingGroups', subgroup)}
-        onUpdateSubgroup={(id, field, value) => updateItem('savingGroups', id, field, value)}
-        onRemoveSubgroup={(id) => removeSubgroup('savingGroups', 'savings', id)}
-      />
+        <ScopedSection
+          title="Épargne et investissements"
+          anchor="savings"
+          tone="savings"
+          addLabel="Ligne d’épargne"
+          total={totals.monthlySavings}
+          annualTotal={totals.annualSavings}
+          scopes={visibleSavingScopes}
+          editableScopes={editableScopes}
+          shareCount={plan.people.length}
+          subgroups={plan.savingGroups}
+          items={plan.savings}
+          onAddLine={(line) => addItem('savings', line)}
+          onUpdateLine={(id, field, value) => updateItem('savings', id, field, value)}
+          onRemoveLine={(id) => removeItem('savings', id)}
+          onAddSubgroup={(subgroup) => addItem('savingGroups', subgroup)}
+          onUpdateSubgroup={(id, field, value) => updateItem('savingGroups', id, field, value)}
+          onRemoveSubgroup={(id) => removeSubgroup('savingGroups', 'savings', id)}
+        />
 
-      <ChartsSection
-        people={plan.people}
-        scopes={expenseScopes}
-        subgroups={plan.subgroups}
-        categories={plan.categories}
-        taxByScope={taxByScope}
-      />
+        <TaxSection
+          people={plan.people}
+          editableIds={editableIdsOf(plan, userId)}
+          taxTiming={plan.settings.taxTiming}
+          annualTax={totals.annualTax}
+          onUpdateTax={updateTax}
+          onUpdateSetting={updateSetting}
+        />
 
-      <SummarySection columns={totals.columns} />
+        <ChartsSection
+          people={plan.people}
+          scopes={expenseScopes}
+          subgroups={plan.subgroups}
+          categories={plan.categories}
+          taxByScope={taxByPerson}
+        />
 
-      <PlanActions plan={plan} canImport={plan.createdBy === userId} onImport={importPlan} />
-    </>
+        <SummarySection columns={summaryColumnsOf(totals.columns, isSolo)} />
+
+        <PlanActions plan={plan} canImport={plan.createdBy === userId} onImport={importPlan} />
+      </div>
+    </div>
   )
 }

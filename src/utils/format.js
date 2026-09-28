@@ -51,3 +51,8 @@ export function formatMonth(month) {
 export function formatDay(day) {
   return dayFormatter.format(toLocalDate(day))
 }
+
+// First letter of a name, shown in the round badges of the sidebar
+export function initialOf(name) {
+  return (name ?? '').trim().charAt(0).toUpperCase()
+}

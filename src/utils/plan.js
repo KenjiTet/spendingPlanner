@@ -1,6 +1,6 @@
 // Pure budget maths, kept out of the hook and the components so it stays trivial to reason about
 
-const MONTHS_PER_YEAR = 12
+export const MONTHS_PER_YEAR = 12
 
 // Scope of a line that belongs to the household rather than to one person
 export const SHARED = 'shared'
@@ -153,14 +153,16 @@ function toColumn(id, label, figures) {
     monthly: {
       income: figures.income,
       expenses: figures.expenses,
+      tax: figures.tax,
       savings: figures.savings,
-      remaining: figures.income - figures.expenses - figures.savings,
+      remaining: figures.income - figures.expenses - figures.tax - figures.savings,
     },
     annual: {
       income: figures.annualIncome,
       expenses: figures.annualExpenses,
+      tax: figures.annualTax,
       savings: figures.annualSavings,
-      remaining: figures.annualIncome - figures.annualExpenses - figures.annualSavings,
+      remaining: figures.annualIncome - figures.annualExpenses - figures.annualTax - figures.annualSavings,
     },
   }
 }
@@ -185,9 +187,9 @@ export function computeTotals(plan) {
     monthlyTax = annualTax / MONTHS_PER_YEAR
   }
 
-  // The tax is shown as a monthly expense, so it is part of the expense totals
-  const monthlyExpenses = monthlyCategories + monthlyTax
-  const annualExpenses = monthlyCategories * MONTHS_PER_YEAR + annualTax
+  // The tax is a flow of its own, kept out of the expense totals
+  const monthlyExpenses = monthlyCategories
+  const annualExpenses = monthlyCategories * MONTHS_PER_YEAR
   const annualSavings = monthlySavings * MONTHS_PER_YEAR
   const annualNetIncome = monthlyNetIncome * MONTHS_PER_YEAR
 
@@ -202,15 +204,17 @@ export function computeTotals(plan) {
     // Common lines are split equally, personal ones count for their owner only
     const netMonthly = toAmount(person.netMonthly)
     const share = (expensesByScope[SHARED] ?? 0) / shareCount
-    const expenses = share + (expensesByScope[person.id] ?? 0) + personTax
+    const expenses = share + (expensesByScope[person.id] ?? 0)
     const savings = (savingsByScope[SHARED] ?? 0) / shareCount + (savingsByScope[person.id] ?? 0)
 
     return toColumn(person.id, person.label, {
       income: netMonthly,
       expenses,
+      tax: personTax,
       savings,
       annualIncome: netMonthly * MONTHS_PER_YEAR,
-      annualExpenses: (expenses - personTax) * MONTHS_PER_YEAR + toAmount(person.annualTax),
+      annualExpenses: expenses * MONTHS_PER_YEAR,
+      annualTax: toAmount(person.annualTax),
       annualSavings: savings * MONTHS_PER_YEAR,
     })
   })
@@ -219,9 +223,11 @@ export function computeTotals(plan) {
     toColumn('household', 'Total', {
       income: monthlyNetIncome,
       expenses: monthlyExpenses,
+      tax: monthlyTax,
       savings: monthlySavings,
       annualIncome: annualNetIncome,
       annualExpenses,
+      annualTax,
       annualSavings,
     })
   )
@@ -232,12 +238,12 @@ export function computeTotals(plan) {
     monthlyCategories,
     monthlyExpenses,
     monthlySavings,
-    monthlyRemaining: monthlyNetIncome - monthlyExpenses - monthlySavings,
+    monthlyRemaining: monthlyNetIncome - monthlyExpenses - monthlyTax - monthlySavings,
     annualNetIncome,
     annualTax,
     annualExpenses,
     annualSavings,
-    annualRemaining: annualNetIncome - annualExpenses - annualSavings,
+    annualRemaining: annualNetIncome - annualExpenses - annualTax - annualSavings,
     columns,
   }
 }

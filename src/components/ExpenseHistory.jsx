@@ -28,11 +28,11 @@ function swatchClass(color) {
  * @param {object} props
  * @param {object[]} props.expenses
  * @param {Record<string, { label: string, color?: string }>} props.lines - from indexLines
- * @param {Record<string, string>} props.names - member id to display name
- * @param {string} props.userId
+ * @param {Record<string, string>} props.names - place id to display name
+ * @param {string} props.slotId
  * @param {(id: string) => void} props.onRemove
  */
-export default function ExpenseHistory({ expenses, lines, names, userId, onRemove }) {
+export default function ExpenseHistory({ expenses, lines, names, slotId, onRemove }) {
   if (!expenses.length) {
     return (
       <section className="card history">
@@ -54,7 +54,7 @@ export default function ExpenseHistory({ expenses, lines, names, userId, onRemov
             <ul className="history__items">
               {group.items.map((expense, index) => {
                 const line = lines[expense.line_id]
-                const isMine = expense.user_id === userId
+                const isMine = expense.slot_id === slotId
 
                 return (
                   <li key={`expense-${expense.id}-${index}`} className="history__item">
@@ -63,7 +63,7 @@ export default function ExpenseHistory({ expenses, lines, names, userId, onRemov
                     <span className="history__text">
                       <span className="history__label">{line?.label ?? 'Ligne supprimée'}</span>
                       <span className="history__meta">
-                        {!isMine && `${names[expense.user_id] ?? 'Autre membre'} · `}
+                        {!isMine && `${names[expense.slot_id] ?? 'Autre membre'} · `}
                         {expense.note}
                       </span>
                     </span>

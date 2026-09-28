@@ -33,9 +33,9 @@ function ownerOfScope(scope) {
 
 /**
  * Builds the plan shape expected by computeTotals and the plan components
- * @param {{ plan: object, members: object[], groups: object[], lines: object[] }} rows
+ * @param {{ plan: object, slots: object[], groups: object[], lines: object[] }} rows
  */
-export function rowsToPlan({ plan, members, groups, lines }) {
+export function rowsToPlan({ plan, slots, groups, lines }) {
   const toGroup = (group) => ({
     id: group.id,
     label: group.label,
@@ -47,6 +47,7 @@ export function rowsToPlan({ plan, members, groups, lines }) {
     id: line.id,
     label: line.label,
     amount: Number(line.amount),
+    autoBook: !!line.auto_book,
     parent: line.group_id ?? scopeOfOwner(line.owner_id),
   })
 
@@ -55,11 +56,13 @@ export function rowsToPlan({ plan, members, groups, lines }) {
     name: plan.name,
     createdBy: plan.created_by,
     settings: { taxTiming: plan.tax_timing },
-    people: members.map((member) => ({
-      id: member.user_id,
-      label: member.display_name,
-      netMonthly: Number(member.net_monthly),
-      annualTax: Number(member.annual_tax),
+    // A person is a place in the plan: its name is derived from the account holding it, if any
+    people: slots.map((slot) => ({
+      id: slot.id,
+      userId: slot.user_id ?? undefined,
+      label: slot.display_name ?? slot.label,
+      netMonthly: Number(slot.net_monthly),
+      annualTax: Number(slot.annual_tax),
     })),
     subgroups: groups.filter((group) => group.kind === 'expense').map(toGroup),
     savingGroups: groups.filter((group) => group.kind === 'saving').map(toGroup),
@@ -98,13 +101,18 @@ export function itemToRow(plan, listKey, item) {
     return { ...base, color: item.color, owner_id: ownerOfScope(item.scope) }
   }
 
-  return { ...base, amount: toAmount(item.amount), ...parentToColumns(item.parent, plan[groupKey]) }
+  return {
+    ...base,
+    amount: toAmount(item.amount),
+    auto_book: !!item.autoBook,
+    ...parentToColumns(item.parent, plan[groupKey]),
+  }
 }
 
 /**
- * Turns a JSON plan into the import_plan payload, each JSON person being mapped to a member or to the common part
+ * Turns a JSON plan into the import_plan payload, each JSON person being mapped to a place or to the common part
  * @param {object} source - a plan read from a JSON file, defaults already applied
- * @param {Record<string, string>} scopeByPerson - JSON person id to member id or SHARED
+ * @param {Record<string, string>} scopeByPerson - JSON person id to place id or SHARED
  */
 export function toImportPayload(source, scopeByPerson) {
   const groupIds = {}
@@ -132,6 +140,7 @@ export function toImportPayload(source, scopeByPerson) {
       kind,
       label: line.label,
       amount: toAmount(line.amount),
+      auto_book: !!line.autoBook,
       group_id: groupIds[line.parent] ?? null,
       owner_id: resolveScope(line.parent),
       position: index,
@@ -140,13 +149,13 @@ export function toImportPayload(source, scopeByPerson) {
   const groups = [...toGroups(source.subgroups, 'expense'), ...toGroups(source.savingGroups, 'saving')]
   const lines = [...toLines(source.categories, 'expense'), ...toLines(source.savings, 'saving')]
 
-  const members = source.people
+  const slots = source.people
     .filter((person) => !!scopeByPerson[person.id] && scopeByPerson[person.id] !== SHARED)
     .map((person) => ({
-      user_id: scopeByPerson[person.id],
+      slot_id: scopeByPerson[person.id],
       net_monthly: toAmount(person.netMonthly),
       annual_tax: toAmount(person.annualTax),
     }))
 
-  return { groups, lines, members, tax_timing: source.settings.taxTiming }
+  return { groups, lines, slots, tax_timing: source.settings.taxTiming }
 }

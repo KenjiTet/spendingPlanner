@@ -1,24 +1,36 @@
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
-import { clearSession, hashPassword, setSession, verifyPassword } from '../auth.js'
+import { clearSession, hashPassword, requireUser, setSession, verifyPassword } from '../auth.js'
 import { db } from '../db.js'
+import { readAmount } from '../input.js'
 
 const MIN_PASSWORD_LENGTH = 6
+const MAX_USERNAME_LENGTH = 32
 
 const router = Router()
 
-const findByEmail = db.prepare('select * from users where email = ?')
-const findById = db.prepare('select id, email, display_name from users where id = ?')
+const findByUsername = db.prepare('select * from users where username = ?')
+const findById = db.prepare(
+  'select id, username, display_name, net_monthly from users where id = ?'
+)
 const insertUser = db.prepare(
-  'insert into users (id, email, display_name, password_hash, created_at) values (?, ?, ?, ?, ?)'
+  'insert into users (id, username, display_name, password, created_at) values (?, ?, ?, ?, ?)'
+)
+const updateProfile = db.prepare(
+  'update users set display_name = ?, net_monthly = ? where id = ?'
 )
 
 /**
- * What the front-end may see of an account, never the password hash
+ * What the front-end may see of an account, never the password
  * @param {object} user
  */
 function toPublicUser(user) {
-  return { id: user.id, email: user.email, display_name: user.display_name }
+  return {
+    id: user.id,
+    username: user.username,
+    display_name: user.display_name,
+    net_monthly: user.net_monthly,
+  }
 }
 
 // Who is signed in, used once when the app boots
@@ -32,14 +44,11 @@ router.get('/session', (req, res) => {
 })
 
 router.post('/signup', (req, res) => {
-  const displayName = String(req.body.displayName ?? '').trim()
-  const email = String(req.body.email ?? '')
-    .trim()
-    .toLowerCase()
+  const username = String(req.body.username ?? '').trim()
   const password = String(req.body.password ?? '')
 
-  if (!displayName || !email) {
-    res.status(400).json({ error: 'Prénom et email sont obligatoires.' })
+  if (!username || username.length > MAX_USERNAME_LENGTH) {
+    res.status(400).json({ error: `Le nom d’utilisateur fait au plus ${MAX_USERNAME_LENGTH} caractères.` })
     return
   }
 
@@ -48,33 +57,45 @@ router.post('/signup', (req, res) => {
     return
   }
 
-  if (!!findByEmail.get(email)) {
-    res.status(409).json({ error: 'Un compte existe déjà pour cette adresse.' })
+  if (!!findByUsername.get(username)) {
+    res.status(409).json({ error: 'Ce nom d’utilisateur est déjà pris.' })
     return
   }
 
-  const user = { id: randomUUID(), email, display_name: displayName }
+  const id = randomUUID()
 
-  insertUser.run(user.id, email, displayName, hashPassword(password), new Date().toISOString())
-  setSession(res, user.id)
-  res.json({ user })
+  // The display name starts as the username, the profile renames it afterwards
+  insertUser.run(id, username, username, hashPassword(password), new Date().toISOString())
+  setSession(res, id)
+  res.json({ user: findById.get(id) })
 })
 
 router.post('/login', (req, res) => {
-  const email = String(req.body.email ?? '')
-    .trim()
-    .toLowerCase()
+  const username = String(req.body.username ?? '').trim()
   const password = String(req.body.password ?? '')
-  const user = findByEmail.get(email)
+  const user = findByUsername.get(username)
 
   // The same message either way, so the form never reveals which accounts exist
-  if (!user || !verifyPassword(password, user.password_hash)) {
-    res.status(401).json({ error: 'Email ou mot de passe incorrect.' })
+  if (!user || !verifyPassword(password, user.password)) {
+    res.status(401).json({ error: 'Nom d’utilisateur ou mot de passe incorrect.' })
     return
   }
 
   setSession(res, user.id)
   res.json({ user: toPublicUser(user) })
+})
+
+// The name and income every plan reads, guarded on its own: /session stays anonymous
+router.patch('/profile', requireUser, (req, res) => {
+  const displayName = String(req.body.display_name ?? '').trim()
+
+  if (!displayName) {
+    res.status(400).json({ error: 'Le nom affiché est obligatoire.' })
+    return
+  }
+
+  updateProfile.run(displayName, readAmount(req.body.net_monthly), req.userId)
+  res.json({ user: findById.get(req.userId) })
 })
 
 router.post('/logout', (_req, res) => {

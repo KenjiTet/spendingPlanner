@@ -1,116 +1,63 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CreatePlanForm from '../components/CreatePlanForm.jsx'
+import JoinPlanForm from '../components/JoinPlanForm.jsx'
+import PlanCard from '../components/PlanCard.jsx'
 
 /**
- * Adds an existing account to a plan by email
+ * The plans the account holds a place in, which one is active, and the ways into a new one
  * @param {object} props
- * @param {string} props.planId
- * @param {(planId: string, email: string) => Promise<string | undefined>} props.onAddMember
- */
-function AddMemberForm({ planId, onAddMember }) {
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-
-    const error = await onAddMember(planId, email.trim())
-
-    setMessage(error ?? `${email.trim()} a été ajouté au plan.`)
-
-    if (!error) {
-      setEmail('')
-    }
-  }
-
-  return (
-    <form className="plan-card__form" onSubmit={handleSubmit}>
-      <label className="form__field form__field--grow">
-        <span>Ajouter un membre (email de son compte)</span>
-        <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-      </label>
-
-      <button type="submit" className="form__submit">
-        Ajouter
-      </button>
-
-      {!!message && <p className="section__hint">{message}</p>}
-    </form>
-  )
-}
-
-/**
- * Lists the plans of the signed-in person, opens one, creates new ones
- * @param {object} props
- * @param {string} props.userId
- * @param {{ id: string, name: string, created_by: string }[]} props.plans
+ * @param {{ id: string }} props.user
+ * @param {object[]} props.plans
+ * @param {{ id: string, name: string }[]} props.templates
  * @param {string} [props.currentPlanId]
  * @param {(id: string) => void} props.onSelect
- * @param {(name: string) => Promise<string | undefined>} props.onCreate
- * @param {(planId: string, email: string) => Promise<string | undefined>} props.onAddMember
- * @param {() => void} props.onSignOut
+ * @param {(name: string, slotCount: number, templateId?: string) => Promise<string | undefined>} props.onCreate
+ * @param {(code: string) => Promise<{ data?: object, error?: { message: string } }>} props.onPreviewJoin
+ * @param {(code: string, slotId: string) => Promise<string | undefined>} props.onJoin
+ * @param {(planId: string, isTemplate: boolean) => Promise<string | undefined>} props.onPublishTemplate
  */
-export default function PlanPicker({ userId, plans, currentPlanId, onSelect, onCreate, onAddMember, onSignOut }) {
+export default function PlanPicker({
+  user,
+  plans,
+  templates,
+  currentPlanId,
+  onSelect,
+  onCreate,
+  onPreviewJoin,
+  onJoin,
+  onPublishTemplate,
+}) {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
 
-  function open(id) {
+  // Activating a plan leads back to its overview
+  function activate(id) {
     onSelect(id)
-    navigate('/depenses')
-  }
-
-  async function handleCreate(event) {
-    event.preventDefault()
-
-    const failure = await onCreate(name.trim())
-
-    setError(failure ?? '')
-
-    if (!failure) {
-      navigate('/plan')
-    }
+    navigate('/')
   }
 
   return (
-    <main className="plans">
-      <header className="plans__header">
-        <h1 className="plans__title">Vos plans</h1>
-        <button type="button" className="actions__reset" onClick={onSignOut}>
-          Se déconnecter
-        </button>
-      </header>
+    <section className="plans">
+      <h1 className="plans__title">Vos plans</h1>
+
+      {!plans.length && <p className="section__hint">Vous ne participez encore à aucun plan.</p>}
 
       <ul className="plans__list">
         {plans.map((plan, index) => (
           <li key={`plan-${plan.id}-${index}`}>
-            <article className="card plan-card">
-              <header className="plan-card__header">
-                <h2 className="plan-card__title">{plan.name}</h2>
-                <button type="button" className="form__submit" onClick={() => open(plan.id)}>
-                  {plan.id === currentPlanId && 'Continuer'}
-                  {plan.id !== currentPlanId && 'Ouvrir'}
-                </button>
-              </header>
-
-              {plan.created_by === userId && <AddMemberForm planId={plan.id} onAddMember={onAddMember} />}
-            </article>
+            <PlanCard
+              plan={plan}
+              isCurrent={plan.id === currentPlanId}
+              isCreator={plan.created_by === user.id}
+              onActivate={activate}
+              onPublishTemplate={onPublishTemplate}
+            />
           </li>
         ))}
       </ul>
 
-      <form className="card plans__create" onSubmit={handleCreate}>
-        <label className="form__field form__field--grow">
-          <span>Nouveau plan</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Budget 2026" required />
-        </label>
+      <CreatePlanForm templates={templates} onCreate={onCreate} onCreated={() => navigate('/plan')} />
 
-        <button type="submit" className="form__submit">
-          Créer
-        </button>
-
-        {!!error && <p className="actions__error">{error}</p>}
-      </form>
-    </main>
+      <JoinPlanForm onPreview={onPreviewJoin} onJoin={onJoin} onJoined={() => navigate('/')} />
+    </section>
   )
 }

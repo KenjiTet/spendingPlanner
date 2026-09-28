@@ -4,15 +4,16 @@ import { useState } from 'react'
  * Card whose body folds away when its header is clicked
  * @param {object} props
  * @param {string} props.title
+ * @param {string} [props.id] - anchor the plan outline links to
  * @param {string} props.tone - drives the accent colour of the card
  * @param {import('react').ReactNode} [props.actions] - shown on the right of the header
  * @param {import('react').ReactNode} props.children
  */
-export default function Section({ title, tone, actions, children }) {
+export default function Section({ title, id, tone, actions, children }) {
   const [open, setOpen] = useState(true)
 
   return (
-    <section className={`card section section--${tone}`}>
+    <section id={id} className={`card section section--${tone}`}>
       <header className="section__header">
         <button
           type="button"

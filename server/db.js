@@ -18,3 +18,19 @@ db.pragma('foreign_keys = ON')
 
 // Creating the tables is idempotent, so it runs on every boot
 db.exec(readFileSync(join(here, 'schema.sql'), 'utf8'))
+
+/**
+ * Brings a table created by an older schema up to date: SQLite has no "add column if not exists"
+ * @param {string} table
+ * @param {string} column
+ * @param {string} definition
+ */
+function addColumnIfMissing(table, column, definition) {
+  const columns = db.pragma(`table_info(${table})`)
+
+  if (!columns.some((candidate) => candidate.name === column)) {
+    db.exec(`alter table ${table} add column ${column} ${definition}`)
+  }
+}
+
+addColumnIfMissing('plan_lines', 'auto_book', 'integer not null default 0 check (auto_book in (0, 1))')

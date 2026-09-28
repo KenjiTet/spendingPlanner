@@ -9,13 +9,12 @@ const MODES = {
 /**
  * Sign-in and sign-up form, switching between both modes
  * @param {object} props
- * @param {(email: string, password: string) => Promise<string | undefined>} props.onSignIn
- * @param {(name: string, email: string, password: string) => Promise<string | undefined>} props.onSignUp
+ * @param {(username: string, password: string) => Promise<string | undefined>} props.onSignIn
+ * @param {(username: string, password: string) => Promise<string | undefined>} props.onSignUp
  */
 export default function LoginPage({ onSignIn, onSignUp }) {
   const [mode, setMode] = useState('signIn')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,11 +26,11 @@ export default function LoginPage({ onSignIn, onSignUp }) {
     setMessage('')
 
     if (isSignUp) {
-      setMessage((await onSignUp(name.trim(), email.trim(), password)) ?? '')
+      setMessage((await onSignUp(username.trim(), password)) ?? '')
     }
 
     if (!isSignUp) {
-      setMessage((await onSignIn(email.trim(), password)) ?? '')
+      setMessage((await onSignIn(username.trim(), password)) ?? '')
     }
 
     setBusy(false)
@@ -55,21 +54,14 @@ export default function LoginPage({ onSignIn, onSignUp }) {
         </nav>
 
         <form className="auth__form" onSubmit={handleSubmit}>
-          {isSignUp && (
-            <label className="form__field">
-              <span>Prénom</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} required autoComplete="given-name" />
-            </label>
-          )}
-
           <label className="form__field">
-            <span>Email</span>
+            <span>Nom d&rsquo;utilisateur</span>
             <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               required
-              autoComplete="email"
+              maxLength={32}
+              autoComplete="username"
             />
           </label>
 

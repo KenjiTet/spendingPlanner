@@ -122,6 +122,28 @@ body {
   --section-tint: var(--savings-tint);
 }
 
+.section--tax {
+  --section-color: var(--chart-tax);
+  --section-tint: var(--neutral-tint);
+}
+
+/* Each row names its person, so unlike the other field rows every label stays visible */
+.tax__item {
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.tax__item .form__field {
+  flex: 0 1 240px;
+}
+
+.tax__monthly {
+  padding-bottom: 10px;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .section--summary {
   --section-color: var(--text);
   --section-tint: var(--neutral-tint);
@@ -383,6 +405,10 @@ body {
 
 .summary__label--savings {
   color: var(--savings);
+}
+
+.summary__label--tax {
+  color: var(--chart-tax);
 }
 
 .summary__amount--positive {
@@ -704,6 +730,19 @@ body {
 .subgroup__total {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* Each person's part of a common amount, set under the household total */
+.scope__total,
+.subgroup__total {
+  display: inline-grid;
+  justify-items: end;
+}
+
+.amount__share {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .lines {
@@ -1142,6 +1181,8 @@ body {
 .sidebar {
   position: sticky;
   top: 0;
+  /* Above the page, so the plan menu opening to the right is never covered */
+  z-index: 20;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1151,21 +1192,6 @@ body {
   border-right: 1px solid var(--border);
 }
 
-.sidebar__plan {
-  display: grid;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  color: var(--text);
-  text-decoration: none;
-}
-
-.sidebar__plan:hover {
-  border-color: var(--accent);
-}
-
 .sidebar__eyebrow {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -1173,27 +1199,44 @@ body {
   color: var(--muted);
 }
 
-.sidebar__plan-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar__nav {
+.sidebar__nav,
+.sidebar__list,
+.sidebar__sublist {
   display: grid;
   gap: 4px;
 }
 
+.sidebar__list,
+.sidebar__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar__sublist {
+  margin: 4px 0 0 21px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.sidebar__sublist.is-collapsed {
+  display: none;
+}
+
 .sidebar__link {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
+  font: inherit;
   color: var(--muted);
   text-decoration: none;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .sidebar__link:hover {
@@ -1206,6 +1249,20 @@ body {
   color: var(--accent);
 }
 
+.sidebar__toggle .chevron {
+  margin-left: auto;
+}
+
+.sidebar__link--sub {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+/* The sub-entries only need their icon in the phone bar */
+.sidebar__link--sub .sidebar__icon {
+  display: none;
+}
+
 .sidebar__icon {
   width: 20px;
   text-align: center;
@@ -1215,18 +1272,58 @@ body {
 .sidebar__footer {
   margin-top: auto;
   display: grid;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: 8px;
+}
+
+.sidebar__profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebar__profile:hover,
+.sidebar__profile.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.sidebar__avatar,
+.switcher__badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--success-tint);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.sidebar__who {
+  min-width: 0;
+  display: grid;
 }
 
 .sidebar__user {
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar__signout {
   justify-self: start;
   font: inherit;
-  padding: 0;
+  font-size: 0.85rem;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -1235,6 +1332,152 @@ body {
 
 .sidebar__signout:hover {
   color: var(--danger);
+}
+
+/* Active plan picker: a card-like trigger and a menu opening to its right */
+.switcher {
+  position: relative;
+}
+
+.switcher__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.switcher__trigger:hover,
+.switcher__trigger[aria-expanded='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.switcher__badge {
+  border-radius: 8px;
+}
+
+.switcher__badge--small {
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+}
+
+.switcher__text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.switcher__name,
+.switcher__option-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Points right, towards where the menu opens */
+.switcher__arrow {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.55;
+}
+
+.switcher__menu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 12px);
+  width: 260px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px var(--shadow);
+  animation: switcher-in 0.12s ease-out;
+}
+
+@keyframes switcher-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+.switcher__heading {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.switcher__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.switcher__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.switcher__option:hover {
+  background: var(--neutral-tint);
+}
+
+.switcher__option.is-active {
+  background: var(--success-tint);
+}
+
+.switcher__check {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.switcher__manage {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.switcher__manage:hover {
+  text-decoration: underline;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1281,19 +1524,15 @@ body {
   color: var(--muted);
 }
 
-.plans__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.plans {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 32px 16px;
+.plans,
+.profile {
   display: grid;
   gap: 16px;
+}
+
+.profile__header,
+.profile__signout {
+  justify-self: start;
 }
 
 .plans__title {
@@ -1327,11 +1566,63 @@ body {
 }
 
 .plan-card__form,
-.plans__create {
+.plans__create,
+.plans__join,
+.profile__form {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 12px;
+}
+
+.plans__join > *,
+.profile__form > * {
+  flex-basis: 100%;
+}
+
+.plans__join .form__field,
+.profile__form .form__field {
+  flex-basis: auto;
+}
+
+.plan-card__share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+.plan-card--active {
+  border-color: var(--accent);
+}
+
+.plan-card__badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--success-tint);
+  color: var(--accent);
+}
+
+.plan-card__code {
+  font-family: ui-monospace, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.plan-card__toggle {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .scope__badge {
@@ -1366,37 +1657,63 @@ a.form__submit {
 /* Expenses page                                                        */
 /* ------------------------------------------------------------------ */
 
+/* Month switcher: a floating pill, the arrows as soft round buttons on each side */
 .month {
+  justify-self: center;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  gap: 4px;
+  width: 100%;
+  max-width: 340px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .month__label {
+  flex: 1;
   margin: 0;
-  min-width: 200px;
   text-align: center;
-  font-size: 1.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   text-transform: capitalize;
 }
 
 .month__step {
-  width: 36px;
-  height: 36px;
-  font: inherit;
-  font-size: 1.3rem;
-  line-height: 1;
-  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--text);
+  background: transparent;
+  color: var(--muted);
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
 .month__step:hover {
-  border-color: var(--accent);
+  background: var(--success-tint);
   color: var(--accent);
+}
+
+.month__step:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.month__icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .overview {
@@ -1429,6 +1746,621 @@ a.form__submit {
 .empty__title {
   margin: 0;
   font-size: 1.1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Plan editor: automatic debits and the outline beside it              */
+/* ------------------------------------------------------------------ */
+
+.line__auto {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.line__auto:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.line__auto.is-on {
+  border-color: var(--accent);
+  background: var(--success-tint);
+  color: var(--accent);
+}
+
+/* The editor gets more room when the outline stands beside it */
+.layout__main:has(.plan-layout) {
+  max-width: 1280px;
+}
+
+.plan-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.plan-layout__main {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+/* Blocks reached from the outline stop below the top edge and flash once */
+.section,
+.scope,
+.subgroup,
+.line {
+  scroll-margin-top: 16px;
+}
+
+.section:target,
+.scope:target,
+.subgroup:target,
+.line:target {
+  animation: target-flash 1.6s ease-out;
+}
+
+@keyframes target-flash {
+  from {
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* The outline and the save button stay in sight together, the outline shrinking and scrolling to leave room */
+.plan-layout__side {
+  position: sticky;
+  /* Same offset as the top padding of the page, so the column never shifts before sticking */
+  top: 32px;
+  /* Ends above the bottom padding of the page, or the end of the layout would push it up at the bottom */
+  max-height: calc(100vh - 32px - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-tree {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.plan-tree > nav {
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.plan-tree__header {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-tree__title {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.plan-tree__search {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.plan-tree__search:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.tree,
+.tree__children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* Lets long labels shrink to an ellipsis instead of widening the panel */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.tree {
+  gap: 12px;
+}
+
+.tree__section {
+  --tree-color: var(--muted);
+  display: grid;
+  gap: 4px;
+}
+
+.tree__section--expense {
+  --tree-color: var(--expense);
+}
+
+.tree__section--savings {
+  --tree-color: var(--savings);
+}
+
+/* Each level hangs off a thin guide line, like a file explorer */
+.tree__children .tree__children {
+  margin-left: 11px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.tree__row {
+  display: flex;
+  align-items: center;
+}
+
+.tree__toggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tree__toggle:hover {
+  background: var(--neutral-tint);
+}
+
+.tree__toggle .chevron {
+  width: 6px;
+  height: 6px;
+}
+
+.tree__link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tree__link:hover {
+  background: var(--neutral-tint);
+}
+
+.tree__link--section {
+  padding: 6px 8px;
+  border-left: 3px solid var(--tree-color);
+  border-radius: 0 6px 6px 0;
+  font-weight: 600;
+}
+
+.tree__link--leaf {
+  padding-left: 28px;
+  color: var(--muted);
+}
+
+.tree__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tree__count {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--neutral-tint);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.tree__auto {
+  flex: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.tree__amount {
+  flex: none;
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* Below this width the outline would squeeze the editor, which stays on its own */
+@media (max-width: 1100px) {
+  .plan-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The save button moves to the bottom of the screen, so it stays in sight without the outline */
+  .plan-layout__side {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: auto;
+    z-index: 15;
+    max-height: none;
+  }
+
+  .plan-tree {
+    display: none;
+  }
+}
+
+.save {
+  flex: none;
+}
+
+.save__button {
+  width: 100%;
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+.save__button:disabled {
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dashboard                                                            */
+/* ------------------------------------------------------------------ */
+
+.kpis {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.kpi {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.kpi__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.kpi__value {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi--over .kpi__value {
+  color: var(--danger);
+}
+
+.kpi__hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.balance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  border-left: 4px solid var(--accent);
+}
+
+.balance--over {
+  border-left-color: var(--danger);
+}
+
+.balance__head {
+  display: grid;
+  gap: 4px;
+}
+
+.balance__value {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.balance--over .balance__value {
+  color: var(--danger);
+}
+
+.balance__detail {
+  flex: 1 1 280px;
+  max-width: 420px;
+  display: grid;
+  gap: 12px;
+}
+
+.balance__rows {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+/* What the available amount is made of, set apart from the way it is reached */
+.balance__rows--split {
+  padding-top: 10px;
+  border-top: 2px solid var(--border);
+}
+
+.balance__rows--split dd {
+  font-weight: 600;
+}
+
+.balance__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.balance__row dt {
+  color: var(--muted);
+}
+
+.balance__row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.calendar {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.calendar__caption {
+  display: grid;
+  gap: 4px;
+}
+
+.calendar__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 4px;
+  margin: -4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar__weekday {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.calendar__cell {
+  position: relative;
+  padding: 0;
+}
+
+/* Day cell: neutral until lived, then tinted by its status */
+.calendar__day {
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.calendar__day:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+.calendar__day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.calendar__day--ok {
+  background: var(--success-tint);
+  color: var(--text);
+}
+
+.calendar__day--warning {
+  background: var(--warning-tint);
+  color: var(--text);
+}
+
+.calendar__day--over {
+  background: var(--danger-tint);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Today is marked by its underlined number, the selected day looks lifted like a hovered one */
+.calendar__day--today {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.calendar__day--selected {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+/* Hover bubble above the day, kept inside the card on the edge columns */
+.calendar__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--surface);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.calendar__cell:first-child .calendar__tooltip {
+  left: 0;
+  transform: translate(0, 4px);
+}
+
+.calendar__cell:last-child .calendar__tooltip {
+  left: auto;
+  right: 0;
+  transform: translate(0, 4px);
+}
+
+.calendar__cell:has(.calendar__day:hover) .calendar__tooltip,
+.calendar__cell:has(.calendar__day:focus-visible) .calendar__tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.calendar__cell:first-child:has(.calendar__day:hover) .calendar__tooltip,
+.calendar__cell:first-child:has(.calendar__day:focus-visible) .calendar__tooltip,
+.calendar__cell:last-child:has(.calendar__day:hover) .calendar__tooltip,
+.calendar__cell:last-child:has(.calendar__day:focus-visible) .calendar__tooltip {
+  transform: translate(0, 0);
+}
+
+.calendar__details {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar__details-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.calendar__key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.calendar__swatch--ok {
+  background: var(--success);
+}
+
+.calendar__swatch--warning {
+  background: var(--warning);
+}
+
+.calendar__swatch--over {
+  background: var(--danger);
+}
+
+.attention {
+  display: grid;
+  gap: 12px;
+}
+
+.attention__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 24px;
 }
 
 /* Gauge: the colour follows the status, the meter being restyled in every engine */
@@ -1563,6 +2495,8 @@ a.form__submit {
 /* Quick add */
 .quick-add {
   display: grid;
+  /* The column follows the card width instead of the widest field */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -1665,6 +2599,11 @@ a.form__submit {
 .chip:has(input:focus-visible) {
   outline: 2px solid var(--text);
   outline-offset: 2px;
+}
+
+.quick-add__scope {
+  /* A fieldset defaults to its content width, which pushed the card past its column */
+  min-width: 0;
 }
 
 .quick-add__details {
@@ -1778,22 +2717,50 @@ a.form__submit {
     box-shadow: 0 -4px 16px var(--shadow);
   }
 
-  .sidebar__plan,
-  .sidebar__footer {
+  /* The plan is switched from "Mes plans", signing out from the profile page */
+  .switcher,
+  .sidebar__toggle,
+  .sidebar__signout,
+  .sidebar__who {
     display: none;
   }
 
   .sidebar__nav {
     flex: 1;
+  }
+
+  /* Every entry, the "Plan" ones included, becomes one cell of the bar */
+  .sidebar__list {
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
   }
 
-  .sidebar__link {
+  .sidebar__group,
+  .sidebar__sublist,
+  .sidebar__sublist.is-collapsed {
+    display: contents;
+  }
+
+  .sidebar__link,
+  .sidebar__link--sub {
     flex-direction: column;
     gap: 2px;
-    padding: 6px;
-    font-size: 0.75rem;
+    padding: 6px 2px;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
+  .sidebar__link--sub .sidebar__icon {
+    display: inline;
+  }
+
+  .sidebar__footer {
+    margin: 0;
+  }
+
+  .sidebar__profile {
+    padding: 4px;
+    border-radius: 50%;
   }
 
   .month__label {
@@ -1803,5 +2770,11 @@ a.form__submit {
 
   .quick-add__amount input {
     font-size: 1.6rem;
+  }
+
+  /* Above the bottom bar, across the screen */
+  .plan-layout__side {
+    left: 16px;
+    bottom: 88px;
   }
 }

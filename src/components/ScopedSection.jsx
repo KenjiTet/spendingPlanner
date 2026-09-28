@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { nodeAnchor, scopeAnchor, sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
 import ColorPicker from './ColorPicker.jsx'
 import Section from './Section.jsx'
-import { createItem, createSubgroup, GROUP_COLORS, toScopeTree } from '../utils/plan.js'
+import { createItem, createSubgroup, GROUP_COLORS, SHARED, toScopeTree } from '../utils/plan.js'
 
 // Name given to a sub-group the moment it is created, before it is renamed
 const NEW_SUBGROUP = 'Nouveau sous-groupe'
@@ -12,7 +13,16 @@ function nextColor(count) {
   return GROUP_COLORS[count % GROUP_COLORS.length].id
 }
 
-// Toggles an id inside the set of folded blocks
+// Class of the automatic debit toggle, lit when the line is booked on its own
+function autoClassOf(autoBook) {
+  if (autoBook) {
+    return 'line__auto is-on'
+  }
+
+  return 'line__auto'
+}
+
+// Toggles an id inside the set of blocks flipped from their default state
 function toggleIn(ids, id) {
   if (ids.includes(id)) {
     return ids.filter((candidate) => candidate !== id)
@@ -25,18 +35,19 @@ function toggleIn(ids, id) {
  * Budget lines arranged under fixed scopes, each holding sub-groups and loose lines
  * @param {object} props
  * @param {string} props.title
+ * @param {string} props.anchor - section key used by the element ids the plan outline links to
  * @param {string} props.tone - drives the accent colour of the card
  * @param {string} props.addLabel - wording of the button adding a line
+ * @param {boolean} [props.autoBookable] - lines may be flagged as debited automatically every month
  * @param {number} props.total
- * @param {number} props.annualTotal
+ * @param {number} [props.annualTotal] - shown beside the monthly total when given
  * @param {{ id: string, label: string }[]} props.scopes - common first, then one per person
  * @param {string[]} [props.editableScopes] - scopes the viewer may change, all of them when omitted
+ * @param {number} [props.shareCount] - people the common scope is split between, its per-person amounts shown above one
  * @param {{ id: string, label: string, color: string, scope: string }[]} props.subgroups
- * @param {{ id: string, label: string, amount: number, parent: string }[]} props.items
- * @param {Record<string, number>} [props.lockedByScope] - derived amounts shown but not editable
- * @param {string} [props.lockedLabel]
+ * @param {{ id: string, label: string, amount: number, autoBook?: boolean, parent: string }[]} props.items
  * @param {(line: object) => void} props.onAddLine
- * @param {(id: string, field: string, value: string) => void} props.onUpdateLine
+ * @param {(id: string, field: string, value: string | boolean) => void} props.onUpdateLine
  * @param {(id: string) => void} props.onRemoveLine
  * @param {(subgroup: object) => void} props.onAddSubgroup
  * @param {(id: string, field: string, value: string) => void} props.onUpdateSubgroup
@@ -44,16 +55,17 @@ function toggleIn(ids, id) {
  */
 export default function ScopedSection({
   title,
+  anchor,
   tone,
   addLabel,
+  autoBookable,
   total,
   annualTotal,
   scopes,
   editableScopes,
+  shareCount = 1,
   subgroups,
   items,
-  lockedByScope = {},
-  lockedLabel,
   onAddLine,
   onUpdateLine,
   onRemoveLine,
@@ -65,7 +77,8 @@ export default function ScopedSection({
   const [armedId, setArmedId] = useState(undefined)
   const [dragId, setDragId] = useState(undefined)
   const [overId, setOverId] = useState(undefined)
-  const [folded, setFolded] = useState([])
+  // Ids of the blocks folded or unfolded by hand, against their default state
+  const [toggled, setToggled] = useState([])
   const tree = toScopeTree(scopes, subgroups, items)
 
   // Adds an empty line under a scope or a sub-group, ready to be typed into
@@ -122,12 +135,30 @@ export default function ScopedSection({
     }
   }
 
-  function isOpen(id) {
-    return !folded.includes(id)
+  /**
+   * Scopes and the viewer's own sub-groups start unfolded, the other person's sub-groups folded
+   * @param {string} id
+   * @param {boolean} [openByDefault]
+   */
+  function isOpen(id, openByDefault = true) {
+    if (toggled.includes(id)) {
+      return !openByDefault
+    }
+
+    return openByDefault
   }
 
   function fold(id) {
-    setFolded((current) => toggleIn(current, id))
+    setToggled((current) => toggleIn(current, id))
+  }
+
+  // Each person's part of a common amount, nothing for a personal scope or a solo plan
+  function renderShare(scopeId, amount) {
+    if (scopeId !== SHARED || shareCount < 2) {
+      return undefined
+    }
+
+    return <small className="amount__share">{formatAmount(amount / shareCount)} / pers.</small>
   }
 
   // Highlights whatever the dragged line is hovering
@@ -151,8 +182,9 @@ export default function ScopedSection({
   // Another person's line, shown as plain text
   function renderReadOnlyLine(item, index) {
     return (
-      <li key={`line-${item.id}-${index}`} className="line line--locked">
+      <li key={`line-${item.id}-${index}`} id={nodeAnchor(item.id)} className="line line--locked">
         <span className="line__name">{item.label}</span>
+        {autoBookable && item.autoBook && <span className="line__meta">Prélèvement auto</span>}
         <span className="line__total">{formatAmount(item.amount)}</span>
       </li>
     )
@@ -171,6 +203,7 @@ export default function ScopedSection({
     return (
       <li
         key={`line-${item.id}-${index}`}
+        id={nodeAnchor(item.id)}
         className={lineClass(item.id)}
         draggable={armedId === item.id}
         onDragStart={(event) => {
@@ -209,6 +242,18 @@ export default function ScopedSection({
           aria-label="Montant par mois"
         />
 
+        {autoBookable && (
+          <button
+            type="button"
+            className={autoClassOf(item.autoBook)}
+            onClick={() => onUpdateLine(item.id, 'autoBook', !item.autoBook)}
+            aria-pressed={!!item.autoBook}
+            title="Prélèvement automatique : compté comme dépensé dès le 1er du mois, sans saisie"
+          >
+            <span aria-hidden="true">↻</span> Auto
+          </button>
+        )}
+
         <button
           type="button"
           className="list__remove"
@@ -224,22 +269,19 @@ export default function ScopedSection({
   const totals = (
     <span className="section__totals">
       <span className="section__total">{formatAmount(total)} / mois</span>
-      <span className="section__subtotal">{formatAmount(annualTotal)} / an</span>
+      {annualTotal !== undefined && <span className="section__subtotal">{formatAmount(annualTotal)} / an</span>}
     </span>
   )
 
   return (
-    <Section title={title} tone={tone} actions={totals}>
-      <p className="section__hint">
-        Glissez une ligne par sa poignée pour la déposer dans un autre groupe ou sous-groupe.
-      </p>
-
+    <Section title={title} id={sectionAnchor(anchor)} tone={tone} actions={totals}>
       {tree.map((scope, scopeIndex) => {
         const editable = canEdit(scope.id)
 
         return (
           <article
             key={`scope-${scope.id}-${scopeIndex}`}
+            id={scopeAnchor(anchor, scope.id)}
             className={blockClass('scope', scope.id)}
             {...dropProps(scope.id, editable)}
           >
@@ -257,7 +299,8 @@ export default function ScopedSection({
               {!editable && <span className="scope__badge">Lecture seule</span>}
 
               <span className="scope__total">
-                {formatAmount(scope.total + (lockedByScope[scope.id] ?? 0))} / mois
+                {formatAmount(scope.total)} / mois
+                {renderShare(scope.id, scope.total)}
               </span>
             </header>
 
@@ -266,6 +309,7 @@ export default function ScopedSection({
                 {scope.subgroups.map((subgroup, index) => (
                   <article
                     key={`subgroup-${subgroup.id}-${index}`}
+                    id={nodeAnchor(subgroup.id)}
                     className={blockClass(`subgroup subgroup--${subgroup.color}`, subgroup.id)}
                     {...dropProps(subgroup.id, editable)}
                   >
@@ -284,7 +328,7 @@ export default function ScopedSection({
                         type="button"
                         className="subgroup__toggle"
                         onClick={() => fold(subgroup.id)}
-                        aria-expanded={isOpen(subgroup.id)}
+                        aria-expanded={isOpen(subgroup.id, editable)}
                         aria-label={`Replier ${subgroup.label}`}
                       >
                         <span className="chevron" aria-hidden="true" />
@@ -304,7 +348,10 @@ export default function ScopedSection({
 
                       {!editable && <h4 className="subgroup__name">{subgroup.label}</h4>}
 
-                      <span className="subgroup__total">{formatAmount(subgroup.total)}</span>
+                      <span className="subgroup__total">
+                        {formatAmount(subgroup.total)}
+                        {renderShare(scope.id, subgroup.total)}
+                      </span>
 
                       {editable && (
                         <button
@@ -318,7 +365,7 @@ export default function ScopedSection({
                       )}
                     </header>
 
-                    {isOpen(subgroup.id) && (
+                    {isOpen(subgroup.id, editable) && (
                       <>
                         <ul className="lines">{subgroup.items.map(lineRenderer(editable))}</ul>
 
@@ -333,14 +380,6 @@ export default function ScopedSection({
                 ))}
 
                 <ul className="lines">{scope.items.map(lineRenderer(editable))}</ul>
-
-                {!!lockedByScope[scope.id] && (
-                  <p className="line line--locked">
-                    <span className="line__name">{lockedLabel}</span>
-                    <span className="line__meta">Calculé depuis les revenus</span>
-                    <span className="line__total">{formatAmount(lockedByScope[scope.id])}</span>
-                  </p>
-                )}
 
                 {editable && (
                   <footer className="scope__actions">

@@ -106,13 +106,15 @@ Dockerfile                     image built by Railway: vite build, then the API 
 server/index.js                Express app: API routes, static front-end, error handler
 server/schema.sql              SQLite tables, created on every boot
 server/db.js                   the single database connection, on DATA_DIR
-server/auth.js                 password hashing and the signed session cookie
+server/auth.js                 the password seam (clear text for now) and the signed session cookie
 server/access.js               who may read and edit what, the former RLS policies
-server/routes/                 auth, plans (and their groups, lines, import), expenses
+server/input.js                shared readers for values coming from the browser
+server/routes/                 auth (and the profile), plans (slots, join, templates, groups, lines, import), expenses
 src/main.jsx                   React entry point, router
-src/App.jsx                    routing: login → plan choice → app
+src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
-src/pages/                     LoginPage, PlanPicker, PlanPage (budget editor), ExpensesPage (tracking)
+src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
+                               PlanPicker (plans list, active plan), ProfilePage
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, ExpenseHistory…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses)
 src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
@@ -132,7 +134,9 @@ npm start       # the API serving the built front-end
 ```
 
 `.env` must define `SESSION_SECRET`, and may set `PORT` and `DATA_DIR` (see `.env.example`).
-Schema changes go in `server/schema.sql`, written so that re-running it on an existing database is harmless.
+Schema changes go in `server/schema.sql`, written so that re-running it on an existing database is harmless. A column
+added to an existing table also needs an `addColumnIfMissing` call in `server/db.js`, SQLite having no
+`add column if not exists`.
 
 There is no test runner, linter or formatter configured yet. Do not add one without being asked.
 
@@ -141,15 +145,26 @@ There is no test runner, linter or formatter configured yet. Do not add one with
 **Stack:** React 19, Vite 7, plain CSS, `react-router-dom`; Express 5 and `better-sqlite3` on the server. No
 TypeScript, no state library, no UI kit, no ORM.
 
-**Data model:** a plan has members (`plan_members`), sub-groups (`plan_groups`) and lines (`plan_lines`); a NULL
-`owner_id` means the common part. `expenses` are booked by one member on one expense line. Security lives in
-`server/access.js` and the routes: members read the whole plan, edit only the common part and their own; personal
-expenses are visible to their author only, expenses on common lines to every member. Rows sent by the browser are
-rebuilt from allowed fields, never inserted as received, and nothing is filtered on the front-end side for privacy.
+**Data model:** a plan holds one or two **slots** (`plan_slots`) — a slot is a *place* in the plan, taken by at
+most one account, and free until someone claims it. `plan_groups` and `plan_lines` hang off the plan; a NULL
+`owner_id` means the common part, otherwise it is a slot id. `expenses` are booked by one slot on one expense line;
+an expense line flagged `auto_book` (rent, subscriptions) counts as spent in full from the first of every month
+without any expense row, the tracking maths adding it on the fly.
+An account (`users`) carries a profile — display name and net monthly income — which a taken slot reads from
+(`plan_slots` keeps a copy only for free slots). The annual tax belongs to the slot and is set in the budget. Security lives in `server/access.js` and the routes: `requireMembership` resolves
+the viewer's slot into `req.slotId`, members read the whole plan but edit only the common part and their own slot;
+personal expenses are visible to their author only, expenses on common lines to the whole plan. Rows sent by the
+browser are rebuilt from allowed fields, never inserted as received, and nothing is filtered on the front-end side
+for privacy.
+
+**Joining and templates:** a plan carries a short `share_code`; whoever holds it previews the slots and claims a
+free one. A creator may flag a plan `is_template`, which publishes its **common structure only** — labels, colours
+and positions, amounts reset to zero — for anyone to copy into a private plan of their own.
 
 **State:** `useAuth` (session), `usePlans` (plans list, current plan), `usePlan` (the open plan, optimistic edits
-with debounced writes) and `useExpenses` (one month of expenses) are the only stateful modules. `Layout` loads the
-plan once and passes it to the pages through the router outlet context.
+with debounced writes) and `useExpenses` (one month of expenses) are the only stateful modules. `Layout` keeps the
+sidebar on every page; `ActivePlan` loads the active plan once and passes it to the plan pages through the router
+outlet context.
 
 **Plan shape:** `src/utils/planMapper.js` turns the API rows into the in-memory shape
 (`people / subgroups / categories / savingGroups / savings / settings`) used by `computeTotals` and the plan

@@ -1,8 +1,7 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 
 const COOKIE_NAME = 'sp_session'
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000
-const KEY_LENGTH = 64
 const secret = process.env.SESSION_SECRET
 
 // Fail fast: without a secret any visitor could forge a session
@@ -11,25 +10,20 @@ if (!secret) {
 }
 
 /**
- * Salted hash stored in the users table
+ * Stored form of a password. Kept in clear for now: put a real hash back in these two
+ * functions and nothing else in the app has to change.
  * @param {string} password
  */
 export function hashPassword(password) {
-  const salt = randomBytes(16).toString('hex')
-
-  return `${salt}:${scryptSync(password, salt, KEY_LENGTH).toString('hex')}`
+  return password
 }
 
 /**
- * Compares a password with a stored hash, in constant time
  * @param {string} password
  * @param {string} stored
  */
 export function verifyPassword(password, stored) {
-  const [salt, hash] = stored.split(':')
-  const candidate = scryptSync(password, salt, KEY_LENGTH)
-
-  return timingSafeEqual(Buffer.from(hash, 'hex'), candidate)
+  return password === stored
 }
 
 /**

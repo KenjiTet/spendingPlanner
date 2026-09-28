@@ -14,12 +14,12 @@ export default function useAuth() {
   }, [])
 
   /**
-   * @param {string} email
+   * @param {string} username
    * @param {string} password
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function signIn(email, password) {
-    const { data, error } = await api.post('/auth/login', { email, password })
+  async function signIn(username, password) {
+    const { data, error } = await api.post('/auth/login', { username, password })
 
     if (!error) {
       setUser(data.user)
@@ -30,13 +30,28 @@ export default function useAuth() {
 
   /**
    * Creates the account and opens the session right away
-   * @param {string} displayName
-   * @param {string} email
+   * @param {string} username
    * @param {string} password
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function signUp(displayName, email, password) {
-    const { data, error } = await api.post('/auth/signup', { displayName, email, password })
+  async function signUp(username, password) {
+    const { data, error } = await api.post('/auth/signup', { username, password })
+
+    if (!error) {
+      setUser(data.user)
+    }
+
+    return error?.message
+  }
+
+  /**
+   * The income every plan reads, and the name shown to the other person
+   * @param {string} displayName
+   * @param {number | string} netMonthly
+   * @returns {Promise<string | undefined>} an error message, if any
+   */
+  async function updateProfile(displayName, netMonthly) {
+    const { data, error } = await api.patch('/auth/profile', { display_name: displayName, net_monthly: netMonthly })
 
     if (!error) {
       setUser(data.user)
@@ -50,5 +65,5 @@ export default function useAuth() {
     setUser(undefined)
   }
 
-  return { user, loading, signIn, signUp, signOut }
+  return { user, loading, signIn, signUp, updateProfile, signOut }
 }

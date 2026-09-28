@@ -6,13 +6,13 @@ import { loadLegacyPlan } from '../utils/storage.js'
 const EXPORT_FILENAME = 'plan.json'
 
 /**
- * Default mapping of JSON people to members: same position, the common part when there are more people than members
+ * Default mapping of JSON people to places: same position, the common part when there are more people than places
  * @param {{ id: string }[]} sourcePeople
- * @param {{ id: string }[]} members
+ * @param {{ id: string }[]} places
  */
-function defaultMapping(sourcePeople, members) {
+function defaultMapping(sourcePeople, places) {
   return sourcePeople.reduce(
-    (mapping, person, index) => ({ ...mapping, [person.id]: members[index]?.id ?? SHARED }),
+    (mapping, person, index) => ({ ...mapping, [person.id]: places[index]?.id ?? SHARED }),
     {}
   )
 }
@@ -21,7 +21,7 @@ function defaultMapping(sourcePeople, members) {
  * Moves the plan in and out of a JSON file; importing appends a file's lines to this plan
  * @param {object} props
  * @param {object} props.plan
- * @param {boolean} props.canImport - only the plan creator may write other members' parts
+ * @param {boolean} props.canImport - only the plan creator may write the other place's part
  * @param {(source: object, scopeByPerson: Record<string, string>) => Promise<string | undefined>} props.onImport
  */
 export default function PlanActions({ plan, canImport, onImport }) {
@@ -117,9 +117,9 @@ export default function PlanActions({ plan, canImport, onImport }) {
                 value={mapping[person.id]}
                 onChange={(event) => setMapping({ ...mapping, [person.id]: event.target.value })}
               >
-                {plan.people.map((member, memberIndex) => (
-                  <option key={`member-${member.id}-${memberIndex}`} value={member.id}>
-                    {member.label}
+                {plan.people.map((place, placeIndex) => (
+                  <option key={`place-${place.id}-${placeIndex}`} value={place.id}>
+                    {place.label}
                   </option>
                 ))}
                 <option value={SHARED}>Partie commune</option>

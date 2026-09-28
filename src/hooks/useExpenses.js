@@ -11,12 +11,12 @@ function byNewest(left, right) {
 }
 
 /**
- * Expenses of one month of a plan. The server already hides other members' personal expenses
+ * Expenses of one month of a plan. The server already hides the other place's personal expenses
  * @param {string} planId
- * @param {string} userId
+ * @param {string} slotId - the place this person holds in the plan
  * @param {string} month - YYYY-MM
  */
-export default function useExpenses(planId, userId, month) {
+export default function useExpenses(planId, slotId, month) {
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,7 +49,7 @@ export default function useExpenses(planId, userId, month) {
     const expense = {
       id: crypto.randomUUID(),
       line_id: lineId,
-      user_id: userId,
+      slot_id: slotId,
       amount,
       spent_on: spentOn,
       note,

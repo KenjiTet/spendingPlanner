@@ -6,17 +6,19 @@ import { fail } from '../errors.js'
 // Mounted under a plan, membership already checked by the parent router
 const router = Router({ mergeParams: true })
 
-// Own expenses are always visible, other members' only when booked on a common line
+// Own expenses are always visible, the other place's only when booked on a common line.
+// An expense outliving its line keeps a NULL line_id: it stays private rather than turning common.
 const listMonth = db.prepare(`
-  select e.id, e.line_id, e.user_id, e.amount, e.spent_on, e.note, e.created_at
+  select e.id, e.line_id, e.slot_id, e.amount, e.spent_on, e.note, e.created_at
   from expenses e
   left join plan_lines l on l.id = e.line_id
-  where e.plan_id = ? and e.spent_on between ? and ? and (e.user_id = ? or l.owner_id is null)
+  where e.plan_id = ? and e.spent_on between ? and ?
+    and (e.slot_id = ? or (e.line_id is not null and l.owner_id is null))
 `)
 const insertExpense = db.prepare(
-  'insert into expenses (id, plan_id, line_id, user_id, amount, spent_on, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?)'
+  'insert into expenses (id, plan_id, line_id, slot_id, amount, spent_on, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?)'
 )
-const deleteOwn = db.prepare('delete from expenses where id = ? and plan_id = ? and user_id = ?')
+const deleteOwn = db.prepare('delete from expenses where id = ? and plan_id = ? and slot_id = ?')
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -36,7 +38,7 @@ function monthRange(month) {
 router.get('/', (req, res) => {
   const { from, to } = monthRange(String(req.query.month ?? ''))
 
-  res.json(listMonth.all(req.params.planId, from, to, req.userId))
+  res.json(listMonth.all(req.params.planId, from, to, req.slotId))
 })
 
 router.post('/', (req, res) => {
@@ -53,7 +55,7 @@ router.post('/', (req, res) => {
     fail(400, 'Date invalide.')
   }
 
-  if (!canBookOnLine(planId, req.userId, lineId)) {
+  if (!canBookOnLine(planId, req.slotId, lineId)) {
     fail(403, 'Cette ligne de dépense n’est pas accessible.')
   }
 
@@ -61,19 +63,19 @@ router.post('/', (req, res) => {
     id: String(req.body.id),
     plan_id: planId,
     line_id: lineId,
-    user_id: req.userId,
+    slot_id: req.slotId,
     amount,
     spent_on: spentOn,
     note: String(req.body.note ?? ''),
     created_at: new Date().toISOString(),
   }
 
-  insertExpense.run(expense.id, planId, lineId, req.userId, amount, spentOn, expense.note, expense.created_at)
+  insertExpense.run(expense.id, planId, lineId, req.slotId, amount, spentOn, expense.note, expense.created_at)
   res.json(expense)
 })
 
 router.delete('/:id', (req, res) => {
-  const { changes } = deleteOwn.run(req.params.id, req.params.planId, req.userId)
+  const { changes } = deleteOwn.run(req.params.id, req.params.planId, req.slotId)
 
   if (!changes) {
     fail(403, 'Vous ne pouvez supprimer que vos propres dépenses.')

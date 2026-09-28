@@ -9,6 +9,15 @@ function cardClass(color) {
   return `budget-card subgroup--${color}`
 }
 
+// Automatic debits are flagged, their gauge being full without any entry
+function lineLabelOf(line) {
+  if (line.autoBook) {
+    return `${line.label} ↻`
+  }
+
+  return line.label
+}
+
 /**
  * Gauges of every line of one sub-group, headed by the sub-group total
  * @param {object} props
@@ -29,7 +38,7 @@ function GaugeCard({ group }) {
       <ul className="budget-card__lines">
         {group.items.map((line, index) => (
           <li key={`gauge-${line.id}-${index}`}>
-            <Gauge label={line.label} spent={line.spent} budget={line.budget} fill={line.fill} status={line.status} />
+            <Gauge label={lineLabelOf(line)} spent={line.spent} budget={line.budget} fill={line.fill} status={line.status} />
           </li>
         ))}
       </ul>
