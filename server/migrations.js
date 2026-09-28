@@ -25,6 +25,8 @@ export function migrateMembersToSlots(db, schema) {
   db.pragma('foreign_keys = OFF')
 
   db.transaction(() => {
+    // A boot that crashed on the old columns may have left an empty plan_slots, bound to the tables renamed below
+    db.exec('drop table if exists plan_slots')
     MEMBER_INDEXES.forEach((index) => db.exec(`drop index if exists ${index}`))
     MEMBER_TABLES.forEach((table) => db.exec(`alter table ${table} rename to legacy_${table}`))
     db.exec(schema)
