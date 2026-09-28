@@ -1,0 +1,129 @@
+{
+  "name": "Plan d’exemple",
+  "people": [
+    {
+      "id": "me",
+      "label": "Moi",
+      "netMonthly": 5000,
+      "annualTax": 6000
+    }
+  ],
+  "subgroups": [
+    {
+      "id": "home",
+      "label": "Logement",
+      "color": "1",
+      "scope": "shared"
+    },
+    {
+      "id": "care",
+      "label": "Santé",
+      "color": "2",
+      "scope": "shared"
+    },
+    {
+      "id": "daily",
+      "label": "Quotidien",
+      "color": "3",
+      "scope": "shared"
+    },
+    {
+      "id": "fun",
+      "label": "Loisirs",
+      "color": "5",
+      "scope": "shared"
+    },
+    {
+      "id": "subscriptions",
+      "label": "Abonnements",
+      "color": "6",
+      "scope": "shared"
+    }
+  ],
+  "categories": [
+    {
+      "id": "rent",
+      "label": "Loyer",
+      "amount": 1500,
+      "autoBook": true,
+      "parent": "home"
+    },
+    {
+      "id": "health",
+      "label": "Assurance maladie",
+      "amount": 400,
+      "autoBook": true,
+      "parent": "care"
+    },
+    {
+      "id": "utilities",
+      "label": "Électricité et internet",
+      "amount": 100,
+      "autoBook": true,
+      "parent": "home"
+    },
+    {
+      "id": "groceries",
+      "label": "Courses",
+      "amount": 500,
+      "parent": "daily"
+    },
+    {
+      "id": "transport",
+      "label": "Transports",
+      "amount": 100,
+      "parent": "daily"
+    },
+    {
+      "id": "restaurants",
+      "label": "Restaurants",
+      "amount": 200,
+      "parent": "fun"
+    },
+    {
+      "id": "outings",
+      "label": "Sorties",
+      "amount": 100,
+      "parent": "fun"
+    },
+    {
+      "id": "netflix",
+      "label": "Netflix",
+      "amount": 18.9,
+      "autoBook": true,
+      "parent": "subscriptions"
+    },
+    {
+      "id": "spotify",
+      "label": "Spotify",
+      "amount": 13.95,
+      "autoBook": true,
+      "parent": "subscriptions"
+    }
+  ],
+  "savingGroups": [
+    {
+      "id": "reserve",
+      "label": "Épargne",
+      "color": "7",
+      "scope": "shared"
+    }
+  ],
+  "savings": [
+    {
+      "id": "emergency",
+      "label": "Fonds d’urgence",
+      "amount": 300,
+      "parent": "reserve"
+    },
+    {
+      "id": "pillar3",
+      "label": "3e pilier",
+      "amount": 300,
+      "parent": "reserve"
+    }
+  ],
+  "settings": {
+    "taxTiming": "monthly"
+  }
+}
