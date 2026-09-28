@@ -82,6 +82,7 @@ const updateLine = db.prepare(
 )
 const deleteGroup = db.prepare('delete from plan_groups where id = ? and plan_id = ?')
 const deleteLine = db.prepare('delete from plan_lines where id = ? and plan_id = ?')
+const deletePlan = db.prepare('delete from plans where id = ?')
 
 /**
  * Share code as typed by the person who received it
@@ -538,6 +539,18 @@ router.post('/:planId/import', (req, res) => {
   const slotIds = new Set(listSlots.all(planId).map((slot) => slot.id))
 
   importPlan(planId, req.body, slotIds)
+  res.json({})
+})
+
+// Removes the plan for everyone, its slots, lines and expenses following through the cascades
+router.delete('/:planId', (req, res) => {
+  const { planId } = req.params
+
+  if (!isPlanCreator(planId, req.userId)) {
+    fail(403, 'Seul le créateur du plan peut le supprimer.')
+  }
+
+  deletePlan.run(planId)
   res.json({})
 })
 

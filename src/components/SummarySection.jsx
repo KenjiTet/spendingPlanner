@@ -20,13 +20,24 @@ function toneFor(value) {
   return 'summary__amount summary__amount--positive'
 }
 
+// On a phone only the chosen column stays visible, the others being set aside
+function figureClassOf(columnId, shownId) {
+  if (columnId !== shownId) {
+    return 'summary__figure summary__figure--aside'
+  }
+
+  return 'summary__figure'
+}
+
 /**
- * Recap of the plan, one column per person plus the household total
+ * Recap of the plan, one column per person plus the household total, a single chosen one on phones
  * @param {object} props
  * @param {{ id: string, label: string, monthly: object, annual: object }[]} props.columns
  */
 export default function SummarySection({ columns }) {
   const [period, setPeriod] = useState('monthly')
+  // The household total is shown first on a phone
+  const [shownId, setShownId] = useState(columns[columns.length - 1].id)
 
   const switcher = (
     <span className={`switch switch--${period}`} role="group" aria-label="Période">
@@ -54,56 +65,68 @@ export default function SummarySection({ columns }) {
 
   return (
     <Section title="Récapitulatif" id={sectionAnchor('summary')} tone="summary" actions={switcher}>
+      {columns.length > 1 && (
+        <span className="switch switch--segmented summary__columns" role="group" aria-label="Colonne affichée">
+          {columns.map((column, index) => (
+            <button
+              key={`column-${column.id}-${index}`}
+              type="button"
+              className="switch__option"
+              onClick={() => setShownId(column.id)}
+              aria-pressed={column.id === shownId}
+            >
+              {column.label}
+            </button>
+          ))}
+        </span>
+      )}
 
-      <table className="summary">
-        <thead>
-          <tr>
-            <th scope="col">Poste</th>
-
-            {columns.map((column, index) => (
-              <th key={`head-${column.id}-${index}`} scope="col" className="summary__figure">
-                {column.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {ROWS.map((row, rowIndex) => (
-            <tr key={`recap-${row.id}-${rowIndex}`}>
-              <th scope="row" className={`summary__label summary__label--${row.id}`}>
-                {row.label}
-              </th>
+      {/* Scrolls sideways on a phone rather than squeezing the figures of every column */}
+      <div className="summary__scroll">
+        <table className="summary">
+          <thead>
+            <tr>
+              <th scope="col">Poste</th>
 
               {columns.map((column, index) => (
-                <td key={`cell-${row.id}-${column.id}-${index}`} className="summary__figure">
-                  {formatAmount(column[period][row.field])}
+                <th key={`head-${column.id}-${index}`} scope="col" className={figureClassOf(column.id, shownId)}>
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {ROWS.map((row, rowIndex) => (
+              <tr key={`recap-${row.id}-${rowIndex}`}>
+                <th scope="row" className={`summary__label summary__label--${row.id}`}>
+                  {row.label}
+                </th>
+
+                {columns.map((column, index) => (
+                  <td key={`cell-${row.id}-${column.id}-${index}`} className={figureClassOf(column.id, shownId)}>
+                    {formatAmount(column[period][row.field])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <th scope="row">Reste</th>
+
+              {columns.map((column, index) => (
+                <td key={`rest-${column.id}-${index}`} className={figureClassOf(column.id, shownId)}>
+                  <strong className={toneFor(column[period].remaining)}>
+                    {formatAmount(column[period].remaining)}
+                  </strong>
                 </td>
               ))}
             </tr>
-          ))}
-        </tbody>
-
-        <tfoot>
-          <tr>
-            <th scope="row">Reste</th>
-
-            {columns.map((column, index) => (
-              <td key={`rest-${column.id}-${index}`} className="summary__figure">
-                <strong className={toneFor(column[period].remaining)}>
-                  {formatAmount(column[period].remaining)}
-                </strong>
-              </td>
-            ))}
-          </tr>
-        </tfoot>
-      </table>
-
-      <p className="section__hint">
-        Les dépenses communes sont partagées à parts égales. Chacun porte ses propres impôts et son
-        épargne, plus sa part des lignes communes. Le reste annuel ne dépend pas du décompte des
-        impôts.
-      </p>
+          </tfoot>
+        </table>
+      </div>
     </Section>
   )
 }

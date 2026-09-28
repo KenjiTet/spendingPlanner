@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { importInto } from '../lib/planImport.js'
+import { downloadPlan } from '../utils/planFile.js'
+import { rowsToPlan } from '../utils/planMapper.js'
 import { loadPreference, savePreference } from '../utils/storage.js'
 
 const CURRENT_PLAN_KEY = 'current-plan'
@@ -54,17 +57,45 @@ export default function usePlans(userId) {
    * @param {string} name
    * @param {number} slotCount - one or two places
    * @param {string} [templateId] - a published template to copy the common structure from
+   * @param {object} [source] - a plan read from a JSON file, whose lines fill the new plan
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function createPlan(name, slotCount, templateId) {
+  async function createPlan(name, slotCount, templateId, source) {
     const { data, error } = await api.post('/plans', { name, slotCount, templateId })
 
     if (error) {
       return error.message
     }
 
+    let importFailure = undefined
+
+    if (!!source) {
+      importFailure = await importInto(data.id, source)
+    }
+
     await reload()
     selectPlan(data.id)
+
+    if (!!importFailure) {
+      return `Le plan a été créé, mais l’import a échoué : ${importFailure}`
+    }
+
+    return undefined
+  }
+
+  /**
+   * Downloads a plan as JSON, read in full since the list only carries its summary
+   * @param {string} planId
+   * @returns {Promise<string | undefined>} an error message, if any
+   */
+  async function exportPlan(planId) {
+    const { data, error } = await api.get(`/plans/${planId}`)
+
+    if (error) {
+      return error.message
+    }
+
+    downloadPlan(rowsToPlan(data))
     return undefined
   }
 
@@ -110,6 +141,26 @@ export default function usePlans(userId) {
     return undefined
   }
 
+  /**
+   * Deletes a plan for everyone; the active plan then falls back to the first one left
+   * @param {string} planId
+   * @returns {Promise<string | undefined>} an error message, if any
+   */
+  async function deletePlan(planId) {
+    const { error } = await api.remove(`/plans/${planId}`)
+
+    if (error) {
+      return error.message
+    }
+
+    if (planId === currentPlanId) {
+      selectPlan(undefined)
+    }
+
+    await reload()
+    return undefined
+  }
+
   // A remembered id pointing to a plan the person no longer belongs to falls back to their first plan
   let currentPlan = undefined
 
@@ -127,5 +178,7 @@ export default function usePlans(userId) {
     previewJoin,
     joinPlan,
     publishTemplate,
+    exportPlan,
+    deletePlan,
   }
 }

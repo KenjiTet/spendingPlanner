@@ -4,7 +4,7 @@ import ScopedSection from '../components/ScopedSection.jsx'
 import ChartsSection from '../components/ChartsSection.jsx'
 import SummarySection from '../components/SummarySection.jsx'
 import TaxSection from '../components/TaxSection.jsx'
-import PlanActions from '../components/PlanActions.jsx'
+import UnnamedLinesBanner from '../components/UnnamedLinesBanner.jsx'
 import PlanTree from '../components/PlanTree.jsx'
 import SavePanel from '../components/SavePanel.jsx'
 import { MONTHS_PER_YEAR, SHARED, toAmount, toScopeTree } from '../utils/plan.js'
@@ -70,9 +70,10 @@ export default function PlanPage() {
     updateItem,
     removeItem,
     removeSubgroup,
-    importPlan,
     saveStatus,
     flush,
+    showSavings,
+    showTaxes,
   } = useOutletContext()
 
   const isSolo = plan.people.length < 2
@@ -83,7 +84,7 @@ export default function PlanPage() {
   const visibleExpenseScopes = visibleScopesOf(expenseScopes, isSolo)
   const visibleSavingScopes = visibleScopesOf(savingScopes, isSolo)
 
-  // What the outline beside the editor lists, in the order of the page
+  // What the outline beside the editor lists, in the order of the page, without the sections turned off in the profile
   const outline = [
     {
       id: 'expenses',
@@ -91,6 +92,7 @@ export default function PlanPage() {
       tone: 'expense',
       total: totals.monthlyExpenses,
       scopes: toScopeTree(visibleExpenseScopes, plan.subgroups, plan.categories),
+      flat: isSolo,
     },
     {
       id: 'savings',
@@ -98,12 +100,14 @@ export default function PlanPage() {
       tone: 'savings',
       total: totals.monthlySavings,
       scopes: toScopeTree(visibleSavingScopes, plan.savingGroups, plan.savings),
+      flat: isSolo,
+      visible: showSavings,
     },
-  ]
+  ].filter((section) => section.visible ?? true)
   const extras = [
-    { id: 'tax', title: 'Impôts' },
+    { id: 'tax', title: 'Impôts', visible: showTaxes },
     { id: 'summary', title: 'Récapitulatif' },
-  ]
+  ].filter((extra) => extra.visible ?? true)
 
   return (
     <div className="plan-layout">
@@ -114,6 +118,7 @@ export default function PlanPage() {
 
       <div className="plan-layout__main">
         <WarningBanner monthlyRemaining={totals.monthlyRemaining} annualRemaining={totals.annualRemaining} />
+        <UnnamedLinesBanner lines={plan.categories} />
 
         <ScopedSection
           title="Dépenses mensuelles"
@@ -125,6 +130,7 @@ export default function PlanPage() {
           scopes={visibleExpenseScopes}
           editableScopes={editableScopes}
           shareCount={plan.people.length}
+          flat={isSolo}
           subgroups={plan.subgroups}
           items={plan.categories}
           onAddLine={(line) => addItem('categories', line)}
@@ -135,34 +141,39 @@ export default function PlanPage() {
           onRemoveSubgroup={(id) => removeSubgroup('subgroups', 'categories', id)}
         />
 
-        <ScopedSection
-          title="Épargne et investissements"
-          anchor="savings"
-          tone="savings"
-          addLabel="Ligne d’épargne"
-          total={totals.monthlySavings}
-          annualTotal={totals.annualSavings}
-          scopes={visibleSavingScopes}
-          editableScopes={editableScopes}
-          shareCount={plan.people.length}
-          subgroups={plan.savingGroups}
-          items={plan.savings}
-          onAddLine={(line) => addItem('savings', line)}
-          onUpdateLine={(id, field, value) => updateItem('savings', id, field, value)}
-          onRemoveLine={(id) => removeItem('savings', id)}
-          onAddSubgroup={(subgroup) => addItem('savingGroups', subgroup)}
-          onUpdateSubgroup={(id, field, value) => updateItem('savingGroups', id, field, value)}
-          onRemoveSubgroup={(id) => removeSubgroup('savingGroups', 'savings', id)}
-        />
+        {showSavings && (
+          <ScopedSection
+            title="Épargne et investissements"
+            anchor="savings"
+            tone="savings"
+            addLabel="Ligne d’épargne"
+            total={totals.monthlySavings}
+            annualTotal={totals.annualSavings}
+            scopes={visibleSavingScopes}
+            editableScopes={editableScopes}
+            shareCount={plan.people.length}
+            flat={isSolo}
+            subgroups={plan.savingGroups}
+            items={plan.savings}
+            onAddLine={(line) => addItem('savings', line)}
+            onUpdateLine={(id, field, value) => updateItem('savings', id, field, value)}
+            onRemoveLine={(id) => removeItem('savings', id)}
+            onAddSubgroup={(subgroup) => addItem('savingGroups', subgroup)}
+            onUpdateSubgroup={(id, field, value) => updateItem('savingGroups', id, field, value)}
+            onRemoveSubgroup={(id) => removeSubgroup('savingGroups', 'savings', id)}
+          />
+        )}
 
-        <TaxSection
-          people={plan.people}
-          editableIds={editableIdsOf(plan, userId)}
-          taxTiming={plan.settings.taxTiming}
-          annualTax={totals.annualTax}
-          onUpdateTax={updateTax}
-          onUpdateSetting={updateSetting}
-        />
+        {showTaxes && (
+          <TaxSection
+            people={plan.people}
+            editableIds={editableIdsOf(plan, userId)}
+            taxTiming={plan.settings.taxTiming}
+            annualTax={totals.annualTax}
+            onUpdateTax={updateTax}
+            onUpdateSetting={updateSetting}
+          />
+        )}
 
         <ChartsSection
           people={plan.people}
@@ -173,8 +184,6 @@ export default function PlanPage() {
         />
 
         <SummarySection columns={summaryColumnsOf(totals.columns, isSolo)} />
-
-        <PlanActions plan={plan} canImport={plan.createdBy === userId} onImport={importPlan} />
       </div>
     </div>
   )

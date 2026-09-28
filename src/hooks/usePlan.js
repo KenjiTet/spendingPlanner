@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api.js'
-import { computeTotals, toAmount, withDefaults } from '../utils/plan.js'
-import { itemToRow, LISTS, rowsToPlan, toImportPayload } from '../utils/planMapper.js'
+import { computeTotals, toAmount } from '../utils/plan.js'
+import { itemToRow, LISTS, rowsToPlan } from '../utils/planMapper.js'
 
 // Typing is saved once the person pauses, not on every keystroke
 const SAVE_DELAY_MS = 400
@@ -263,24 +263,6 @@ export default function usePlan(planId) {
     persist(api.remove(`/plans/${planId}/groups/${id}`))
   }
 
-  /**
-   * Appends a plan read from a JSON file, each JSON person mapped to a member or to the common part
-   * @param {object} source
-   * @param {Record<string, string>} scopeByPerson
-   * @returns {Promise<string | undefined>} an error message, if any
-   */
-  async function importPlan(source, scopeByPerson) {
-    const payload = toImportPayload(withDefaults(source), scopeByPerson)
-    const { error: failure } = await api.post(`/plans/${planId}/import`, payload)
-
-    if (failure) {
-      return failure.message
-    }
-
-    await reload()
-    return undefined
-  }
-
   const totals = useMemo(() => {
     if (!plan) {
       return undefined
@@ -302,6 +284,5 @@ export default function usePlan(planId) {
     updateItem,
     removeItem,
     removeSubgroup,
-    importPlan,
   }
 }

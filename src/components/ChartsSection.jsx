@@ -31,12 +31,15 @@ function slicesFor(person, tree, shareCount, tax) {
     common.items.reduce((sum, line) => sum + Number(line.amount), 0) / shareCount +
     own.items.reduce((sum, line) => sum + Number(line.amount), 0)
 
-  return [
+  const slices = [
     ...commonSlices,
     ...ownSlices,
     { id: 'loose', label: 'Hors sous-groupe', value: loose, tone: 'neutral' },
     { id: 'tax', label: 'Impôts', value: tax, tone: 'tax' },
   ]
+
+  // Largest share first, in the donut as in its legend
+  return slices.sort((first, second) => second.value - first.value)
 }
 
 /**

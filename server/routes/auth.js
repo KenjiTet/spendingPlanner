@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { clearSession, hashPassword, requireUser, setSession, verifyPassword } from '../auth.js'
 import { db } from '../db.js'
-import { readAmount } from '../input.js'
+import { readAmount, readFlag } from '../input.js'
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_USERNAME_LENGTH = 32
@@ -11,14 +11,16 @@ const router = Router()
 
 const findByUsername = db.prepare('select * from users where username = ?')
 const findById = db.prepare(
-  'select id, username, display_name, net_monthly from users where id = ?'
+  'select id, username, display_name, net_monthly, show_savings, show_taxes, tutorial_done from users where id = ?'
 )
 const insertUser = db.prepare(
-  'insert into users (id, username, display_name, password, created_at) values (?, ?, ?, ?, ?)'
+  'insert into users (id, username, display_name, password, tutorial_done, created_at) values (?, ?, ?, ?, 0, ?)'
 )
 const updateProfile = db.prepare(
   'update users set display_name = ?, net_monthly = ? where id = ?'
 )
+const updatePreferences = db.prepare('update users set show_savings = ?, show_taxes = ? where id = ?')
+const completeTutorial = db.prepare('update users set tutorial_done = 1 where id = ?')
 
 /**
  * What the front-end may see of an account, never the password
@@ -30,6 +32,9 @@ function toPublicUser(user) {
     username: user.username,
     display_name: user.display_name,
     net_monthly: user.net_monthly,
+    show_savings: user.show_savings,
+    show_taxes: user.show_taxes,
+    tutorial_done: user.tutorial_done,
   }
 }
 
@@ -95,6 +100,18 @@ router.patch('/profile', requireUser, (req, res) => {
   }
 
   updateProfile.run(displayName, readAmount(req.body.net_monthly), req.userId)
+  res.json({ user: findById.get(req.userId) })
+})
+
+// Budget sections the account works with, saved on every toggle
+router.patch('/preferences', requireUser, (req, res) => {
+  updatePreferences.run(readFlag(req.body.show_savings), readFlag(req.body.show_taxes), req.userId)
+  res.json({ user: findById.get(req.userId) })
+})
+
+// The guided tour was finished or skipped, never shown again on its own
+router.post('/tutorial', requireUser, (req, res) => {
+  completeTutorial.run(req.userId)
   res.json({ user: findById.get(req.userId) })
 })
 

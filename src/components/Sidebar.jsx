@@ -2,20 +2,21 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { initialOf } from '../utils/format.js'
 import { loadPreference, savePreference } from '../utils/storage.js'
+import Icon from './Icon.jsx'
 import PlanSwitcher from './PlanSwitcher.jsx'
 
 const PLAN_GROUP_KEY = 'sidebar-plan-collapsed'
 
-// Top-level menu entries, in display order
+// Top-level menu entries, in display order; the short label fits a cell of the phone bar, the featured one sits at its centre
 const LINKS = [
-  { to: '/', label: 'Vue d’ensemble', icon: '◈', end: true },
-  { to: '/depenses', label: 'Dépenses', icon: '◔' },
+  { to: '/', label: 'Vue d’ensemble', short: 'Aperçu', icon: 'dashboard', end: true },
+  { to: '/depenses', label: 'Dépenses', short: 'Dépenses', icon: 'receipt', featured: true },
 ]
 
 // Entries folded under "Plan"
 const PLAN_LINKS = [
-  { to: '/plan', label: 'Budget', icon: '☰' },
-  { to: '/plans', label: 'Mes plans', icon: '▦' },
+  { to: '/plan', label: 'Budget', short: 'Budget', icon: 'wallet' },
+  { to: '/plans', label: 'Mes plans', short: 'Plans', icon: 'layers' },
 ]
 
 // Highlights the menu entry of the current page
@@ -45,6 +46,15 @@ function profileClass({ isActive }) {
   return 'sidebar__profile'
 }
 
+// The featured entry is moved to the centre of the phone bar
+function itemClassOf(link) {
+  if (link.featured) {
+    return 'sidebar__item--featured'
+  }
+
+  return undefined
+}
+
 // The collapsed state only hides the group on desktop, the phone bar always lists its entries
 function subListClassOf(collapsed) {
   if (collapsed) {
@@ -57,16 +67,23 @@ function subListClassOf(collapsed) {
 /**
  * One menu entry, icon then label
  * @param {object} props
- * @param {{ to: string, label: string, icon: string, end?: boolean }} props.link
+ * @param {{ to: string, label: string, short: string, icon: string, end?: boolean, featured?: boolean }} props.link
  * @param {(state: { isActive: boolean }) => string} props.className
  */
 function MenuLink({ link, className }) {
   return (
-    <NavLink to={link.to} end={link.end} className={className}>
-      <span className="sidebar__icon" aria-hidden="true">
-        {link.icon}
+    <NavLink to={link.to} end={link.end} className={className} aria-label={link.label}>
+      <Icon name={link.icon} className="sidebar__icon" />
+      {/* The featured entry swaps its icon for a green "+" button in the phone bar */}
+      {link.featured && (
+        <span className="sidebar__fab" aria-hidden="true">
+          <Icon name="plus" className="sidebar__icon" />
+        </span>
+      )}
+      <span className="sidebar__label">{link.label}</span>
+      <span className="sidebar__tab" aria-hidden="true">
+        {link.short}
       </span>
-      <span>{link.label}</span>
     </NavLink>
   )
 }
@@ -95,16 +112,14 @@ export default function Sidebar({ plans, currentPlanId, userName, onSelectPlan, 
       <nav className="sidebar__nav" aria-label="Menu principal">
         <ul className="sidebar__list">
           {LINKS.map((link, index) => (
-            <li key={`nav-${link.to}-${index}`}>
+            <li key={`nav-${link.to}-${index}`} className={itemClassOf(link)}>
               <MenuLink link={link} className={linkClass} />
             </li>
           ))}
 
           <li className="sidebar__group">
             <button type="button" className="sidebar__link sidebar__toggle" aria-expanded={!collapsed} onClick={toggleGroup}>
-              <span className="sidebar__icon" aria-hidden="true">
-                ☰
-              </span>
+              <Icon name="clipboard" className="sidebar__icon" />
               <span>Plan</span>
               <span className="chevron" aria-hidden="true" />
             </button>
@@ -125,9 +140,15 @@ export default function Sidebar({ plans, currentPlanId, userName, onSelectPlan, 
           <span className="sidebar__avatar" aria-hidden="true">
             {initialOf(userName)}
           </span>
+          {/* The phone bar shows a plain icon, like the other cells */}
+          <Icon name="user" className="sidebar__icon sidebar__profile-icon" />
           <span className="sidebar__who">
             <span className="sidebar__user">{userName}</span>
             <span className="sidebar__eyebrow">Voir le profil</span>
+          </span>
+          {/* The phone bar names every cell, the profile included */}
+          <span className="sidebar__tab" aria-hidden="true">
+            Profil
           </span>
         </NavLink>
 

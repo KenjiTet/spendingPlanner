@@ -16,12 +16,20 @@ export default function LoginPage({ onSignIn, onSignUp }) {
   const [mode, setMode] = useState('signIn')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const isSignUp = mode === 'signUp'
 
   async function handleSubmit(event) {
     event.preventDefault()
+
+    // A mistyped new password would lock the account out, there being no reset
+    if (isSignUp && password !== confirmation) {
+      setMessage('Les mots de passe ne correspondent pas.')
+      return
+    }
+
     setBusy(true)
     setMessage('')
 
@@ -76,6 +84,20 @@ export default function LoginPage({ onSignIn, onSignUp }) {
               autoComplete={MODES[mode].autoComplete}
             />
           </label>
+
+          {isSignUp && (
+            <label className="form__field">
+              <span>Confirmer le mot de passe</span>
+              <input
+                type="password"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </label>
+          )}
 
           <button type="submit" className="form__submit" disabled={busy}>
             {MODES[mode].submit}

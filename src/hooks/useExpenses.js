@@ -42,12 +42,12 @@ export default function useExpenses(planId, slotId, month) {
 
   /**
    * Records an expense, shown immediately when it falls in the displayed month
-   * @param {{ lineId: string, amount: number, spentOn: string, note: string }} input
+   * @param {{ id?: string, lineId: string, amount: number, spentOn: string, note: string }} input - the id lets the caller undo it
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function addExpense({ lineId, amount, spentOn, note }) {
+  async function addExpense({ id = crypto.randomUUID(), lineId, amount, spentOn, note }) {
     const expense = {
-      id: crypto.randomUUID(),
+      id,
       line_id: lineId,
       slot_id: slotId,
       amount,

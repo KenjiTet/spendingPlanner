@@ -40,3 +40,6 @@ function addColumnIfMissing(table, column, definition) {
 }
 
 addColumnIfMissing('plan_lines', 'auto_book', 'integer not null default 0 check (auto_book in (0, 1))')
+addColumnIfMissing('users', 'show_savings', 'integer not null default 1 check (show_savings in (0, 1))')
+addColumnIfMissing('users', 'show_taxes', 'integer not null default 1 check (show_taxes in (0, 1))')
+addColumnIfMissing('users', 'tutorial_done', 'integer not null default 1 check (tutorial_done in (0, 1))')

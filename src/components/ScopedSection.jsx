@@ -3,7 +3,7 @@ import { nodeAnchor, scopeAnchor, sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
 import ColorPicker from './ColorPicker.jsx'
 import Section from './Section.jsx'
-import { createItem, createSubgroup, GROUP_COLORS, SHARED, toScopeTree } from '../utils/plan.js'
+import { createItem, createSubgroup, GROUP_COLORS, hasName, SHARED, toScopeTree } from '../utils/plan.js'
 
 // Name given to a sub-group the moment it is created, before it is renamed
 const NEW_SUBGROUP = 'Nouveau sous-groupe'
@@ -20,6 +20,15 @@ function autoClassOf(autoBook) {
   }
 
   return 'line__auto'
+}
+
+// A flat scope drops its frame, its content sitting straight in the section
+function scopeClassOf(flat) {
+  if (flat) {
+    return 'scope scope--flat'
+  }
+
+  return 'scope'
 }
 
 // Toggles an id inside the set of blocks flipped from their default state
@@ -44,6 +53,7 @@ function toggleIn(ids, id) {
  * @param {{ id: string, label: string }[]} props.scopes - common first, then one per person
  * @param {string[]} [props.editableScopes] - scopes the viewer may change, all of them when omitted
  * @param {number} [props.shareCount] - people the common scope is split between, its per-person amounts shown above one
+ * @param {boolean} [props.flat] - a single scope shown without its header, as in a solo plan
  * @param {{ id: string, label: string, color: string, scope: string }[]} props.subgroups
  * @param {{ id: string, label: string, amount: number, autoBook?: boolean, parent: string }[]} props.items
  * @param {(line: object) => void} props.onAddLine
@@ -64,6 +74,7 @@ export default function ScopedSection({
   scopes,
   editableScopes,
   shareCount = 1,
+  flat = false,
   subgroups,
   items,
   onAddLine,
@@ -170,6 +181,15 @@ export default function ScopedSection({
     return base
   }
 
+  // An unnamed line is flagged, since it cannot be picked when booking an expense
+  function nameClassOf(item) {
+    if (!hasName(item)) {
+      return 'line__name line__name--missing'
+    }
+
+    return 'line__name'
+  }
+
   // Dims the line while it is being carried
   function lineClass(id) {
     if (dragId === id) {
@@ -223,11 +243,12 @@ export default function ScopedSection({
         </span>
 
         <input
-          className="line__name"
+          className={nameClassOf(item)}
           value={item.label}
           onChange={(event) => onUpdateLine(item.id, 'label', event.target.value)}
           placeholder={addLabel}
           aria-label={addLabel}
+          aria-invalid={!hasName(item)}
           autoFocus={item.id === focusId}
         />
 
@@ -248,9 +269,12 @@ export default function ScopedSection({
             className={autoClassOf(item.autoBook)}
             onClick={() => onUpdateLine(item.id, 'autoBook', !item.autoBook)}
             aria-pressed={!!item.autoBook}
+            aria-label="Prélèvement automatique"
             title="Prélèvement automatique : compté comme dépensé dès le 1er du mois, sans saisie"
           >
-            <span aria-hidden="true">↻</span> Auto
+            <span aria-hidden="true">↻</span>
+            {/* The word goes on a phone, the symbol alone keeping the line on one row */}
+            <span className="line__auto-text">Auto</span>
           </button>
         )}
 
@@ -282,29 +306,31 @@ export default function ScopedSection({
           <article
             key={`scope-${scope.id}-${scopeIndex}`}
             id={scopeAnchor(anchor, scope.id)}
-            className={blockClass('scope', scope.id)}
+            className={blockClass(scopeClassOf(flat), scope.id)}
             {...dropProps(scope.id, editable)}
           >
-            <header className="scope__header">
-              <button
-                type="button"
-                className="scope__toggle"
-                onClick={() => fold(scope.id)}
-                aria-expanded={isOpen(scope.id)}
-              >
-                <span className="chevron" aria-hidden="true" />
-                <h3 className="scope__title">{scope.label}</h3>
-              </button>
+            {!flat && (
+              <header className="scope__header">
+                <button
+                  type="button"
+                  className="scope__toggle"
+                  onClick={() => fold(scope.id)}
+                  aria-expanded={isOpen(scope.id)}
+                >
+                  <span className="chevron" aria-hidden="true" />
+                  <h3 className="scope__title">{scope.label}</h3>
+                </button>
 
-              {!editable && <span className="scope__badge">Lecture seule</span>}
+                {!editable && <span className="scope__badge">Lecture seule</span>}
 
-              <span className="scope__total">
-                {formatAmount(scope.total)} / mois
-                {renderShare(scope.id, scope.total)}
-              </span>
-            </header>
+                <span className="scope__total">
+                  {formatAmount(scope.total)} / mois
+                  {renderShare(scope.id, scope.total)}
+                </span>
+              </header>
+            )}
 
-            {isOpen(scope.id) && (
+            {(flat || isOpen(scope.id)) && (
               <>
                 {scope.subgroups.map((subgroup, index) => (
                   <article

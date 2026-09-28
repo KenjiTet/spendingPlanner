@@ -1,65 +1,20 @@
 import { useState } from 'react'
 import { formatAmount, formatDay } from '../utils/format.js'
-
-const WEEKDAYS = [
-  { short: 'L', long: 'lundi' },
-  { short: 'M', long: 'mardi' },
-  { short: 'M', long: 'mercredi' },
-  { short: 'J', long: 'jeudi' },
-  { short: 'V', long: 'vendredi' },
-  { short: 'S', long: 'samedi' },
-  { short: 'D', long: 'dimanche' },
-]
-
-const STATUS_LABELS = {
-  ok: 'Dans le budget',
-  warning: 'Proche du budget',
-  over: 'Budget dépassé',
-}
-
-// Splits the days into Monday-first weeks, blank cells padding the first and last ones
-function weeksOf(days, firstWeekday) {
-  const cells = [...Array(firstWeekday).fill(undefined), ...days]
-
-  while (cells.length % WEEKDAYS.length) {
-    cells.push(undefined)
-  }
-
-  return Array.from({ length: cells.length / WEEKDAYS.length }, (_unused, index) =>
-    cells.slice(index * WEEKDAYS.length, (index + 1) * WEEKDAYS.length)
-  )
-}
-
-// Class of a day cell, coloured by its status once lived, outlined when it is today or selected
-function dayClassOf(day, today, selectedDate) {
-  const classes = ['calendar__day']
-
-  if (!!day.status) {
-    classes.push(`calendar__day--${day.status}`)
-  }
-
-  if (day.date === today) {
-    classes.push('calendar__day--today')
-  }
-
-  if (day.date === selectedDate) {
-    classes.push('calendar__day--selected')
-  }
-
-  return classes.join(' ')
-}
+import MonthCalendar from './MonthCalendar.jsx'
 
 /**
  * Month calendar, each lived day coloured by what was spent against an even share of the budget.
- * Hovering a day tells its total, clicking it lists its expenses below the grid.
+ * Hovering a day tells its total, clicking it lists its expenses below the grid, one's own being removable.
  * @param {object} props
  * @param {{ date: string, day: number, spent: number, items: object[], status?: string }[]} props.days - from dailySpendingOf
  * @param {number} props.firstWeekday - position of the 1st in a Monday-first week, from firstWeekdayOf
  * @param {number} props.dailyBudget
  * @param {string} props.today - YYYY-MM-DD
  * @param {Record<string, { label: string, color?: string }>} props.lines - from indexLines
+ * @param {string} props.slotId - the place this person holds in the plan
+ * @param {(id: string) => void} props.onRemove
  */
-export default function SpendingCalendar({ days, firstWeekday, dailyBudget, today, lines }) {
+export default function SpendingCalendar({ days, firstWeekday, dailyBudget, today, lines, slotId, onRemove }) {
   const [selectedDate, setSelectedDate] = useState(undefined)
   const overCount = days.filter((day) => day.status === 'over').length
   const selected = days.find((day) => day.date === selectedDate)
@@ -83,64 +38,14 @@ export default function SpendingCalendar({ days, firstWeekday, dailyBudget, toda
         </span>
       </figcaption>
 
-      <table className="calendar__table">
-        <thead>
-          <tr>
-            {WEEKDAYS.map((weekday, index) => (
-              <th key={`calendar-weekday-${weekday.long}-${index}`} scope="col" abbr={weekday.long} className="calendar__weekday">
-                {weekday.short}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {weeksOf(days, firstWeekday).map((week, weekIndex) => (
-            <tr key={`calendar-week-${weekIndex}`}>
-              {week.map((day, index) => {
-                if (!day) {
-                  return <td key={`calendar-blank-${weekIndex}-${index}`} />
-                }
-
-                return (
-                  <td key={`calendar-day-${day.date}-${index}`} className="calendar__cell">
-                    <button
-                      type="button"
-                      className={dayClassOf(day, today, selectedDate)}
-                      onClick={() => toggle(day.date)}
-                      aria-pressed={day.date === selectedDate}
-                      aria-label={`${formatDay(day.date)} : ${formatAmount(day.spent)}`}
-                    >
-                      {day.day}
-                    </button>
-
-                    <span className="calendar__tooltip" role="tooltip">
-                      <strong>{formatAmount(day.spent)}</strong>
-                      <span>sur {formatAmount(dailyBudget)}</span>
-                      {!!day.status && <span>{STATUS_LABELS[day.status]}</span>}
-                    </span>
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <ul className="calendar__legend">
-        <li className="calendar__key">
-          <span className="calendar__swatch calendar__swatch--ok" aria-hidden="true" />
-          Dans le budget
-        </li>
-        <li className="calendar__key">
-          <span className="calendar__swatch calendar__swatch--warning" aria-hidden="true" />
-          Proche
-        </li>
-        <li className="calendar__key">
-          <span className="calendar__swatch calendar__swatch--over" aria-hidden="true" />
-          Dépassé
-        </li>
-      </ul>
+      <MonthCalendar
+        days={days}
+        firstWeekday={firstWeekday}
+        dailyBudget={dailyBudget}
+        today={today}
+        selected={selectedDate}
+        onSelect={toggle}
+      />
 
       {!!selected && (
         <section className="calendar__details" aria-live="polite">
@@ -168,6 +73,17 @@ export default function SpendingCalendar({ days, firstWeekday, dailyBudget, toda
                     </span>
 
                     <span className="history__amount">{formatAmount(expense.amount)}</span>
+
+                    {expense.slot_id === slotId && (
+                      <button
+                        type="button"
+                        className="list__remove"
+                        onClick={() => onRemove(expense.id)}
+                        aria-label={`Supprimer la dépense de ${formatAmount(expense.amount)}`}
+                      >
+                        ×
+                      </button>
+                    )}
                   </li>
                 )
               })}

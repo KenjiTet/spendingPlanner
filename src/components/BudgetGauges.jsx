@@ -1,71 +1,79 @@
+import { useState } from 'react'
 import Gauge from './Gauge.jsx'
+import { manualGroupsOf } from '../utils/tracking.js'
 
-// Colour class of a card, neutral for the lines outside any sub-group
-function cardClass(color) {
-  if (!color) {
-    return 'budget-card'
+// Singular or plural count of the lines behind a group gauge
+function detailLabelOf(count) {
+  if (count === 1) {
+    return 'Détail · 1 ligne'
   }
 
-  return `budget-card subgroup--${color}`
-}
-
-// Automatic debits are flagged, their gauge being full without any entry
-function lineLabelOf(line) {
-  if (line.autoBook) {
-    return `${line.label} ↻`
-  }
-
-  return line.label
+  return `Détail · ${count} lignes`
 }
 
 /**
- * Gauges of every line of one sub-group, headed by the sub-group total
+ * Gauge of one sub-group, its lines unfolding on a click
  * @param {object} props
  * @param {{ label: string, color?: string, items: object[], spent: number, budget: number, fill: number, status: string }} props.group
  */
 function GaugeCard({ group }) {
-  return (
-    <article className={cardClass(group.color)}>
-      <Gauge
-        label={group.label}
-        spent={group.spent}
-        budget={group.budget}
-        fill={group.fill}
-        status={group.status}
-        size="group"
-      />
+  const [open, setOpen] = useState(false)
 
-      <ul className="budget-card__lines">
-        {group.items.map((line, index) => (
-          <li key={`gauge-${line.id}-${index}`}>
-            <Gauge label={lineLabelOf(line)} spent={line.spent} budget={line.budget} fill={line.fill} status={line.status} />
-          </li>
-        ))}
-      </ul>
+  return (
+    <article className="budget-card">
+      {/* The toggle stretches over the whole head, so the group gauge itself is clickable */}
+      <div className="budget-card__head">
+        <Gauge
+          label={group.label}
+          spent={group.spent}
+          budget={group.budget}
+          fill={group.fill}
+          status={group.status}
+          size="group"
+        />
+
+        <button type="button" className="budget-card__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+          <span>{detailLabelOf(group.items.length)}</span>
+          <span className="chevron" aria-hidden="true" />
+        </button>
+      </div>
+
+      {open && (
+        <ul className="budget-card__lines">
+          {group.items.map((line, index) => (
+            <li key={`gauge-${line.id}-${index}`}>
+              <Gauge label={line.label} spent={line.spent} budget={line.budget} fill={line.fill} status={line.status} />
+            </li>
+          ))}
+        </ul>
+      )}
     </article>
   )
 }
 
 /**
- * Budget tracking of each scope, one card per sub-group
+ * Budget tracking of each scope, one card per sub-group, automatic debits left out since they need no follow-up
  * @param {object} props
  * @param {object[]} props.tracking - scopes from buildTracking
  */
 export default function BudgetGauges({ tracking }) {
+  // A scope made only of automatic debits has nothing left to follow
+  const scopes = tracking
+    .map((scope) => ({ ...scope, groups: manualGroupsOf(scope) }))
+    .filter((scope) => !!scope.groups.length)
+
   return (
     <>
-      {tracking.map((scope, scopeIndex) => (
+      {scopes.map((scope, scopeIndex) => (
         <section key={`budget-${scope.id}-${scopeIndex}`} className="budget">
           <h2 className="budget__title">{scope.label}</h2>
 
           <ul className="budget__grid">
-            {[...scope.subgroups, scope.loose]
-              .filter((group) => !!group.items.length)
-              .map((group, index) => (
-                <li key={`budget-group-${group.id}-${index}`}>
-                  <GaugeCard group={group} />
-                </li>
-              ))}
+            {scope.groups.map((group, index) => (
+              <li key={`budget-group-${group.id}-${index}`}>
+                <GaugeCard group={group} />
+              </li>
+            ))}
           </ul>
         </section>
       ))}

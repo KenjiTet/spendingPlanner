@@ -15,6 +15,34 @@ export function formatAmount(amount) {
   return formatter.format(value)
 }
 
+/**
+ * Reads an amount typed by hand, accepting both "12.50" and "12,50", the Swiss keyboard habit
+ * @param {string} value
+ * @returns {number} zero when the text is not a number
+ */
+export function parseAmount(value) {
+  const amount = Number(value.replace(',', '.'))
+
+  if (!Number.isFinite(amount)) {
+    return 0
+  }
+
+  return amount
+}
+
+const axisFormatter = new Intl.NumberFormat('fr-CH', { maximumFractionDigits: 0 })
+
+// Formats an amount without currency nor cents, for chart axes
+export function formatAxisAmount(amount) {
+  const value = Number(amount)
+
+  if (!Number.isFinite(value)) {
+    return axisFormatter.format(0)
+  }
+
+  return axisFormatter.format(value)
+}
+
 // Shares are shown next to the chart legends
 const shareFormatter = new Intl.NumberFormat('fr-CH', {
   style: 'percent',
@@ -50,6 +78,13 @@ export function formatMonth(month) {
 // Formats a YYYY-MM-DD day, e.g. "lundi 14 septembre"
 export function formatDay(day) {
   return dayFormatter.format(toLocalDate(day))
+}
+
+const shortDayFormatter = new Intl.DateTimeFormat('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' })
+
+// Formats a YYYY-MM-DD day compactly, e.g. "lun. 14 sept."
+export function formatShortDay(day) {
+  return shortDayFormatter.format(toLocalDate(day))
 }
 
 // First letter of a name, shown in the round badges of the sidebar

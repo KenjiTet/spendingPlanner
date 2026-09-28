@@ -23,8 +23,23 @@ function swatchClass(color) {
   return `swatch swatch--${color}`
 }
 
+// Summary line of the folded history: how many expenses and how much this month
+function summaryOf(expenses) {
+  const total = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+
+  if (!expenses.length) {
+    return 'Aucune dépense ce mois-ci'
+  }
+
+  if (expenses.length === 1) {
+    return `1 dépense · ${formatAmount(total)}`
+  }
+
+  return `${expenses.length} dépenses · ${formatAmount(total)}`
+}
+
 /**
- * Expenses of the month grouped by day, only one's own entries being removable
+ * Expenses of the month grouped by day, folded by default, only one's own entries being removable
  * @param {object} props
  * @param {object[]} props.expenses
  * @param {Record<string, { label: string, color?: string }>} props.lines - from indexLines
@@ -33,60 +48,56 @@ function swatchClass(color) {
  * @param {(id: string) => void} props.onRemove
  */
 export default function ExpenseHistory({ expenses, lines, names, slotId, onRemove }) {
-  if (!expenses.length) {
-    return (
-      <section className="card history">
-        <h2 className="history__title">Historique</h2>
-        <p className="section__hint">Aucune dépense ce mois-ci.</p>
-      </section>
-    )
-  }
-
   return (
-    <section className="card history">
-      <h2 className="history__title">Historique</h2>
+    <details className="card history">
+      <summary className="history__summary">
+        <span className="history__title">Historique du mois</span>
+        <span className="history__count">{summaryOf(expenses)}</span>
+      </summary>
 
-      <ol className="history__days">
-        {groupByDay(expenses).map((group, dayIndex) => (
-          <li key={`day-${group.day}-${dayIndex}`} className="history__day">
-            <h3 className="history__date">{formatDay(group.day)}</h3>
+      {!!expenses.length && (
+        <ol className="history__days">
+          {groupByDay(expenses).map((group, dayIndex) => (
+            <li key={`day-${group.day}-${dayIndex}`} className="history__day">
+              <h3 className="history__date">{formatDay(group.day)}</h3>
 
-            <ul className="history__items">
-              {group.items.map((expense, index) => {
-                const line = lines[expense.line_id]
-                const isMine = expense.slot_id === slotId
+              <ul className="history__items">
+                {group.items.map((expense, index) => {
+                  const line = lines[expense.line_id]
+                  const isMine = expense.slot_id === slotId
 
-                return (
-                  <li key={`expense-${expense.id}-${index}`} className="history__item">
-                    <span className={swatchClass(line?.color)} aria-hidden="true" />
+                  return (
+                    <li key={`expense-${expense.id}-${index}`} className="history__item">
+                      <span className={swatchClass(line?.color)} aria-hidden="true" />
 
-                    <span className="history__text">
-                      <span className="history__label">{line?.label ?? 'Ligne supprimée'}</span>
-                      <span className="history__meta">
-                        {!isMine && `${names[expense.slot_id] ?? 'Autre membre'} · `}
-                        {expense.note}
+                      <span className="history__text">
+                        <span className="history__label">{line?.label ?? 'Ligne supprimée'}</span>
+                        <span className="history__meta">
+                          {!isMine && `${names[expense.slot_id] ?? 'Autre membre'} · `}
+                          {expense.note}
+                        </span>
                       </span>
-                    </span>
 
-                    <span className="history__amount">{formatAmount(expense.amount)}</span>
+                      <span className="history__amount">{formatAmount(expense.amount)}</span>
 
-                    {isMine && (
-                      <button
-                        type="button"
-                        className="list__remove"
-                        onClick={() => onRemove(expense.id)}
-                        aria-label={`Supprimer la dépense de ${formatAmount(expense.amount)}`}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </li>
-        ))}
-      </ol>
-    </section>
+                      {isMine && (
+                        <button
+                          type="button"
+                          className="list__remove"
+                          onClick={() => onRemove(expense.id)}
+                          aria-label={`Supprimer la dépense de ${formatAmount(expense.amount)}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </li>
+          ))}
+        </ol>
+      )}
+    </details>
   )
 }

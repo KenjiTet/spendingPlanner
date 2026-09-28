@@ -4,7 +4,7 @@ import usePlan from '../hooks/usePlan.js'
 /**
  * Loads the active plan once and hands it to the pages through the outlet context
  * @param {object} props
- * @param {{ id: string }} props.user
+ * @param {{ id: string, show_savings: number, show_taxes: number }} props.user
  * @param {{ id: string }} props.currentPlan
  */
 function OpenPlan({ user, currentPlan }) {
@@ -25,7 +25,17 @@ function OpenPlan({ user, currentPlan }) {
 
       {!planState.plan && !planState.error && <p className="section__hint">Chargement du plan…</p>}
 
-      {!!planState.plan && <Outlet context={{ ...planState, userId: user.id, slotId: mySlot?.id }} />}
+      {!!planState.plan && (
+        <Outlet
+          context={{
+            ...planState,
+            userId: user.id,
+            slotId: mySlot?.id,
+            showSavings: !!user.show_savings,
+            showTaxes: !!user.show_taxes,
+          }}
+        />
+      )}
     </>
   )
 }
@@ -33,7 +43,7 @@ function OpenPlan({ user, currentPlan }) {
 /**
  * Gate of the pages working on a plan, pointing to the plans page while none is active
  * @param {object} props
- * @param {{ id: string }} props.user
+ * @param {{ id: string, show_savings: number, show_taxes: number }} props.user
  * @param {{ id: string }} [props.currentPlan]
  */
 export default function ActivePlan({ user, currentPlan }) {

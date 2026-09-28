@@ -82,7 +82,7 @@ export function gaugeStatus(spent, budget) {
  * @param {number} budget
  * @param {number} [committed] - automatic debits, expected in full, so the warning only looks at the rest
  */
-function toGauge(spent, budget, committed = 0) {
+export function toGauge(spent, budget, committed = 0) {
   let fill = 0
 
   if (budget > 0) {
@@ -119,6 +119,15 @@ export function sumSpentByLine(expenses) {
   )
 }
 
+// Alone, the common scope is simply the budget: calling it common would mean nothing
+function sharedLabelOf(isSolo) {
+  if (isSolo) {
+    return 'Budget par catégorie'
+  }
+
+  return 'Commun'
+}
+
 /**
  * Expense lines tracked by the signed-in person: the common scope and their own, with gauges at every level
  * @param {object} plan
@@ -127,10 +136,11 @@ export function sumSpentByLine(expenses) {
  */
 export function buildTracking(plan, expenses, slotId) {
   const spentByLine = sumSpentByLine(expenses)
-  const scopes = [{ id: SHARED, label: 'Commun' }]
+  const isSolo = plan.people.length < 2
+  const scopes = [{ id: SHARED, label: sharedLabelOf(isSolo) }]
 
   // A solo plan keeps everything common, so it has no personal scope to track
-  if (plan.people.length > 1) {
+  if (!isSolo) {
     scopes.push({ id: slotId, label: 'Personnel' })
   }
 
@@ -169,6 +179,38 @@ export function buildTracking(plan, expenses, slotId) {
 
     return { ...scope, items, subgroups, loose, ...toGauge(spent, budget, committed) }
   })
+}
+
+/**
+ * Share of the budget consumed, spending without any budget counting in full
+ * @param {{ spent: number, budget: number }} gauge
+ */
+export function usageOf(gauge) {
+  if (!gauge.budget) {
+    return gauge.spent
+  }
+
+  return gauge.spent / gauge.budget
+}
+
+/**
+ * Groups of a tracked scope reduced to their lines booked by hand, totals included, groups and lines most consumed first;
+ * groups left empty are dropped
+ * @param {object} scope - one scope from buildTracking
+ */
+export function manualGroupsOf(scope) {
+  return [...scope.subgroups, scope.loose]
+    .map((group) => {
+      const items = group.items
+        .filter((line) => !line.autoBook)
+        .sort((left, right) => usageOf(right) - usageOf(left))
+      const spent = items.reduce((sum, line) => sum + line.spent, 0)
+      const budget = items.reduce((sum, line) => sum + line.budget, 0)
+
+      return { ...group, items, ...toGauge(spent, budget) }
+    })
+    .filter((group) => !!group.items.length)
+    .sort((left, right) => usageOf(right) - usageOf(left))
 }
 
 /**
@@ -238,6 +280,29 @@ export function dailySpendingOf(expenses, month, today, dailyBudget) {
 }
 
 /**
+ * Running total of the month against the even pace of the daily budget, the total stopping at the last lived day
+ * @param {{ date: string, day: number, spent: number, status?: string }[]} days - from dailySpendingOf
+ * @param {number} dailyBudget
+ * @returns {{ date: string, day: number, spent?: number, planned: number }[]}
+ */
+export function spendingPaceOf(days, dailyBudget) {
+  let total = 0
+
+  return days.map((day) => {
+    total += day.spent
+
+    // Days still to come carry a status only once lived
+    let spent = undefined
+
+    if (!!day.status) {
+      spent = total
+    }
+
+    return { date: day.date, day: day.day, spent, planned: dailyBudget * day.day }
+  })
+}
+
+/**
  * Position of the first day of a YYYY-MM month in a week starting on Monday, 0 to 6
  * @param {string} month
  */
@@ -245,6 +310,44 @@ export function firstWeekdayOf(month) {
   const [year, index] = month.split('-').map(Number)
 
   return (new Date(year, index - 1, 1).getDay() + 6) % 7
+}
+
+// Days of a Monday-first week, for the calendars
+export const WEEKDAYS = [
+  { short: 'L', long: 'lundi' },
+  { short: 'M', long: 'mardi' },
+  { short: 'M', long: 'mercredi' },
+  { short: 'J', long: 'jeudi' },
+  { short: 'V', long: 'vendredi' },
+  { short: 'S', long: 'samedi' },
+  { short: 'D', long: 'dimanche' },
+]
+
+/**
+ * Splits the days into Monday-first weeks, blank cells padding the first and last ones
+ * @template T
+ * @param {T[]} days
+ * @param {number} firstWeekday - from firstWeekdayOf
+ * @returns {(T | undefined)[][]}
+ */
+export function weeksOf(days, firstWeekday) {
+  const cells = [...Array(firstWeekday).fill(undefined), ...days]
+
+  while (cells.length % WEEKDAYS.length) {
+    cells.push(undefined)
+  }
+
+  return Array.from({ length: cells.length / WEEKDAYS.length }, (_unused, index) =>
+    cells.slice(index * WEEKDAYS.length, (index + 1) * WEEKDAYS.length)
+  )
+}
+
+/**
+ * The day before a date, as YYYY-MM-DD
+ * @param {Date} date
+ */
+export function dayBefore(date) {
+  return toDateValue(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1))
 }
 
 /**
@@ -300,6 +403,20 @@ export function viewerShareOf(plan, tracking, slotId) {
 }
 
 /**
+ * What the viewer can spend per day for the month to land on its budget. Automatic debits land on the 1st on their
+ * own, so each day is weighed against an even share of the rest
+ * @param {object} plan
+ * @param {string} slotId - the place this person holds in the plan
+ * @param {string} month - YYYY-MM
+ */
+export function dailyBudgetOf(plan, slotId, month) {
+  const { budget, committed } = viewerShareOf(plan, buildTracking(plan, [], slotId), slotId)
+  const lastDay = Number(monthRange(month).to.slice(8))
+
+  return Math.max(budget - committed, 0) / lastDay
+}
+
+/**
  * What is left on the viewer's account this month, split into what the budget still plans to spend and what no
  * budget line uses
  * @param {object} plan
@@ -329,4 +446,88 @@ export function accountBalanceOf(plan, share, slotId) {
   const unbudgeted = income - tax - savings - share.budget
 
   return { income, tax, savings, spent: share.spent, remaining, unbudgeted, available: remaining + unbudgeted }
+}
+
+// How many categories are put forward on the expense form
+export const FAVOURITE_COUNT = 8
+
+// Fewest sub-groups, and lines within each, left on the expense form once habits narrow it, unless hidden by hand
+export const MIN_SUGGESTED_GROUPS = 2
+export const MIN_SUGGESTED_LINES = 2
+
+/**
+ * Lines arranged under their sub-group in plan order, lines outside any sub-group gathered last
+ * @param {{ id: string, label: string, color: string, scope: string }[]} subgroups
+ * @param {{ id: string, parent: string }[]} lines
+ * @returns {{ id: string, label: string, color?: string, scope?: string, lines: object[] }[]}
+ */
+export function groupLinesOf(subgroups, lines) {
+  const grouped = subgroups.map((subgroup) => ({
+    id: subgroup.id,
+    label: subgroup.label,
+    color: subgroup.color,
+    scope: subgroup.scope,
+    lines: lines.filter((line) => line.parent === subgroup.id),
+  }))
+  const loose = lines.filter((line) => !subgroups.some((subgroup) => subgroup.id === line.parent))
+
+  return [...grouped, { id: 'loose', label: 'Divers', color: undefined, lines: loose }].filter((group) => !!group.lines.length)
+}
+
+/**
+ * Sub-groups ordered by how often they are used, and their lines likewise; ties keep the plan order
+ * @param {{ lines: { id: string }[] }[]} groups - from groupLinesOf
+ * @param {Record<string, number>} usesByLine
+ */
+export function rankGroupsByUse(groups, usesByLine) {
+  const usesOf = (line) => usesByLine[line.id] ?? 0
+
+  return groups
+    .map((group) => ({
+      ...group,
+      lines: [...group.lines].sort((left, right) => usesOf(right) - usesOf(left)),
+      uses: group.lines.reduce((sum, line) => sum + usesOf(line), 0),
+    }))
+    .sort((left, right) => right.uses - left.uses)
+}
+
+/**
+ * The bookable lines used the most, most used first
+ * @param {Set<string>} bookableIds
+ * @param {{ line_id: string }[]} usage - per line, already sorted by use
+ */
+export function favouriteLinesOf(bookableIds, usage) {
+  return usage
+    .map((row) => row.line_id)
+    .filter((id) => bookableIds.has(id))
+    .slice(0, FAVOURITE_COUNT)
+}
+
+/**
+ * Lines put forward on the expense form: every line typed by hand before any habit, then the favourites,
+ * topped up so at least two sub-groups show, each with at least two lines
+ * @param {{ id: string, lines: { id: string }[] }[]} groups - ranked by use, lines too
+ * @param {Set<string>} bookableIds
+ * @param {{ line_id: string }[]} usage - per line, already sorted by use
+ * @param {string[]} hiddenIds - sub-groups taken off the form by hand, neither counted nor used to top up
+ */
+export function suggestedLinesOf(groups, bookableIds, usage, hiddenIds) {
+  const favourites = favouriteLinesOf(bookableIds, usage)
+
+  if (!favourites.length) {
+    return [...bookableIds]
+  }
+
+  const shownGroups = groups
+    .filter((group) => !hiddenIds.includes(group.id))
+    .map((group) => group.lines.map((line) => line.id).filter((id) => bookableIds.has(id)))
+    .filter((ids) => !!ids.length)
+
+  // Sub-groups holding a favourite, then the next most used ones until the minimum is reached
+  const withFavourite = shownGroups.filter((ids) => ids.some((id) => favourites.includes(id)))
+  const others = shownGroups.filter((ids) => !withFavourite.includes(ids))
+  const featuredGroups = [...withFavourite, ...others.slice(0, Math.max(MIN_SUGGESTED_GROUPS - withFavourite.length, 0))]
+  const toppedUp = featuredGroups.flatMap((ids) => ids.slice(0, MIN_SUGGESTED_LINES))
+
+  return [...new Set([...favourites, ...toppedUp])]
 }

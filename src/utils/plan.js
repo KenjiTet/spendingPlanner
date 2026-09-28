@@ -5,6 +5,14 @@ export const MONTHS_PER_YEAR = 12
 // Scope of a line that belongs to the household rather than to one person
 export const SHARED = 'shared'
 
+/**
+ * Whether a budget line was given a name, blank spaces not counting
+ * @param {{ label?: string }} line
+ */
+export function hasName(line) {
+  return !!line.label?.trim()
+}
+
 // The colours a sub-group can take, matching the chart tones
 export const GROUP_COLORS = [
   { id: '1', label: 'Océan' },
