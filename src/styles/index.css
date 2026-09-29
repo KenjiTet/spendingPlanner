@@ -2020,13 +2020,14 @@ a.form__submit {
   stroke-linejoin: round;
 }
 
-/* One column sized for a phone, kept narrow on a computer so the form reads at a glance */
+/* One column sized for a phone, kept narrow on a computer; it fills the screen height so the page itself never scrolls */
 .expenses {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   max-width: 560px;
   width: 100%;
+  height: calc(100dvh - 80px);
   margin-inline: auto;
 }
 
@@ -2933,8 +2934,9 @@ a.form__submit {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1;
   min-width: 0;
-  max-height: calc(100dvh - 80px);
+  min-height: 0;
 }
 
 .quick-add__amount {
@@ -2970,8 +2972,8 @@ a.form__submit {
   gap: 14px;
   /* Reaches the card edges so the scrollbar sits against the border */
   margin: 0 -16px;
-  padding: 12px 16px;
-  border-block: 1px solid var(--border);
+  padding: 4px 16px 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .quick-add__footer {
@@ -3052,19 +3054,44 @@ a.form__submit {
   color: var(--danger);
 }
 
-/* The history button on top on the right, the filter across the card under it */
+/* The history button alone on top, on the right */
 .quick-add__header {
   flex: none;
   display: grid;
+}
+
+/* The categories take the height left, their title and filter staying above the scrolling list; the rule above
+   them runs to the card edges, setting them apart from the history button */
+.quick-add__categories {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 12px 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.quick-add__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.quick-add__header .switch {
-  display: flex;
+.quick-add__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.quick-add__header .switch__option {
-  flex: 1;
+/* A compact segmented switch, for a filter set beside a title */
+.switch--small .switch__option {
+  font-size: 0.75rem;
+  padding: 3px 10px;
 }
 
 /* Next to the amount, the button keeps its label's width rather than the whole row */
@@ -4112,15 +4139,19 @@ a.form__submit {
     padding: 14px;
   }
 
-  /* The card fills the screen down to the tab bar, so the amount and the button sit at the bottom, under the thumb */
-  .quick-add {
+  /* The page stops above the tab bar, so the amount and the button sit at the bottom, under the thumb */
+  .expenses {
     height: calc(100dvh - 52px - var(--tabbar-height) - env(safe-area-inset-bottom));
-    max-height: none;
+  }
+
+  .quick-add__categories {
+    margin: 0 -14px;
+    padding: 12px 14px 0;
   }
 
   .quick-add__scroll {
     margin: 0 -14px;
-    padding: 12px 14px;
+    padding: 4px 14px 12px;
   }
 
   .balance {

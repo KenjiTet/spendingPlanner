@@ -9,10 +9,10 @@ const SECTIONS = [
 // Word shown beside the switch, so the state reads without relying on its colour
 function stateLabelOf(included) {
   if (included) {
-    return 'Incluse'
+    return 'Inclus'
   }
 
-  return 'Désactivée'
+  return 'Désactivé'
 }
 
 /**

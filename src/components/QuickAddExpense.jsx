@@ -212,32 +212,35 @@ export default function QuickAddExpense({
     <form className="card quick-add" onSubmit={handleSubmit}>
       <header className="quick-add__header">
         <ExpenseHistorySheet history={history} lines={lines} onEdit={edit} onRemove={onRemove} />
-
-        {!!scopes.length && (
-          <span className="switch switch--segmented" role="group" aria-label="Catégories affichées">
-            {scopes.map((option, index) => (
-              <button
-                key={`scope-${option.id}-${index}`}
-                type="button"
-                className="switch__option"
-                onClick={() => changeScope(option.id)}
-                aria-pressed={option.id === scope}
-              >
-                {option.label}
-              </button>
-            ))}
-          </span>
-        )}
       </header>
 
-      {/* Only this part scrolls, so the shortcuts, the amount and the button never leave the screen */}
-      <div className="quick-add__scroll">
-        <section className="quick-add__block" aria-label="Catégorie">
-          <h3 className="quick-add__legend">Catégorie</h3>
+      <section className="quick-add__categories" aria-label="Catégorie">
+        {/* The filter sits beside the title, outside the scrolling part so it stays in sight */}
+        <header className="quick-add__heading">
+          <h3 className="quick-add__title">Catégorie</h3>
 
+          {!!scopes.length && (
+            <span className="switch switch--segmented switch--small" role="group" aria-label="Catégories affichées">
+              {scopes.map((option, index) => (
+                <button
+                  key={`scope-${option.id}-${index}`}
+                  type="button"
+                  className="switch__option"
+                  onClick={() => changeScope(option.id)}
+                  aria-pressed={option.id === scope}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </span>
+          )}
+        </header>
+
+        {/* Only this part scrolls, so the shortcuts, the amount and the button never leave the screen */}
+        <div className="quick-add__scroll">
           <CategoryGroups groups={shownGroupsOf(groups, offeredIds, lineId)} selected={lineId} onSelect={setLineId} />
-        </section>
-      </div>
+        </div>
+      </section>
 
       {/* One tap books a shortcut; the last pill opens the sheet where they are created and removed */}
       <section className="quick-add__block" aria-label="Raccourcis">

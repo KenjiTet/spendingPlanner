@@ -36,7 +36,7 @@ export default function ProfileCard({ user, onSave }) {
         <input
           type="number"
           min="0"
-          step="10"
+          step="any"
           value={netMonthly}
           onChange={(event) => setNetMonthly(event.target.value)}
           placeholder="0"
