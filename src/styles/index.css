@@ -4053,7 +4053,7 @@ a.form__submit {
     order: 2;
   }
 
-  /* The expense entry: a raised green "+" button in place of its icon */
+  /* The expense entry: a raised red "+" button in place of its icon */
   .sidebar__item--featured .sidebar__link > .sidebar__icon {
     display: none;
   }
@@ -4080,7 +4080,7 @@ a.form__submit {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--danger);
     color: var(--on-accent);
     box-shadow: 0 4px 12px var(--shadow);
   }
