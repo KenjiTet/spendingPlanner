@@ -21,14 +21,30 @@ app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Route inconnue.' })
 })
 
+// The page shell must always be revalidated, so that a new deploy reaches installed home-screen apps
+const noCache = (res) => {
+  res.setHeader('Cache-Control', 'no-cache')
+}
+
+// Vite fingerprints the bundles, so a given file never changes; everything else is revalidated
+const setStaticHeaders = (res, path) => {
+  if (path.includes(join('dist', 'assets'))) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    return
+  }
+
+  noCache(res)
+}
+
 // The built front-end, every other path falling back to its entry so the router can take over
-app.use(express.static(join(root, 'dist')))
+app.use(express.static(join(root, 'dist'), { setHeaders: setStaticHeaders }))
 app.use((req, res, next) => {
   if (req.method !== 'GET') {
     next()
     return
   }
 
+  noCache(res)
   res.sendFile(index)
 })
 

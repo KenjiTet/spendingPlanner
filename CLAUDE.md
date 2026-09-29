@@ -115,6 +115,7 @@ server/routes/                 auth (and the profile), plans (slots, join, templ
 src/main.jsx                   React entry point, router
 src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
+src/lib/appUpdate.js           reloads the page when a new deploy is detected (home-screen apps never reload on their own)
 src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the example plan of new accounts
 src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
                                PlanPicker (plans list, active plan), ProfilePage
