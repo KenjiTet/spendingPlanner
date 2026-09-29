@@ -1007,6 +1007,30 @@ body {
   flex: none;
 }
 
+/* The toggle stretches over its whole header, so the banner folds wherever it is clicked */
+.section__header,
+.scope__header,
+.subgroup__header {
+  position: relative;
+}
+
+.section__toggle::after,
+.scope__toggle::after,
+.subgroup__toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* The controls sharing the header stay above the stretched toggle */
+.section__header .switch,
+.subgroup__header .picker,
+input.subgroup__name,
+.subgroup__header .list__remove {
+  position: relative;
+  z-index: 1;
+}
+
 .chevron {
   width: 8px;
   height: 8px;
@@ -4142,6 +4166,13 @@ a.form__submit {
   /* The page stops above the tab bar, so the amount and the button sit at the bottom, under the thumb */
   .expenses {
     height: calc(100dvh - 52px - var(--tabbar-height) - env(safe-area-inset-bottom));
+  }
+
+  /* The page itself is locked: the 100vh minimum heights outgrow the visible screen, and the finger would drag the form away */
+  html:has(.expenses),
+  body:has(.expenses) {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .quick-add__categories {
