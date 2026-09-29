@@ -3,11 +3,14 @@ import { nodeAnchor, scopeAnchor, sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
 import AmountInput from './AmountInput.jsx'
 import ColorPicker from './ColorPicker.jsx'
+import ConfirmSheet from './ConfirmSheet.jsx'
+import NameInput from './NameInput.jsx'
 import Section from './Section.jsx'
-import { createItem, createSubgroup, GROUP_COLORS, hasName, SHARED, toScopeTree } from '../utils/plan.js'
+import { createItem, createSubgroup, GROUP_COLORS, SHARED, toScopeTree } from '../utils/plan.js'
 
-// Name given to a sub-group the moment it is created, before it is renamed
-const NEW_SUBGROUP = 'Nouveau sous-groupe'
+// Names given to a sub-group and a line the moment they are created, before they are renamed
+const NEW_SUBGROUP = 'Nouveau groupe'
+const NEW_LINE = 'Nouvelle ligne'
 
 // Picks the next colour so two sub-groups created in a row do not look alike
 function nextColor(count) {
@@ -30,6 +33,29 @@ function scopeClassOf(flat) {
   }
 
   return 'scope'
+}
+
+/**
+ * What the deletion of a group takes with it, empty while no deletion is asked
+ * @param {{ id: string, label: string } | undefined} group
+ * @param {{ parent: string }[]} items
+ */
+function removalMessageOf(group, items) {
+  if (!group) {
+    return ''
+  }
+
+  const count = items.filter((line) => line.parent === group.id).length
+
+  if (!count) {
+    return `Le groupe « ${group.label} » sera supprimé.`
+  }
+
+  if (count === 1) {
+    return `Le groupe « ${group.label} » et sa ligne seront supprimés.`
+  }
+
+  return `Le groupe « ${group.label} » et ses ${count} lignes seront supprimés.`
 }
 
 // Toggles an id inside the set of blocks flipped from their default state
@@ -60,7 +86,7 @@ function toggleIn(ids, id) {
  * @param {(line: object) => void} props.onAddLine
  * @param {(id: string, field: string, value: string | boolean) => void} props.onUpdateLine
  * @param {(id: string) => void} props.onRemoveLine
- * @param {(subgroup: object) => void} props.onAddSubgroup
+ * @param {(subgroup: object, line: object) => void} props.onAddSubgroup - the group and its first line
  * @param {(id: string, field: string, value: string) => void} props.onUpdateSubgroup
  * @param {(id: string) => void} props.onRemoveSubgroup
  */
@@ -91,21 +117,30 @@ export default function ScopedSection({
   const [overId, setOverId] = useState(undefined)
   // Ids of the blocks folded or unfolded by hand, against their default state
   const [toggled, setToggled] = useState([])
+  // Group waiting for the confirmation of its deletion
+  const [removalId, setRemovalId] = useState(undefined)
   const tree = toScopeTree(scopes, subgroups, items)
+  const removal = subgroups.find((subgroup) => subgroup.id === removalId)
 
-  // Adds an empty line under a scope or a sub-group, ready to be typed into
+  // Adds a new line under a sub-group, ready to be typed into
   function addLine(parent) {
-    const line = createItem('', 0, parent)
+    const line = createItem(NEW_LINE, 0, parent)
 
     onAddLine(line)
     setFocusId(line.id)
   }
 
+  // A new group comes with a new line, ready to be filled once the group is named
   function addSubgroup(scopeId) {
     const subgroup = createSubgroup(NEW_SUBGROUP, nextColor(subgroups.length), scopeId)
 
-    onAddSubgroup(subgroup)
+    onAddSubgroup(subgroup, createItem(NEW_LINE, 0, subgroup.id))
     setFocusId(subgroup.id)
+  }
+
+  function confirmRemoval() {
+    onRemoveSubgroup(removal.id)
+    setRemovalId(undefined)
   }
 
   function endDrag() {
@@ -122,7 +157,7 @@ export default function ScopedSection({
     return editableScopes.includes(scopeId)
   }
 
-  // Lines move between scopes and sub-groups by being dropped on one of them, read-only scopes accept nothing
+  // Lines move between sub-groups by being dropped on one of them, read-only scopes accept nothing
   function dropProps(targetId, editable) {
     if (!editable) {
       return {}
@@ -182,15 +217,6 @@ export default function ScopedSection({
     return base
   }
 
-  // An unnamed line is flagged, since it cannot be picked when booking an expense
-  function nameClassOf(item) {
-    if (!hasName(item)) {
-      return 'line__name line__name--missing'
-    }
-
-    return 'line__name'
-  }
-
   // Dims the line while it is being carried
   function lineClass(id) {
     if (dragId === id) {
@@ -243,13 +269,12 @@ export default function ScopedSection({
           ⠿
         </span>
 
-        <input
-          className={nameClassOf(item)}
+        <NameInput
+          className="line__name"
           value={item.label}
-          onChange={(event) => onUpdateLine(item.id, 'label', event.target.value)}
-          placeholder={addLabel}
+          defaultName={NEW_LINE}
+          onChange={(value) => onUpdateLine(item.id, 'label', value)}
           aria-label={addLabel}
-          aria-invalid={!hasName(item)}
           autoFocus={item.id === focusId}
         />
 
@@ -306,8 +331,7 @@ export default function ScopedSection({
           <article
             key={`scope-${scope.id}-${scopeIndex}`}
             id={scopeAnchor(anchor, scope.id)}
-            className={blockClass(scopeClassOf(flat), scope.id)}
-            {...dropProps(scope.id, editable)}
+            className={scopeClassOf(flat)}
           >
             {!flat && (
               <header className="scope__header">
@@ -343,7 +367,7 @@ export default function ScopedSection({
                       {editable && (
                         <ColorPicker
                           color={subgroup.color}
-                          title={`Couleur du sous-groupe ${subgroup.label}`}
+                          title={`Couleur du groupe ${subgroup.label}`}
                           onPick={(color) => onUpdateSubgroup(subgroup.id, 'color', color)}
                         />
                       )}
@@ -361,13 +385,12 @@ export default function ScopedSection({
                       </button>
 
                       {editable && (
-                        <input
+                        <NameInput
                           className="subgroup__name"
                           value={subgroup.label}
-                          onChange={(event) =>
-                            onUpdateSubgroup(subgroup.id, 'label', event.target.value)
-                          }
-                          aria-label="Nom du sous-groupe"
+                          defaultName={NEW_SUBGROUP}
+                          onChange={(value) => onUpdateSubgroup(subgroup.id, 'label', value)}
+                          aria-label="Nom du groupe"
                           autoFocus={subgroup.id === focusId}
                         />
                       )}
@@ -383,8 +406,8 @@ export default function ScopedSection({
                         <button
                           type="button"
                           className="list__remove"
-                          onClick={() => onRemoveSubgroup(subgroup.id)}
-                          aria-label={`Supprimer le sous-groupe ${subgroup.label}`}
+                          onClick={() => setRemovalId(subgroup.id)}
+                          aria-label={`Supprimer le groupe ${subgroup.label}`}
                         >
                           ×
                         </button>
@@ -407,14 +430,11 @@ export default function ScopedSection({
 
                 <ul className="lines">{scope.items.map(lineRenderer(editable))}</ul>
 
+                {/* A scope only takes groups: new lines are added inside one of them */}
                 {editable && (
                   <footer className="scope__actions">
-                    <button type="button" className="add" onClick={() => addLine(scope.id)}>
-                      + {addLabel}
-                    </button>
-
                     <button type="button" className="add" onClick={() => addSubgroup(scope.id)}>
-                      + Sous-groupe
+                      + Groupe
                     </button>
                   </footer>
                 )}
@@ -423,6 +443,15 @@ export default function ScopedSection({
           </article>
         )
       })}
+
+      <ConfirmSheet
+        open={!!removal}
+        title="Supprimer le groupe"
+        message={removalMessageOf(removal, items)}
+        confirmLabel="Supprimer"
+        onConfirm={confirmRemoval}
+        onClose={() => setRemovalId(undefined)}
+      />
     </Section>
   )
 }

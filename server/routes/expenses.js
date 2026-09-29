@@ -57,7 +57,7 @@ const hideGroup = db.transaction((slotId, groupId) => {
  */
 function requirePinnable(req) {
   if (!findPinnable.get(req.params.groupId, req.params.planId, req.slotId)) {
-    fail(403, 'Ce sous-groupe n’est pas accessible.')
+    fail(403, 'Ce groupe n’est pas accessible.')
   }
 }
 const listPresets = db.prepare(
@@ -164,7 +164,7 @@ router.post('/presets', (req, res) => {
   }
 
   if (!canBookOnLine(planId, req.slotId, lineId)) {
-    fail(403, 'Cette ligne de dépense n’est pas accessible.')
+    fail(403, 'Cette ligne de budget n’est pas accessible.')
   }
 
   const preset = { id: readId(req.body.id), line_id: lineId, label, amount }
@@ -193,7 +193,7 @@ router.post('/', (req, res) => {
   }
 
   if (!canBookOnLine(planId, req.slotId, lineId)) {
-    fail(403, 'Cette ligne de dépense n’est pas accessible.')
+    fail(403, 'Cette ligne de budget n’est pas accessible.')
   }
 
   const expense = {

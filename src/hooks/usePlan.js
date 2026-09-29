@@ -239,27 +239,46 @@ export default function usePlan(planId) {
   }
 
   /**
-   * Drops a sub-group, its lines moving up to the scope it belonged to (the server does the same on delete)
+   * Appends a sub-group with a first line in it, the line written only once its group exists on the server
+   * @param {'subgroups' | 'savingGroups'} groupKey
+   * @param {'categories' | 'savings'} listKey
+   * @param {object} subgroup
+   * @param {object} line
+   */
+  function addSubgroup(groupKey, listKey, subgroup, line) {
+    const withGroup = withList(latest.current, groupKey, [...latest.current[groupKey], subgroup])
+    const next = withList(withGroup, listKey, [...withGroup[listKey], line])
+
+    const writeInOrder = async () => {
+      const created = await api.post(`/plans/${planId}/${LISTS[groupKey].resource}`, itemToRow(next, groupKey, subgroup))
+
+      if (created.error) {
+        return created
+      }
+
+      return api.post(`/plans/${planId}/${LISTS[listKey].resource}`, itemToRow(next, listKey, line))
+    }
+
+    setPlan(next)
+    persist(writeInOrder())
+  }
+
+  /**
+   * Drops a sub-group and all its lines (the server does the same on delete)
    * @param {'subgroups' | 'savingGroups'} groupKey
    * @param {'categories' | 'savings'} listKey
    * @param {string} id
    */
   function removeSubgroup(groupKey, listKey, id) {
-    setPlan((current) => {
-      const removed = current[groupKey].find((subgroup) => subgroup.id === id)
+    // Edits still waiting on the removed lines would recreate nothing but a failed write
+    latest.current[listKey].filter((line) => line.parent === id).forEach((line) => cancel(`${listKey}-${line.id}`))
+    cancel(`${groupKey}-${id}`)
 
-      return {
-        ...current,
-        [groupKey]: current[groupKey].filter((subgroup) => subgroup.id !== id),
-        [listKey]: current[listKey].map((line) => {
-          if (line.parent !== id) {
-            return line
-          }
-
-          return { ...line, parent: removed.scope }
-        }),
-      }
-    })
+    setPlan((current) => ({
+      ...current,
+      [groupKey]: current[groupKey].filter((subgroup) => subgroup.id !== id),
+      [listKey]: current[listKey].filter((line) => line.parent !== id),
+    }))
     persist(api.remove(`/plans/${planId}/groups/${id}`))
   }
 
@@ -284,6 +303,7 @@ export default function usePlan(planId) {
     addItem,
     updateItem,
     removeItem,
+    addSubgroup,
     removeSubgroup,
   }
 }

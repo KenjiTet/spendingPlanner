@@ -10,7 +10,7 @@ const STEPS = [
     title: 'Bienvenue !',
     intro: 'Un plan d’exemple, rempli pour une personne, vous attend. Petit tour des pages en une minute.',
     features: [
-      { icon: 'clipboard', text: 'Un plan, c’est votre budget du mois : revenu, dépenses prévues, épargne et impôts.' },
+      { icon: 'clipboard', text: 'Un plan, c’est votre budget du mois : revenu, budget, épargne et impôts.' },
       { icon: 'receipt', text: 'Au quotidien, vous notez vos dépenses et l’app les compare au plan.' },
       { icon: 'layers', text: 'Personnalisez l’exemple à votre guise, ou créez autant de plans que vous voulez, seul ou à deux.' },
     ],
@@ -46,7 +46,7 @@ const STEPS = [
     title: 'Budget',
     intro: 'Le plan lui-même : ce que vous prévoyez chaque mois.',
     features: [
-      { visual: 'swatch', text: 'Les lignes sont rangées en sous-groupes colorés ; touchez un nom ou un montant pour le changer.' },
+      { visual: 'swatch', text: 'Les lignes sont rangées en groupes colorés ; touchez un nom ou un montant pour le changer.' },
       { symbol: '↻', text: 'Auto marque un prélèvement automatique (loyer, abonnements) : compté dès le 1er du mois, sans saisie.' },
       { icon: 'clipboard', text: 'Épargne, impôts, graphiques et récapitulatif suivent, avec ce qu’il vous reste chaque mois.' },
     ],

@@ -34,7 +34,7 @@ function slicesFor(person, tree, shareCount, tax) {
   const slices = [
     ...commonSlices,
     ...ownSlices,
-    { id: 'loose', label: 'Hors sous-groupe', value: loose, tone: 'neutral' },
+    { id: 'loose', label: 'Hors groupe', value: loose, tone: 'neutral' },
     { id: 'tax', label: 'Impôts', value: tax, tone: 'tax' },
   ]
 
@@ -61,7 +61,7 @@ export default function ChartsSection({ people, scopes, subgroups, categories, t
         {people.map((person, index) => (
           <PieChart
             key={`chart-${person.id}-${index}`}
-            title={`Dépenses de ${person.label}`}
+            title={`Budget de ${person.label}`}
             slices={slicesFor(person, tree, shareCount, taxByScope[person.id] ?? 0)}
           />
         ))}

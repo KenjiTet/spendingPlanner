@@ -81,6 +81,12 @@ const updateLine = db.prepare(
   'update plan_lines set label = @label, amount = @amount, auto_book = @auto_book, owner_id = @owner_id, group_id = @group_id, position = @position where id = @id and plan_id = @plan_id'
 )
 const deleteGroup = db.prepare('delete from plan_groups where id = ? and plan_id = ?')
+const deleteGroupLines = db.prepare('delete from plan_lines where group_id = ? and plan_id = ?')
+// A group goes with its lines, their expenses kept with a NULL line
+const deleteGroupWithLines = db.transaction((groupId, planId) => {
+  deleteGroupLines.run(groupId, planId)
+  deleteGroup.run(groupId, planId)
+})
 const deleteLine = db.prepare('delete from plan_lines where id = ? and plan_id = ?')
 const deletePlan = db.prepare('delete from plans where id = ?')
 
@@ -176,7 +182,7 @@ function resolvePlacement(planId, kind, groupId, ownerId) {
   const group = findGroup.get(String(groupId))
 
   if (!group || group.plan_id !== planId || group.kind !== kind) {
-    fail(400, 'Ce sous-groupe n’appartient pas à cette section du plan.')
+    fail(400, 'Ce groupe n’appartient pas à cette section du plan.')
   }
 
   return { group_id: group.id, owner_id: group.owner_id }
@@ -505,10 +511,9 @@ router.put('/:planId/groups/:id', (req, res) => {
   res.json({})
 })
 
-// Its lines move up to the scope it belonged to, the foreign key clearing their group
 router.delete('/:planId/groups/:id', (req, res) => {
   requireEditable(req.params.planId, req.slotId, findGroup.get(req.params.id))
-  deleteGroup.run(req.params.id, req.params.planId)
+  deleteGroupWithLines(req.params.id, req.params.planId)
   res.json({})
 })
 

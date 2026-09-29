@@ -159,7 +159,7 @@ export default function CreatePlanForm({ templates, onCreate, onCreated }) {
       </button>
 
       <p className="section__hint">
-        À deux, les dépenses communes sont partagées et chacun garde sa partie personnelle. Seule la structure d&rsquo;un
+        À deux, le budget commun est partagé et chacun garde sa partie personnelle. Seule la structure d&rsquo;un
         modèle est copiée, jamais les montants. Un plan importé reprend toutes les lignes du fichier.
       </p>
 

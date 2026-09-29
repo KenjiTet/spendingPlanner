@@ -69,6 +69,7 @@ export default function PlanPage() {
     addItem,
     updateItem,
     removeItem,
+    addSubgroup,
     removeSubgroup,
     saveStatus,
     flush,
@@ -77,7 +78,7 @@ export default function PlanPage() {
   } = useOutletContext()
 
   const isSolo = plan.people.length < 2
-  const expenseScopes = scopesOf(plan.people, 'Dépenses communes', 'Dépenses personnelles')
+  const expenseScopes = scopesOf(plan.people, 'Budget commun', 'Budget personnel')
   const savingScopes = scopesOf(plan.people, 'Épargne commune', 'Épargne')
   const taxByPerson = taxByPersonOf(plan.people, plan.settings.taxTiming)
   const editableScopes = [SHARED, slotId]
@@ -88,7 +89,7 @@ export default function PlanPage() {
   const outline = [
     {
       id: 'expenses',
-      title: 'Dépenses mensuelles',
+      title: 'Budget mensuel',
       tone: 'expense',
       total: totals.monthlyExpenses,
       scopes: toScopeTree(visibleExpenseScopes, plan.subgroups, plan.categories),
@@ -121,10 +122,10 @@ export default function PlanPage() {
         <UnnamedLinesBanner lines={plan.categories} />
 
         <ScopedSection
-          title="Dépenses mensuelles"
+          title="Budget mensuel"
           anchor="expenses"
           tone="expense"
-          addLabel="Dépense"
+          addLabel="Ligne de budget"
           autoBookable
           total={totals.monthlyExpenses}
           scopes={visibleExpenseScopes}
@@ -136,7 +137,7 @@ export default function PlanPage() {
           onAddLine={(line) => addItem('categories', line)}
           onUpdateLine={(id, field, value) => updateItem('categories', id, field, value)}
           onRemoveLine={(id) => removeItem('categories', id)}
-          onAddSubgroup={(subgroup) => addItem('subgroups', subgroup)}
+          onAddSubgroup={(subgroup, line) => addSubgroup('subgroups', 'categories', subgroup, line)}
           onUpdateSubgroup={(id, field, value) => updateItem('subgroups', id, field, value)}
           onRemoveSubgroup={(id) => removeSubgroup('subgroups', 'categories', id)}
         />
@@ -158,7 +159,7 @@ export default function PlanPage() {
             onAddLine={(line) => addItem('savings', line)}
             onUpdateLine={(id, field, value) => updateItem('savings', id, field, value)}
             onRemoveLine={(id) => removeItem('savings', id)}
-            onAddSubgroup={(subgroup) => addItem('savingGroups', subgroup)}
+            onAddSubgroup={(subgroup, line) => addSubgroup('savingGroups', 'savings', subgroup, line)}
             onUpdateSubgroup={(id, field, value) => updateItem('savingGroups', id, field, value)}
             onRemoveSubgroup={(id) => removeSubgroup('savingGroups', 'savings', id)}
           />

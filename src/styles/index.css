@@ -814,11 +814,6 @@ body {
   min-width: 0;
 }
 
-.line__name--missing {
-  border-color: var(--warning);
-  background: var(--warning-tint);
-}
-
 .line__amount {
   flex: 0 1 110px;
   font-variant-numeric: tabular-nums;
@@ -1862,7 +1857,8 @@ input.subgroup__name,
   background: var(--neutral-tint);
 }
 
-.plan-card__actions {
+.plan-card__actions,
+.confirm__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -1875,7 +1871,8 @@ input.subgroup__name,
   gap: 6px;
 }
 
-.plan-card__button {
+.plan-card__button,
+.confirm__button {
   font: inherit;
   padding: 9px 16px;
   border: 1px solid var(--border);
@@ -1889,10 +1886,21 @@ input.subgroup__name,
   color: var(--danger);
 }
 
-.plan-card__button--confirm {
+.plan-card__button--confirm,
+.confirm__button--danger {
   border-color: var(--danger);
   background: var(--danger);
   color: var(--on-accent);
+}
+
+/* Confirmation sheet: the consequence, then cancel and confirm side by side */
+.confirm__message {
+  margin: 0 0 20px;
+  color: var(--text);
+}
+
+.confirm__actions {
+  margin: 0;
 }
 
 .plan-card__sheet {
@@ -3586,15 +3594,15 @@ html:has(.pull) {
 .sheet__close {
   display: grid;
   place-items: center;
-  /* A long description would otherwise squeeze the circle into an oval */
+  /* A bare cross, the button keeping a tap-sized area that a long description cannot squeeze */
   flex-shrink: 0;
   width: 32px;
   height: 32px;
+  padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: var(--neutral-tint);
+  background: transparent;
   color: var(--muted);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
 }

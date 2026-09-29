@@ -6,7 +6,7 @@ import Section from './Section.jsx'
 // The figures shown above the leftover line
 const ROWS = [
   { id: 'income', label: 'Revenu net', field: 'income' },
-  { id: 'expenses', label: 'Dépenses', field: 'expenses' },
+  { id: 'expenses', label: 'Budget', field: 'expenses' },
   { id: 'tax', label: 'Impôts', field: 'tax' },
   { id: 'savings', label: 'Épargne', field: 'savings' },
 ]
