@@ -1,6 +1,7 @@
 import { sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
 import { MONTHS_PER_YEAR, toAmount } from '../utils/plan.js'
+import AmountInput from './AmountInput.jsx'
 import Section from './Section.jsx'
 
 // Explains what the selected tax timing changes for the monthly cash flow
@@ -35,8 +36,7 @@ export default function TaxSection({ people, editableIds, taxTiming, annualTax, 
           <li key={`tax-${person.id}-${index}`} className="list__item tax__item">
             <label className="form__field form__field--grow">
               <span>Impôts de {person.label} / an</span>
-              <input
-                type="number"
+              <AmountInput
                 min="0"
                 step="100"
                 value={person.annualTax}

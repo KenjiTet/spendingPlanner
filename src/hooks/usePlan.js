@@ -277,6 +277,7 @@ export default function usePlan(planId) {
     error,
     dismissError: () => setError(''),
     saveStatus: saveStatusOf(waiting, inFlight),
+    reload,
     flush,
     updateTax,
     updateSetting,

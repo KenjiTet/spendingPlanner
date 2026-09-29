@@ -9,7 +9,7 @@ const router = Router({ mergeParams: true })
 
 // Own expenses are always visible, the other place's only when booked on a common line.
 // An expense outliving its line keeps a NULL line_id: it stays private rather than turning common.
-const listMonth = db.prepare(`
+const listBetween = db.prepare(`
   select e.id, e.line_id, e.slot_id, e.amount, e.spent_on, e.note, e.created_at
   from expenses e
   left join plan_lines l on l.id = e.line_id
@@ -72,6 +72,7 @@ const deletePreset = db.prepare('delete from expense_presets where id = ? and pl
 const SUGGESTION_DAYS = 90
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/
+const YEAR_PATTERN = /^\d{4}$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 /**
@@ -86,10 +87,26 @@ function monthRange(month) {
   return { from: `${month}-01`, to: `${month}-31` }
 }
 
-router.get('/', (req, res) => {
-  const { from, to } = monthRange(String(req.query.month ?? ''))
+/**
+ * First and last day of the period asked: a whole YYYY year when given, a YYYY-MM month otherwise
+ * @param {{ year?: string, month?: string }} query
+ */
+function periodRange(query) {
+  if (query.year === undefined) {
+    return monthRange(String(query.month ?? ''))
+  }
 
-  res.json(listMonth.all(req.params.planId, from, to, req.slotId))
+  if (!YEAR_PATTERN.test(String(query.year))) {
+    fail(400, 'Année invalide.')
+  }
+
+  return { from: `${query.year}-01-01`, to: `${query.year}-12-31` }
+}
+
+router.get('/', (req, res) => {
+  const { from, to } = periodRange(req.query)
+
+  res.json(listBetween.all(req.params.planId, from, to, req.slotId))
 })
 
 router.get('/suggestions', (req, res) => {

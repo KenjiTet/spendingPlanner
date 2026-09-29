@@ -9,7 +9,7 @@ const PLAN_GROUP_KEY = 'sidebar-plan-collapsed'
 
 // Top-level menu entries, in display order; the short label fits a cell of the phone bar, the featured one sits at its centre
 const LINKS = [
-  { to: '/', label: 'Vue d’ensemble', short: 'Aperçu', icon: 'dashboard', end: true },
+  { to: '/', label: 'Vue d’ensemble', short: 'Vue d’ensemble', icon: 'dashboard', end: true },
   { to: '/depenses', label: 'Dépenses', short: 'Dépenses', icon: 'receipt', featured: true },
 ]
 

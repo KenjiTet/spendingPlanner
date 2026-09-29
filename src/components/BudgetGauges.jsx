@@ -55,8 +55,10 @@ function GaugeCard({ group }) {
  * Budget tracking of each scope, one card per sub-group, automatic debits left out since they need no follow-up
  * @param {object} props
  * @param {object[]} props.tracking - scopes from buildTracking
+ * @param {import('react').ReactNode} [props.actions] - controls beside the first title
+ * @param {string} [props.note] - one line under the first title
  */
-export default function BudgetGauges({ tracking }) {
+export default function BudgetGauges({ tracking, actions, note }) {
   // A scope made only of automatic debits has nothing left to follow
   const scopes = tracking
     .map((scope) => ({ ...scope, groups: manualGroupsOf(scope) }))
@@ -66,7 +68,12 @@ export default function BudgetGauges({ tracking }) {
     <>
       {scopes.map((scope, scopeIndex) => (
         <section key={`budget-${scope.id}-${scopeIndex}`} className="budget">
-          <h2 className="budget__title">{scope.label}</h2>
+          <header className="budget__head">
+            <h2 className="budget__title">{scope.label}</h2>
+            {scopeIndex === 0 && actions}
+          </header>
+
+          {scopeIndex === 0 && !!note && <p className="section__hint">{note}</p>}
 
           <ul className="budget__grid">
             {scope.groups.map((group, index) => (

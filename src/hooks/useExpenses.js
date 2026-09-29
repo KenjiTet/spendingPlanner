@@ -84,5 +84,5 @@ export default function useExpenses(planId, slotId, month) {
     }
   }
 
-  return { expenses, loading, error, addExpense, removeExpense }
+  return { expenses, loading, error, reload, addExpense, removeExpense }
 }

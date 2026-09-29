@@ -182,6 +182,22 @@ export function buildTracking(plan, expenses, slotId) {
 }
 
 /**
+ * Tracking from January to the end of a month: each line's budget and automatic debit count once per month elapsed,
+ * against every expense booked over those months
+ * @param {object} plan
+ * @param {{ line_id: string, amount: number, spent_on: string }[]} expenses - of the whole year
+ * @param {string} slotId - the place this person holds in the plan
+ * @param {string} month - YYYY-MM, the last month counted
+ */
+export function yearToDateTrackingOf(plan, expenses, slotId, month) {
+  const months = Number(month.slice(5, 7))
+  const { to } = monthRange(month)
+  const categories = plan.categories.map((line) => ({ ...line, amount: toAmount(line.amount) * months }))
+
+  return buildTracking({ ...plan, categories }, expenses.filter((expense) => expense.spent_on <= to), slotId)
+}
+
+/**
  * Share of the budget consumed, spending without any budget counting in full
  * @param {{ spent: number, budget: number }} gauge
  */

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { nodeAnchor, scopeAnchor, sectionAnchor } from '../utils/anchors.js'
 import { formatAmount } from '../utils/format.js'
+import AmountInput from './AmountInput.jsx'
 import ColorPicker from './ColorPicker.jsx'
 import Section from './Section.jsx'
 import { createItem, createSubgroup, GROUP_COLORS, hasName, SHARED, toScopeTree } from '../utils/plan.js'
@@ -252,9 +253,8 @@ export default function ScopedSection({
           autoFocus={item.id === focusId}
         />
 
-        <input
+        <AmountInput
           className="line__amount"
-          type="number"
           min="0"
           step="10"
           value={item.amount}

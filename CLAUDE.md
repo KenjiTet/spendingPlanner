@@ -120,7 +120,8 @@ src/lib/planImport.js          filling a plan from the JSON plan shape: file imp
 src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
                                PlanPicker (plans list, active plan), ProfilePage
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
-src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useExpenseSuggestions, useDailySpending)
+src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
+                               useDailySpending, usePullToRefresh)
 src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
 src/data/plan.json             sample plan, importable from the Plan page
 src/data/example-plan.json     solo plan created at sign-up, walked through by the guided tour (components/Tour)
@@ -167,7 +168,7 @@ free one. A creator may flag a plan `is_template`, which publishes its **common 
 and positions, amounts reset to zero — for anyone to copy into a private plan of their own.
 
 **State:** `useAuth` (session), `usePlans` (plans list, current plan), `usePlan` (the open plan, optimistic edits
-with debounced writes) and `useExpenses` (one month of expenses) and `useExpenseSuggestions` (the viewer's most used lines and frequent
+with debounced writes) and `useExpenses` (one month of expenses), `useYearExpenses` (a whole year, for the dashboard's yearly gauges) and `useExpenseSuggestions` (the viewer's most used lines and frequent
 expenses over 90 days, feeding the entry form) are the only stateful modules. `Layout` keeps the
 sidebar on every page; `ActivePlan` loads the active plan once and passes it to the plan pages through the router
 outlet context.

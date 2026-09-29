@@ -2384,9 +2384,9 @@ a.form__submit {
   gap: 14px;
 }
 
+/* Both figures always share one line: the amounts scale with the screen, the daily caption wraps under its amount */
 .month-budget__head {
   display: flex;
-  flex-wrap: wrap;
   align-items: end;
   justify-content: space-between;
   gap: 12px;
@@ -2399,9 +2399,14 @@ a.form__submit {
   margin: 0;
 }
 
+.month-budget__main {
+  flex: none;
+}
+
 .month-budget__value {
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   color: var(--accent);
 }
 
@@ -2410,7 +2415,10 @@ a.form__submit {
 }
 
 .month-budget__daily {
+  flex: 0 1 auto;
+  min-width: 0;
   justify-items: end;
+  text-align: end;
   padding: 8px 12px;
   border-radius: 10px;
   background: var(--surface-muted);
@@ -2421,6 +2429,7 @@ a.form__submit {
 .month-budget__daily-value {
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   color: var(--text);
 }
 
@@ -2887,8 +2896,83 @@ a.form__submit {
 }
 
 .budget__title {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 1.05rem;
+}
+
+/* Scope title, with the period switch beside the first one */
+.budget__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.budget__head + .section__hint {
+  margin: 0;
+}
+
+/* Pull-to-refresh: a spinner sliding down from above the screen, its distance in pixels set by usePullToRefresh */
+.pull {
+  --pull: 0;
+
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 2px 10px var(--shadow);
+  translate: -50% calc(var(--pull) * 1.25px - 48px);
+  opacity: min(calc(var(--pull) / 64), 1);
+  pointer-events: none;
+  transition: translate 0.2s ease, opacity 0.2s ease;
+}
+
+.pull--refreshing {
+  translate: -50% calc(16px + env(safe-area-inset-top));
+  opacity: 1;
+}
+
+.pull__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  rotate: calc(var(--pull) * 4deg);
+}
+
+.pull--refreshing .pull__spinner {
+  animation: pull-spin 0.7s linear infinite;
+}
+
+@keyframes pull-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* The page's own gesture replaces the browser's pull-to-refresh */
+html:has(.pull) {
+  overscroll-behavior-y: contain;
+}
+
+/* Read by screen readers only */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .budget__grid {
@@ -4021,7 +4105,7 @@ a.form__submit {
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    padding: 6px 2px;
+    padding: 0 2px;
     border: 0;
     border-radius: 10px;
     background: transparent;
@@ -4051,12 +4135,14 @@ a.form__submit {
     display: none;
   }
 
+  /* A longer name, "Vue d’ensemble", folds onto a second line rather than being cut */
   .sidebar__tab {
-    display: block;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     max-width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.1;
   }
 
   .sidebar__footer {
@@ -4072,7 +4158,7 @@ a.form__submit {
     display: block;
   }
 
-  /* Expenses in the middle of the five cells: Aperçu, Budget, Dépenses, Plans, Profil */
+  /* Expenses in the middle of the five cells: Vue d’ensemble, Budget, Dépenses, Plans, Profil */
   .sidebar__item--featured {
     order: 1;
   }
@@ -4209,9 +4295,17 @@ a.form__submit {
     max-width: none;
   }
 
-  /* Dashboard: the month budget and the account balance stacked */
+  /* Dashboard: the month budget and the account balance stacked, the amounts shrinking on narrow screens */
   .month-budget__value {
-    font-size: 1.6rem;
+    font-size: clamp(1.25rem, 7vw, 1.6rem);
+  }
+
+  .month-budget__daily {
+    padding: 6px 10px;
+  }
+
+  .month-budget__daily-value {
+    font-size: clamp(0.95rem, 4.5vw, 1.1rem);
   }
 
   .dashboard__charts,

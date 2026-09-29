@@ -23,7 +23,8 @@ const STEPS = [
     features: [
       { icon: 'wallet', text: 'Dépensé, budget restant et jours restants avant la fin du mois.' },
       { icon: 'calendar', text: 'Le calendrier colore chaque jour selon votre budget quotidien ; touchez un jour pour voir ses dépenses.' },
-      { visual: 'gauge', text: 'Une jauge par catégorie, qui passe à l’orange à 80 % du budget et au rouge au-delà.' },
+      { visual: 'gauge', text: 'Une jauge par catégorie, sur le mois ou cumulée sur l’année, qui passe à l’orange à 80 % du budget et au rouge au-delà.' },
+      { symbol: '↓', text: 'Tirez la page vers le bas pour l’actualiser, par exemple après une modification de l’autre personne du plan.' },
     ],
   },
   {

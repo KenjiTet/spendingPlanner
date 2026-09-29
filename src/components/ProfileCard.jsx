@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AmountInput from './AmountInput.jsx'
 
 /**
  * The account's name and income, read by every plan it takes a place in
@@ -33,8 +34,7 @@ export default function ProfileCard({ user, onSave }) {
 
       <label className="form__field">
         <span>Salaire net / mois</span>
-        <input
-          type="number"
+        <AmountInput
           min="0"
           step="any"
           value={netMonthly}
