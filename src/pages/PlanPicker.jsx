@@ -36,6 +36,11 @@ export default function PlanPicker({
 }) {
   const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const [joining, setJoining] = useState(false)
+
+  // The active plan gets its own block, the others are listed below it
+  const currentPlan = plans.find((plan) => plan.id === currentPlanId)
+  const otherPlans = plans.filter((plan) => plan.id !== currentPlanId)
 
   // Activating a plan leads back to its overview
   function activate(id) {
@@ -49,36 +54,76 @@ export default function PlanPicker({
     navigate('/plan')
   }
 
+  // Every card shares the same callbacks, only the plan and its status change
+  function renderCard(plan, isCurrent) {
+    return (
+      <PlanCard
+        plan={plan}
+        isCurrent={isCurrent}
+        isCreator={plan.created_by === user.id}
+        onActivate={activate}
+        onEdit={edit}
+        onPublishTemplate={onPublishTemplate}
+        onExport={onExport}
+        onDelete={onDelete}
+      />
+    )
+  }
+
   return (
     <section className="plans">
+      <header className="plans__header">
+        <div className="plans__intro">
+          <h1 className="plans__title">Mes plans</h1>
+          <p className="section__hint">
+            Le plan actif est celui affiché dans l&rsquo;aperçu, les dépenses et le budget.
+          </p>
+        </div>
+
+        <div className="plans__toolbar">
+          <button type="button" className="plans__action" onClick={() => setJoining(true)}>
+            <Icon name="user-plus" className="icon" />
+            <span>Rejoindre</span>
+          </button>
+
+          <button type="button" className="plans__action plans__action--primary" onClick={() => setCreating(true)}>
+            <Icon name="plus" className="icon" />
+            <span>Nouveau plan</span>
+          </button>
+        </div>
+      </header>
+
       {!plans.length && <p className="section__hint">Vous ne participez encore à aucun plan.</p>}
 
-      <ul className="plans__list">
-        {plans.map((plan, index) => (
-          <li key={`plan-${plan.id}-${index}`}>
-            <PlanCard
-              plan={plan}
-              isCurrent={plan.id === currentPlanId}
-              isCreator={plan.created_by === user.id}
-              onActivate={activate}
-              onEdit={edit}
-              onPublishTemplate={onPublishTemplate}
-              onExport={onExport}
-              onDelete={onDelete}
-            />
-          </li>
-        ))}
-      </ul>
+      {!!currentPlan && (
+        <section className="plans__group">
+          <h2 className="plans__group-title">Plan actif</h2>
+          {renderCard(currentPlan, true)}
+        </section>
+      )}
 
-      <button type="button" className="plans__new" onClick={() => setCreating(true)}>
-        <Icon name="plus" className="icon" />
-        <span>Nouveau plan</span>
-      </button>
+      {!!otherPlans.length && (
+        <section className="plans__group">
+          <h2 className="plans__group-title">Autres plans</h2>
 
-      <JoinPlanForm onPreview={onPreviewJoin} onJoin={onJoin} onJoined={() => navigate('/')} />
+          <ul className="plans__list">
+            {otherPlans.map((plan, index) => (
+              <li key={`plan-${plan.id}-${index}`}>{renderCard(plan, false)}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Sheet open={creating} title="Nouveau plan" onClose={() => setCreating(false)}>
         <CreatePlanForm templates={templates} onCreate={onCreate} onCreated={() => navigate('/plan')} />
+      </Sheet>
+
+      <Sheet
+        open={joining}
+        title="Rejoindre un plan"
+        description="Saisissez le code de partage reçu d’un autre membre du plan."
+        onClose={() => setJoining(false)}>
+        <JoinPlanForm onPreview={onPreviewJoin} onJoin={onJoin} onJoined={() => navigate('/')} />
       </Sheet>
     </section>
   )

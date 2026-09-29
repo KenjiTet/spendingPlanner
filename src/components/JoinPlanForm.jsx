@@ -38,9 +38,7 @@ export default function JoinPlanForm({ onPreview, onJoin, onJoined }) {
   }
 
   return (
-    <section className="card plans__join">
-      <h2 className="plan-card__title">Rejoindre un plan</h2>
-
+    <div className="plans__join">
       <form className="plan-card__form" onSubmit={handlePreview}>
         <label className="form__field form__field--grow">
           <span>Code de partage</span>
@@ -85,6 +83,6 @@ export default function JoinPlanForm({ onPreview, onJoin, onJoined }) {
       )}
 
       {!!error && <p className="actions__error">{error}</p>}
-    </section>
+    </div>
   )
 }

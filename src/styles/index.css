@@ -1641,25 +1641,104 @@ input.subgroup__name,
   color: var(--text);
 }
 
+/* Plans page: a title explaining what "active" means, the two ways into a new plan beside it */
+.plans__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.plans__intro {
+  display: grid;
+  gap: 4px;
+}
+
+.plans__title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.plans__toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.plans__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.plans__action:hover {
+  background: var(--neutral-tint);
+}
+
+.plans__action--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.plans__action--primary:hover {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.plans__group {
+  display: grid;
+  gap: 8px;
+}
+
+.plans__group-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .plans__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
+/* One plan per row: its name and code on the left, compact actions on the right, wrapping below on narrow screens */
 .plan-card {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  padding: 12px 12px 12px 16px;
+}
+
+.plan-card__main {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
 }
 
 .plan-card__header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .plan-card__title {
@@ -1771,29 +1850,24 @@ input.subgroup__name,
 .plan-card__share {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
+/* The active plan is tinted and outlined in the accent colour */
 .plan-card--active {
   border-color: var(--accent);
-}
-
-.plan-card__badge {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
   background: var(--success-tint);
-  color: var(--accent);
 }
 
 .plan-card__code {
   font-family: ui-monospace, monospace;
-  font-size: 1.05rem;
-  letter-spacing: 0.18em;
-  padding: 4px 10px;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-muted);
@@ -1825,7 +1899,6 @@ input.subgroup__name,
   place-items: center;
   width: 34px;
   height: 34px;
-  margin-left: auto;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -1844,8 +1917,8 @@ input.subgroup__name,
   align-items: center;
   gap: 4px;
   font: inherit;
-  font-size: 0.85rem;
-  padding: 4px 8px;
+  font-size: 0.8rem;
+  padding: 2px 6px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -1865,10 +1938,37 @@ input.subgroup__name,
   gap: 8px;
 }
 
-.plan-card__edit {
+.plan-card__actions {
+  align-items: center;
+}
+
+/* Quiet row actions, so the plans stay the focus of the page */
+.plan-card__action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.plan-card__action:hover {
+  background: var(--neutral-tint);
+}
+
+.plan-card__action .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.plan-card__action--accent {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .plan-card__button,
@@ -1921,28 +2021,6 @@ input.subgroup__name,
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
-}
-
-/* Last thing on the page: a wide dashed slot inviting a new plan */
-.plans__new {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  font: inherit;
-  font-weight: 600;
-  padding: 16px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: 0 4px 12px var(--shadow);
-  cursor: pointer;
-}
-
-.plans__new:hover {
-  filter: brightness(1.08);
 }
 
 /* In the new plan sheet, the starting point and the notes each take a full row */
@@ -4415,10 +4493,13 @@ html:has(.pull) {
     display: none;
   }
 
-  /* Plans list: the actions share the whole width under the share code */
-  .plan-card__actions > * {
+  /* Plans page: the two ways into a new plan share the width under the title */
+  .plans__toolbar {
+    flex: 1 1 100%;
+  }
+
+  .plans__action {
     flex: 1;
-    justify-content: center;
   }
 
   .auth__card {

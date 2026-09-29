@@ -2,18 +2,6 @@ import { useState } from 'react'
 import Icon from './Icon.jsx'
 import Sheet from './Sheet.jsx'
 
-/**
- * Hint shown next to the share code, depending on whether a place is still free
- * @param {number} freeSlots
- */
-function codeHintFor(freeSlots) {
-  if (!freeSlots) {
-    return 'Toutes les places sont prises : le code ne donne plus accès au plan.'
-  }
-
-  return 'Donnez ce code à la personne qui prend la place libre.'
-}
-
 // The active plan is outlined so it stands out in the list
 function cardClassOf(isCurrent) {
   if (isCurrent) {
@@ -33,7 +21,8 @@ function copyLabelOf(copied) {
 }
 
 /**
- * One plan of the list: editing or activating it, its share code, and a sheet for the rarer actions
+ * One plan of the list: activating or editing it, its invitation code while a place is free, and a sheet for the rarer
+ * actions
  * @param {object} props
  * @param {{ id: string, name: string, created_by: string, share_code: string, is_template: number, free_slots: number }} props.plan
  * @param {boolean} props.isCurrent
@@ -81,10 +70,37 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
 
   return (
     <article className={cardClassOf(isCurrent)}>
-      <header className="plan-card__header">
-        <h2 className="plan-card__title">{plan.name}</h2>
-        {isCurrent && <span className="plan-card__badge">Plan actif</span>}
-        {!!plan.is_template && <span className="scope__badge">Modèle</span>}
+      <div className="plan-card__main">
+        <header className="plan-card__header">
+          <h3 className="plan-card__title">{plan.name}</h3>
+          {!!plan.is_template && <span className="scope__badge">Modèle</span>}
+        </header>
+
+        {!!plan.free_slots && (
+          <p className="plan-card__share">
+            <span>Code d&rsquo;invitation</span>
+            <code className="plan-card__code">{plan.share_code}</code>
+
+            <button type="button" className="plan-card__copy" onClick={handleCopy}>
+              <Icon name="copy" className="icon" />
+              <span>{copyLabelOf(copied)}</span>
+            </button>
+          </p>
+        )}
+      </div>
+
+      <footer className="plan-card__actions">
+        {!isCurrent && (
+          <button type="button" className="plan-card__action plan-card__action--accent" onClick={() => onActivate(plan.id)}>
+            <Icon name="check" className="icon" />
+            <span>Activer</span>
+          </button>
+        )}
+
+        <button type="button" className="plan-card__action" onClick={() => onEdit(plan.id)}>
+          <Icon name="pencil" className="icon" />
+          <span>Budget</span>
+        </button>
 
         <button
           type="button"
@@ -93,30 +109,6 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
           aria-label={`Options de ${plan.name}`}
         >
           <Icon name="more" className="icon" />
-        </button>
-      </header>
-
-      <p className="plan-card__share">
-        <code className="plan-card__code">{plan.share_code}</code>
-
-        <button type="button" className="plan-card__copy" onClick={handleCopy}>
-          <Icon name="copy" className="icon" />
-          <span>{copyLabelOf(copied)}</span>
-        </button>
-
-        <span className="section__hint">{codeHintFor(plan.free_slots)}</span>
-      </p>
-
-      <footer className="plan-card__actions">
-        {!isCurrent && (
-          <button type="button" className="plan-card__button" onClick={() => onActivate(plan.id)}>
-            Définir comme actif
-          </button>
-        )}
-
-        <button type="button" className="form__submit plan-card__edit" onClick={() => onEdit(plan.id)}>
-          <Icon name="pencil" className="icon" />
-          <span>Éditer</span>
         </button>
       </footer>
 
