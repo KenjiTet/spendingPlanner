@@ -28,7 +28,7 @@ function yearNoteOf(month) {
 
 // Landing page: where the month stands against the plan, at a glance
 export default function DashboardPage() {
-  const { plan, slotId, reload: reloadPlan } = useOutletContext()
+  const { plan, slotId, settlements, reload: reloadPlan } = useOutletContext()
   const [month, setMonth] = useState(() => toMonthValue(new Date()))
   // The category gauges follow the month or the year so far, a choice remembered on the device
   const [period, setPeriod] = useState(() => loadPreference(PERIOD_KEY) ?? 'monthly')
@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const yearExpenses = useYearExpenses(plan.id, month.slice(0, 4), isAnnual)
 
   // Pulling the page down fetches what the other member of the plan may have changed
-  const { indicatorRef, refreshing } = usePullToRefresh(() => Promise.all([reloadPlan(), reloadExpenses(), yearExpenses.reload()]))
+  const { indicatorRef, refreshing } = usePullToRefresh(() => Promise.all([reloadPlan(), reloadExpenses(), yearExpenses.reload(), settlements.reload()]))
 
   const tracking = useMemo(() => buildTracking(plan, expenses, slotId), [plan, expenses, slotId])
   const yearTracking = useMemo(() => yearToDateTrackingOf(plan, yearExpenses.expenses, slotId, month), [plan, yearExpenses.expenses, slotId, month])

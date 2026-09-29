@@ -23,6 +23,8 @@ create table if not exists plans (
   share_code text not null unique,
   is_template integer not null default 0 check (is_template in (0, 1)),
   created_by text not null references users (id) on delete cascade,
+  -- Common expenses entered before this moment never enter a settlement, '' meaning since the start
+  settlements_since text not null default '',
   created_at text not null
 );
 
@@ -69,7 +71,22 @@ create table if not exists expenses (
   amount real not null check (amount > 0),
   spent_on text not null,
   note text not null default '',
+  -- The settlement that covered this common expense, NULL while it belongs to the open sequence
+  settlement_id text references settlements (id) on delete set null,
   created_at text not null
+);
+
+-- A repayment between the two places of a plan, covering the common expenses attached to it.
+-- Declared by the debtor (pending), then validated by the creditor; refused or cancelled, the row is deleted
+create table if not exists settlements (
+  id text primary key,
+  plan_id text not null references plans (id) on delete cascade,
+  debtor_id text not null references plan_slots (id) on delete cascade,
+  creditor_id text not null references plan_slots (id) on delete cascade,
+  amount real not null check (amount > 0),
+  status text not null default 'pending' check (status in ('pending', 'validated')),
+  declared_at text not null,
+  validated_at text
 );
 
 -- Expense sub-groups a place always shows on its expense form, whatever its habits
@@ -105,3 +122,4 @@ create index if not exists plan_lines_plan_idx on plan_lines (plan_id);
 create index if not exists expenses_plan_month_idx on expenses (plan_id, spent_on);
 create index if not exists expenses_slot_idx on expenses (slot_id);
 create index if not exists expense_presets_slot_idx on expense_presets (slot_id);
+create index if not exists settlements_plan_idx on settlements (plan_id);

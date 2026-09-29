@@ -36,7 +36,7 @@ function byCreation(left, right) {
 
 // Entry of the expenses as they happen, the monitoring living on the overview
 export default function ExpensesPage() {
-  const { plan, slotId } = useOutletContext()
+  const { plan, slotId, settlements } = useOutletContext()
   // Past expenses are browsed from the calendars, this page only records new ones
   const month = useMemo(() => toMonthValue(new Date()), [])
   const { expenses, error, addExpense, removeExpense } = useExpenses(plan.id, slotId, month)
@@ -74,12 +74,13 @@ export default function ExpensesPage() {
     return <NoLinesNotice />
   }
 
-  // A successful entry refreshes the habits, so the most used lines move up
+  // A successful entry refreshes the habits, so the most used lines move up, and the balance between the members
   async function handleAdd(input) {
     const failure = await addExpense(input)
 
     if (!failure) {
       usage.reload()
+      settlements.reload()
     }
 
     return failure

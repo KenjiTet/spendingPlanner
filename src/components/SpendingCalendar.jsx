@@ -74,7 +74,8 @@ export default function SpendingCalendar({ days, firstWeekday, dailyBudget, toda
 
                     <span className="history__amount">{formatAmount(expense.amount)}</span>
 
-                    {expense.slot_id === slotId && (
+                    {/* An expense covered by a repayment stays, the settlement history relying on it */}
+                    {expense.slot_id === slotId && !expense.settlement_id && (
                       <button
                         type="button"
                         className="list__remove"

@@ -70,20 +70,23 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
                 </span>
                 <span className="recent__amount">{formatAmount(expense.amount)}</span>
 
-                {!!lines[expense.line_id] && (
+                {/* Correcting removes the entry first, so neither is offered once a repayment covers it */}
+                {!!lines[expense.line_id] && !expense.settlement_id && (
                   <button type="button" className="recent__action" onClick={() => edit(expense)}>
                     Modifier
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  className="recent__action recent__action--delete"
-                  onClick={() => onRemove(expense.id)}
-                  aria-label={`Supprimer ${lines[expense.line_id]?.label ?? ''} ${formatAmount(expense.amount)}`}
-                >
-                  ×
-                </button>
+                {!expense.settlement_id && (
+                  <button
+                    type="button"
+                    className="recent__action recent__action--delete"
+                    onClick={() => onRemove(expense.id)}
+                    aria-label={`Supprimer ${lines[expense.line_id]?.label ?? ''} ${formatAmount(expense.amount)}`}
+                  >
+                    ×
+                  </button>
+                )}
               </li>
             ))}
           </ul>

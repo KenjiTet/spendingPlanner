@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import PlanPage from './pages/PlanPage.jsx'
 import PlanPicker from './pages/PlanPicker.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
+import SettlementsPage from './pages/SettlementsPage.jsx'
 
 // Routes the visitor through sign-in, then the app itself, always framed by the sidebar
 export default function App() {
@@ -95,6 +96,7 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/depenses" element={<ExpensesPage />} />
             <Route path="/plan" element={<PlanPage />} />
+            <Route path="/remboursements" element={<SettlementsPage />} />
           </Route>
         </Route>
 

@@ -13,11 +13,13 @@ const LINKS = [
   { to: '/depenses', label: 'Dépenses', short: 'Dépenses', icon: 'receipt', featured: true },
 ]
 
-// Entries folded under "Plan"
-const PLAN_LINKS = [
-  { to: '/plan', label: 'Budget', short: 'Budget', icon: 'wallet' },
-  { to: '/plans', label: 'Mes plans', short: 'Plans', icon: 'layers' },
-]
+const BUDGET_LINK = { to: '/plan', label: 'Budget', short: 'Budget', icon: 'wallet' }
+const PLANS_LINK = { to: '/plans', label: 'Mes plans', short: 'Plans', icon: 'layers' }
+const SETTLEMENTS_LINK = { to: '/remboursements', label: 'Remboursements', short: 'Rembours.', icon: 'transfer' }
+
+// Entries folded under "Plan", the last one taking the phone bar cell after the "+": the repayments take it,
+// "Mes plans" leaving the phone bar for the profile
+const PLAN_LINKS = [BUDGET_LINK, { ...PLANS_LINK, desktopOnly: true }, SETTLEMENTS_LINK]
 
 // Highlights the menu entry of the current page
 function linkClass({ isActive }) {
@@ -46,10 +48,14 @@ function profileClass({ isActive }) {
   return 'sidebar__profile'
 }
 
-// The featured entry is moved to the centre of the phone bar
+// The featured entry is moved to the centre of the phone bar, a desktop-only one is left out of it
 function itemClassOf(link) {
   if (link.featured) {
     return 'sidebar__item--featured'
+  }
+
+  if (link.desktopOnly) {
+    return 'sidebar__item--desktop'
   }
 
   return undefined
@@ -69,8 +75,9 @@ function subListClassOf(collapsed) {
  * @param {object} props
  * @param {{ to: string, label: string, short: string, icon: string, end?: boolean, featured?: boolean }} props.link
  * @param {(state: { isActive: boolean }) => string} props.className
+ * @param {boolean} [props.badge] - an action awaits the viewer behind this entry
  */
-function MenuLink({ link, className }) {
+function MenuLink({ link, className, badge }) {
   return (
     <NavLink to={link.to} end={link.end} className={className} aria-label={link.label}>
       <Icon name={link.icon} className="sidebar__icon" />
@@ -81,6 +88,7 @@ function MenuLink({ link, className }) {
         </span>
       )}
       <span className="sidebar__label">{link.label}</span>
+      {badge && <span className="sidebar__badge" aria-label="Action en attente" />}
       <span className="sidebar__tab" aria-hidden="true">
         {link.short}
       </span>
@@ -94,11 +102,13 @@ function MenuLink({ link, className }) {
  * @param {{ id: string, name: string }[]} props.plans
  * @param {string} [props.currentPlanId]
  * @param {string} props.userName
+ * @param {{ action?: string }} [props.settlements] - repayments of the active plan, for the badge
  * @param {(id: string) => void} props.onSelectPlan
  * @param {() => void} props.onSignOut
  */
-export default function Sidebar({ plans, currentPlanId, userName, onSelectPlan, onSignOut }) {
+export default function Sidebar({ plans, currentPlanId, userName, settlements, onSelectPlan, onSignOut }) {
   const [collapsed, setCollapsed] = useState(() => loadPreference(PLAN_GROUP_KEY) === 'true')
+  const hasAction = !!settlements?.action
 
   function toggleGroup() {
     setCollapsed(!collapsed)
@@ -126,8 +136,8 @@ export default function Sidebar({ plans, currentPlanId, userName, onSelectPlan, 
 
             <ul className={subListClassOf(collapsed)}>
               {PLAN_LINKS.map((link, index) => (
-                <li key={`nav-plan-${link.to}-${index}`}>
-                  <MenuLink link={link} className={subLinkClass} />
+                <li key={`nav-plan-${link.to}-${index}`} className={itemClassOf(link)}>
+                  <MenuLink link={link} className={subLinkClass} badge={hasAction && link === SETTLEMENTS_LINK} />
                 </li>
               ))}
             </ul>

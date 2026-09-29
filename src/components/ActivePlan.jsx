@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useOutletContext } from 'react-router-dom'
 import usePlan from '../hooks/usePlan.js'
 
 /**
@@ -9,6 +9,8 @@ import usePlan from '../hooks/usePlan.js'
  */
 function OpenPlan({ user, currentPlan }) {
   const planState = usePlan(currentPlan.id)
+  // Repayments between the two places, loaded by the layout
+  const { settlements } = useOutletContext()
   // The place this person holds in the plan, which is what every scope is keyed by
   const mySlot = planState.plan?.people.find((person) => person.userId === user.id)
 
@@ -30,6 +32,7 @@ function OpenPlan({ user, currentPlan }) {
           context={{
             ...planState,
             userId: user.id,
+            settlements,
             slotId: mySlot?.id,
             showSavings: !!user.show_savings,
             showTaxes: !!user.show_taxes,

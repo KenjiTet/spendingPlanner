@@ -7,6 +7,7 @@ import { fail } from '../errors.js'
 import { readAmount, readFlag, readId, readKind, readPosition } from '../input.js'
 import { randomShareCode, SHARE_CODE_PATTERN } from '../shareCode.js'
 import expensesRouter from './expenses.js'
+import settlementsRouter from './settlements.js'
 
 const TAX_TIMINGS = ['monthly', 'yearly']
 const MAX_SLOTS = 2
@@ -560,5 +561,6 @@ router.delete('/:planId', (req, res) => {
 })
 
 router.use('/:planId/expenses', expensesRouter)
+router.use('/:planId/settlements', settlementsRouter)
 
 export default router

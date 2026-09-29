@@ -30,16 +30,29 @@ db.exec(schema)
  * @param {string} table
  * @param {string} column
  * @param {string} definition
+ * @returns {boolean} whether the column was just added
  */
 function addColumnIfMissing(table, column, definition) {
   const columns = db.pragma(`table_info(${table})`)
 
-  if (!columns.some((candidate) => candidate.name === column)) {
-    db.exec(`alter table ${table} add column ${column} ${definition}`)
+  if (columns.some((candidate) => candidate.name === column)) {
+    return false
   }
+
+  db.exec(`alter table ${table} add column ${column} ${definition}`)
+  return true
 }
 
 addColumnIfMissing('plan_lines', 'auto_book', 'integer not null default 0 check (auto_book in (0, 1))')
 addColumnIfMissing('users', 'show_savings', 'integer not null default 1 check (show_savings in (0, 1))')
 addColumnIfMissing('users', 'show_taxes', 'integer not null default 1 check (show_taxes in (0, 1))')
 addColumnIfMissing('users', 'tutorial_done', 'integer not null default 1 check (tutorial_done in (0, 1))')
+addColumnIfMissing('expenses', 'settlement_id', 'text references settlements (id) on delete set null')
+
+// Existing plans start their settlements from zero: older common expenses are left out
+if (addColumnIfMissing('plans', 'settlements_since', "text not null default ''")) {
+  db.prepare('update plans set settlements_since = ?').run(new Date().toISOString())
+}
+
+// Created here rather than in schema.sql, the column not existing yet on older databases when it runs
+db.exec('create index if not exists expenses_settlement_idx on expenses (settlement_id)')

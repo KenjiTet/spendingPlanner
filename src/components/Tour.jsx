@@ -37,7 +37,7 @@ const STEPS = [
       { icon: 'calendar', text: 'La date est celle du jour, modifiable à gauche du montant pour un oubli.' },
       { icon: 'user', text: 'Dans un plan à deux, le filtre du haut n’affiche que les catégories communes ou personnelles.' },
       { symbol: '+', text: 'Les raccourcis enregistrent une dépense fréquente, comme un billet de bus, en un geste.' },
-      { icon: 'history', text: 'L’historique des dépenses, en haut, liste celles du mois pour les corriger ou les supprimer.' },
+      { icon: 'history', text: 'L’historique des dépenses, en haut, liste celles du mois pour les corriger ou les supprimer, sauf celles déjà remboursées.' },
     ],
   },
   {
@@ -52,10 +52,20 @@ const STEPS = [
     ],
   },
   {
+    to: '/remboursements',
+    menu: { icon: 'transfer', label: 'Remboursements' },
+    title: 'Remboursements',
+    intro: 'Dans un plan à deux, qui a avancé quoi sur les dépenses communes, et qui rembourse qui.',
+    features: [
+      { icon: 'transfer', text: 'En haut, qui rembourse qui et combien : les dépenses des catégories communes sont partagées à parts égales.' },
+      { icon: 'history', text: 'L’historique garde chaque remboursement reçu, sa date et, en le dépliant, les dépenses qu’il couvrait.' },
+    ],
+  },
+  {
     to: '/plans',
     menu: { icon: 'layers', label: 'Mes plans' },
     title: 'Mes plans',
-    intro: 'Tous vos plans, dont celui qui est actif sur les autres pages.',
+    intro: 'Tous vos plans, dont celui qui est actif sur les autres pages. Sur téléphone, ils s’ouvrent depuis le profil.',
     features: [
       { icon: 'pencil', text: 'Éditer ouvre le budget du plan.' },
       { icon: 'copy', text: 'Le code de partage invite une deuxième personne dans un plan à deux.' },
@@ -69,6 +79,7 @@ const STEPS = [
     title: 'Profil',
     intro: 'Vos informations, communes à tous vos plans.',
     features: [
+      { icon: 'layers', text: 'Sur téléphone, « Mes plans » s’ouvre d’ici : sa place dans la barre va aux remboursements.' },
       { icon: 'user', text: 'Nom affiché et revenu net mensuel : remplacez ceux de l’exemple par les vôtres.' },
       { visual: 'switch', text: 'Désactivez l’épargne ou les impôts s’ils ne vous servent pas : ils disparaissent du budget.' },
       { icon: 'history', text: 'Ce tutoriel se relance à tout moment depuis cette page.' },

@@ -111,17 +111,18 @@ server/shareCode.js            random plan share codes
 server/auth.js                 the password seam (clear text for now) and the signed session cookie
 server/access.js               who may read and edit what, the former RLS policies
 server/input.js                shared readers for values coming from the browser
-server/routes/                 auth (and the profile), plans (slots, join, templates, groups, lines, import), expenses
+server/routes/                 auth (and the profile), plans (slots, join, templates, groups, lines, import), expenses,
+                               settlements (repayments between the two members)
 src/main.jsx                   React entry point, router
 src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
 src/lib/appUpdate.js           reloads the page when a new deploy is detected (home-screen apps never reload on their own)
 src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the example plan of new accounts
 src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
-                               PlanPicker (plans list, active plan), ProfilePage
+                               PlanPicker (plans list, active plan), ProfilePage, SettlementsPage (repayments)
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
-                               useDailySpending, usePullToRefresh)
+                               useSettlements, useDailySpending, usePullToRefresh)
 src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
 src/data/plan.json             sample plan, importable from the Plan page
 src/data/example-plan.json     solo plan created at sign-up, walked through by the guided tour (components/Tour)
@@ -156,6 +157,10 @@ most one account, and free until someone claims it. `plan_groups` and `plan_line
 `owner_id` means the common part, otherwise it is a slot id. `expenses` are booked by one slot on one expense line;
 an expense line flagged `auto_book` (rent, subscriptions) counts as spent in full from the first of every month
 without any expense row, the tracking maths adding it on the fly.
+In a plan for two (reachable while the second slot is free, repaying only once it is taken), the common expenses entered since `plans.settlements_since` and not yet covered
+(`expenses.settlement_id` NULL) form the open sequence, split equally: the debtor declares a `settlements` row
+(pending, the amount recomputed by the server, the expenses attached to it), the creditor validates it or refuses it
+(the row is deleted and its expenses fall back into the open sequence). A covered expense can no longer be deleted.
 An account (`users`) carries a profile — display name and net monthly income — which a taken slot reads from
 (`plan_slots` keeps a copy only for free slots). The annual tax belongs to the slot and is set in the budget. Security lives in `server/access.js` and the routes: `requireMembership` resolves
 the viewer's slot into `req.slotId`, members read the whole plan but edit only the common part and their own slot;
@@ -169,7 +174,8 @@ and positions, amounts reset to zero — for anyone to copy into a private plan 
 
 **State:** `useAuth` (session), `usePlans` (plans list, current plan), `usePlan` (the open plan, optimistic edits
 with debounced writes) and `useExpenses` (one month of expenses), `useYearExpenses` (a whole year, for the dashboard's yearly gauges) and `useExpenseSuggestions` (the viewer's most used lines and frequent
-expenses over 90 days, feeding the entry form) are the only stateful modules. `Layout` keeps the
+expenses over 90 days, feeding the entry form) and `useSettlements` (repayments, loaded once by `Layout` for the menu
+badge and handed to the plan pages through the outlet context) are the only stateful modules. `Layout` keeps the
 sidebar on every page; `ActivePlan` loads the active plan once and passes it to the plan pages through the router
 outlet context.
 

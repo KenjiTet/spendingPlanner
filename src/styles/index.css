@@ -1417,6 +1417,16 @@ input.subgroup__name,
   white-space: nowrap;
 }
 
+/* A repayment waiting for the viewer: a dot at the end of its menu entry, over its icon in the phone bar */
+.sidebar__badge {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
 .sidebar__signout {
   justify-self: start;
   font: inherit;
@@ -1639,6 +1649,7 @@ input.subgroup__name,
   align-items: center;
   gap: 8px;
   color: var(--text);
+  text-decoration: none;
 }
 
 /* Plans page: a title explaining what "active" means, the two ways into a new plan beside it */
@@ -4077,6 +4088,239 @@ html:has(.pull) {
   color: var(--accent);
   font-weight: 600;
 }
+/* ------------------------------------------------------------------ */
+/* Repayments between the two members of a plan                         */
+/* ------------------------------------------------------------------ */
+
+.settlements__heading {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+/* The repayment at stake: who repays whom and the amount on the left, the action on the right */
+.settlement-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 20px;
+}
+
+.settlement-summary__figures {
+  display: grid;
+  gap: 4px;
+}
+
+/* Who repays whom, read before the amount */
+.settlement-summary .member-pair {
+  gap: 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.settlement-summary .member-pair__arrow {
+  width: 20px;
+  height: 20px;
+}
+
+.settlement-summary__amount {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.settlement-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.settlement-summary__actions:empty {
+  display: none;
+}
+
+.settlement-summary__actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.settlement-summary__status {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.member-pair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.member-pair__arrow {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+.settlement {
+  display: grid;
+  gap: 12px;
+}
+
+.settlement__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settlement__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.settlement__count {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Expenses of a sequence as a plain table: date, what, who paid, amount */
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ledger th {
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: left;
+}
+
+.ledger td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.ledger th:first-child,
+.ledger td:first-child {
+  padding-left: 0;
+}
+
+.ledger th:last-child,
+.ledger td:last-child {
+  padding-right: 0;
+}
+
+.ledger tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ledger__date {
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.ledger__label {
+  display: block;
+  font-weight: 500;
+}
+
+.ledger__note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ledger__payer {
+  white-space: nowrap;
+}
+
+.ledger th.ledger__amount,
+.ledger__amount {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Repayments folded to one row each, unfolding their expenses */
+.settlement-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settlement-history > li + li {
+  border-top: 1px solid var(--border);
+}
+
+/* Columns: date, who repays whom, amount, chevron; the fixed date width lines the names up from one row to the next */
+.settlement-history__summary {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 20px;
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.settlement-history__summary::-webkit-details-marker {
+  display: none;
+}
+
+.settlement-history__date {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.settlement-history__amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.settlement-history__item:not([open]) .settlement-history__chevron {
+  transform: rotate(-45deg);
+}
+
+/* The unfolded row: its summary stands out, its expenses sit in an inset, smaller panel below it */
+.settlement-history__item[open] .settlement-history__summary {
+  font-weight: 600;
+}
+
+.settlement-history__body {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.settlement-history__body .ledger {
+  font-size: 0.8rem;
+}
+
+.settlement-history__body .ledger td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
 /* Expense rows, listed under a day of the overview calendar */
 .history__items {
   list-style: none;
@@ -4272,6 +4516,45 @@ html:has(.pull) {
   .sidebar__item--featured .sidebar__link {
     gap: 2px;
     padding: 0 2px;
+  }
+
+  /* Five cells stay around the centred "+": "Mes plans" gives its cell to the repayments, reached from the profile */
+  .sidebar__item--desktop {
+    display: none;
+  }
+
+  .sidebar__link {
+    position: relative;
+  }
+
+  .sidebar__badge {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 18px);
+    margin: 0;
+  }
+
+  /* A narrower date column leaves room for the names, still set apart from them */
+  .settlement-history__summary {
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto auto;
+    column-gap: 14px;
+  }
+
+  .settlement-history__date {
+    font-size: 0.8rem;
+  }
+
+  .ledger {
+    font-size: 0.85rem;
+  }
+
+  /* The repayment button spans the card, under the thumb */
+  .settlement-summary__actions {
+    width: 100%;
+  }
+
+  .settlement-summary__actions button {
+    flex: 1;
   }
 
   .sidebar__fab {

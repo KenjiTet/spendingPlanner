@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import ProfileCard from '../components/ProfileCard.jsx'
 import BudgetSectionsCard from '../components/BudgetSectionsCard.jsx'
 import Icon from '../components/Icon.jsx'
@@ -15,6 +16,12 @@ export default function ProfilePage({ user, onSave, onSavePreferences, onReplayT
   return (
     <section className="profile">
       <p className="section__hint profile__header">@{user.username}</p>
+
+      {/* On phones, "Mes plans" gives its cell of the bar to the repayments */}
+      <Link to="/plans" className="actions__reset profile__tour">
+        <Icon name="layers" className="icon" />
+        <span>Mes plans</span>
+      </Link>
 
       <ProfileCard user={user} onSave={onSave} />
       <BudgetSectionsCard user={user} onSave={onSavePreferences} />

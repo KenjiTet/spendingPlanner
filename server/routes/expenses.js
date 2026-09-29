@@ -10,7 +10,7 @@ const router = Router({ mergeParams: true })
 // Own expenses are always visible, the other place's only when booked on a common line.
 // An expense outliving its line keeps a NULL line_id: it stays private rather than turning common.
 const listBetween = db.prepare(`
-  select e.id, e.line_id, e.slot_id, e.amount, e.spent_on, e.note, e.created_at
+  select e.id, e.line_id, e.slot_id, e.amount, e.spent_on, e.note, e.created_at, e.settlement_id
   from expenses e
   left join plan_lines l on l.id = e.line_id
   where e.plan_id = ? and e.spent_on between ? and ?
@@ -19,7 +19,9 @@ const listBetween = db.prepare(`
 const insertExpense = db.prepare(
   'insert into expenses (id, plan_id, line_id, slot_id, amount, spent_on, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?)'
 )
-const deleteOwn = db.prepare('delete from expenses where id = ? and plan_id = ? and slot_id = ?')
+// An expense covered by a settlement is kept, the settlement history relying on it
+const deleteOwn = db.prepare('delete from expenses where id = ? and plan_id = ? and slot_id = ? and settlement_id is null')
+const findSettled = db.prepare('select 1 from expenses where id = ? and plan_id = ? and slot_id = ? and settlement_id is not null')
 
 // Entry habits of one place only, so the other member's expenses never surface in the suggestions
 const usageByLine = db.prepare(`
@@ -213,6 +215,10 @@ router.post('/', (req, res) => {
 
 router.delete('/:id', (req, res) => {
   const { changes } = deleteOwn.run(req.params.id, req.params.planId, req.slotId)
+
+  if (!changes && !!findSettled.get(req.params.id, req.params.planId, req.slotId)) {
+    fail(409, 'Cette dépense fait partie d’un remboursement.')
+  }
 
   if (!changes) {
     fail(403, 'Vous ne pouvez supprimer que vos propres dépenses.')
