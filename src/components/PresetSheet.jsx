@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { parseAmount } from '../utils/format.js'
+import { formatAmount, parseAmount } from '../utils/format.js'
 import CategorySelect from './CategorySelect.jsx'
 import PresetList from './PresetList.jsx'
 import Sheet from './Sheet.jsx'
+import Toast from './Toast.jsx'
 
 /**
  * Form of a new shortcut, mounted with the sheet so it always opens blank, no category chosen in advance
@@ -79,18 +80,32 @@ function PresetForm({ groups, lines, onAdd }) {
  * @param {(id: string) => void} props.onRemove
  */
 export default function PresetSheet({ open, onClose, presets, groups, lines, onAdd, onRemove }) {
-  return (
-    <Sheet open={open} title="Raccourcis" fixed onClose={onClose}>
-      <div className="presets">
-        {!!presets.length && (
-          <section className="quick-add__block" aria-label="Raccourcis existants">
-            <h3 className="quick-add__legend">Mes raccourcis</h3>
-            <PresetList presets={presets} lines={lines} onRemove={onRemove} />
-          </section>
-        )}
+  // Confirmation of the last shortcut created, its id restarting the animation on each one
+  const [toast, setToast] = useState(undefined)
 
-        <PresetForm groups={groups} lines={lines} onAdd={onAdd} />
-      </div>
-    </Sheet>
+  // Creates the shortcut and confirms it with the same pill as a booked expense
+  function add(input) {
+    onAdd(input)
+    setToast({ id: crypto.randomUUID(), text: `Raccourci ${input.label} ${formatAmount(input.amount)} créé` })
+  }
+
+  return (
+    <>
+      <Sheet open={open} title="Raccourcis" fixed onClose={onClose}>
+        <div className="presets">
+          {!!presets.length && (
+            <section className="quick-add__block" aria-label="Raccourcis existants">
+              <h3 className="quick-add__legend">Mes raccourcis</h3>
+              <PresetList presets={presets} lines={lines} onRemove={onRemove} />
+            </section>
+          )}
+
+          <PresetForm groups={groups} lines={lines} onAdd={add} />
+        </div>
+      </Sheet>
+
+      {/* Outside the sheet, so closing it right away never cuts the confirmation short */}
+      {!!toast && <Toast key={toast.id} text={toast.text} onDone={() => setToast(undefined)} />}
+    </>
   )
 }

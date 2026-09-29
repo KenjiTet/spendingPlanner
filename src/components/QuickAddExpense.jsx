@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { formatAmount, formatShortDay, parseAmount } from '../utils/format.js'
 import { toDateValue } from '../utils/tracking.js'
 import CategoryGroups from './CategoryGroups.jsx'
 import DatePicker from './DatePicker.jsx'
 import Icon from './Icon.jsx'
 import Sheet from './Sheet.jsx'
+import Toast from './Toast.jsx'
 
 // Class carrying the sub-group colour of the budget, neutral for lines outside any sub-group
 function toneClass(base, color) {
@@ -14,9 +15,6 @@ function toneClass(base, color) {
 
   return `${base} subgroup--${color}`
 }
-
-// How long the confirmation stays at the top of the screen
-const TOAST_MS = 2500
 
 /**
  * The sub-groups narrowed to the offered lines, the selected one joining them so a corrected expense stays in sight
@@ -137,17 +135,6 @@ export default function QuickAddExpense({
   // Confirmation shown at the top of the screen, its id restarting the animation on each entry
   const [toast, setToast] = useState(undefined)
 
-  // The confirmation leaves on its own
-  useEffect(() => {
-    if (!toast) {
-      return undefined
-    }
-
-    const timer = window.setTimeout(() => setToast(undefined), TOAST_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [toast])
-
   // Books an expense and confirms it at the top of the screen
   async function book(input) {
     const id = crypto.randomUUID()
@@ -244,7 +231,7 @@ export default function QuickAddExpense({
 
       {/* One tap books a shortcut; the last pill opens the sheet where they are created and removed */}
       <section className="quick-add__block" aria-label="Raccourcis">
-        <h3 className="quick-add__legend">Raccourcis</h3>
+        <h3 className="quick-add__title">Raccourcis</h3>
 
         <ul className="chips">
           {presets.map((preset, index) => (
@@ -297,12 +284,7 @@ export default function QuickAddExpense({
         </div>
       </footer>
 
-      {!!toast && (
-        <p key={toast.id} className="toast" role="status">
-          <Icon name="check" className="icon" />
-          {toast.text}
-        </p>
-      )}
+      {!!toast && <Toast key={toast.id} text={toast.text} onDone={() => setToast(undefined)} />}
     </form>
   )
 }

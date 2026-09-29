@@ -3173,6 +3173,14 @@ a.form__submit {
   translate: calc(-50% + var(--sidebar-width) / 2) 0;
 }
 
+/* The popover defaults stretch it over the screen with a border: only the pill is kept */
+.toast[popover] {
+  right: auto;
+  bottom: auto;
+  border: 0;
+  overflow: visible;
+}
+
 .toast .icon {
   width: 18px;
   height: 18px;
@@ -4163,15 +4171,18 @@ a.form__submit {
     padding: 14px;
   }
 
-  /* The page stops above the tab bar, so the amount and the button sit at the bottom, under the thumb */
+  /* Pinned to the screen, a steady gap above the tab bar: no finger drag nor keyboard can move the amount and the button */
   .expenses {
-    height: calc(100dvh - 52px - var(--tabbar-height) - env(safe-area-inset-bottom));
+    position: fixed;
+    top: 20px;
+    right: 16px;
+    bottom: calc(var(--tabbar-height) + 32px + env(safe-area-inset-bottom));
+    left: 16px;
+    width: auto;
+    height: auto;
   }
 
-  /* The page itself is locked: the 100vh minimum heights outgrow the visible screen, and the finger would drag the form away */
-  html:has(.expenses),
-  body:has(.expenses) {
-    overflow: hidden;
+  html:has(.expenses) {
     overscroll-behavior: none;
   }
 
