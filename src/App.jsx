@@ -83,6 +83,9 @@ export default function App() {
             element={
               <ProfilePage
                 user={user}
+                plans={plans}
+                currentPlanId={currentPlan?.id}
+                onSelectPlan={selectPlan}
                 onSave={updateProfile}
                 onSavePreferences={updatePreferences}
                 onReplayTutorial={() => setReplaying(true)}

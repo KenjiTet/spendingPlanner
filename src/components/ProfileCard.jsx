@@ -24,10 +24,13 @@ export default function ProfileCard({ user, onSave }) {
   }
 
   return (
-    <form className="card profile__form" onSubmit={handleSubmit}>
-      <h2 className="plan-card__title">Revenus</h2>
+    <form className="card profile__panel profile__form" onSubmit={handleSubmit}>
+      <header className="profile__panel-intro">
+        <h2 className="plan-card__title">Informations personnelles</h2>
+        <p className="section__hint">Ce salaire alimente les revenus de tous vos plans.</p>
+      </header>
 
-      <label className="form__field form__field--grow">
+      <label className="form__field">
         <span>Nom affiché</span>
         <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
       </label>
@@ -46,11 +49,6 @@ export default function ProfileCard({ user, onSave }) {
       <button type="submit" className="form__submit" disabled={busy}>
         Enregistrer
       </button>
-
-      <p className="section__hint">
-        Ce salaire alimente les revenus de tous les plans auxquels vous participez. Les impôts se règlent dans le
-        budget de chaque plan.
-      </p>
 
       {!!message && <p className="section__hint">{message}</p>}
     </form>
