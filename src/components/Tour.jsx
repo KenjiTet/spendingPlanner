@@ -32,11 +32,11 @@ const STEPS = [
     title: 'Dépenses',
     intro: 'Notez une dépense en quelques secondes.',
     features: [
-      { icon: 'check', text: 'Saisissez le montant et la catégorie concernée avant d’ajouter la dépense.' },
-      { icon: 'calendar', text: 'La date est celle du jour, modifiable pour un oubli.' },
-      { icon: 'pin', text: 'Épinglez un sous-groupe pour le garder toujours sur le formulaire.' },
+      { icon: 'check', text: 'Choisissez la catégorie, puis saisissez le montant en bas de l’écran et ajoutez la dépense.' },
+      { icon: 'calendar', text: 'La date est celle du jour, modifiable à gauche du montant pour un oubli.' },
+      { icon: 'user', text: 'Dans un plan à deux, le filtre du haut n’affiche que les catégories communes ou personnelles.' },
       { symbol: '+', text: 'Les raccourcis enregistrent une dépense fréquente, comme un billet de bus, en un geste.' },
-      { icon: 'history', text: 'L’historique liste vos dépenses du mois, pour les corriger ou les supprimer.' },
+      { icon: 'history', text: 'L’historique des dépenses, en haut, liste celles du mois pour les corriger ou les supprimer.' },
     ],
   },
   {

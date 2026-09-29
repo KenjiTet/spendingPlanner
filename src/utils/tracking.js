@@ -448,13 +448,6 @@ export function accountBalanceOf(plan, share, slotId) {
   return { income, tax, savings, spent: share.spent, remaining, unbudgeted, available: remaining + unbudgeted }
 }
 
-// How many categories are put forward on the expense form
-export const FAVOURITE_COUNT = 8
-
-// Fewest sub-groups, and lines within each, left on the expense form once habits narrow it, unless hidden by hand
-export const MIN_SUGGESTED_GROUPS = 2
-export const MIN_SUGGESTED_LINES = 2
-
 /**
  * Lines arranged under their sub-group in plan order, lines outside any sub-group gathered last
  * @param {{ id: string, label: string, color: string, scope: string }[]} subgroups
@@ -489,45 +482,4 @@ export function rankGroupsByUse(groups, usesByLine) {
       uses: group.lines.reduce((sum, line) => sum + usesOf(line), 0),
     }))
     .sort((left, right) => right.uses - left.uses)
-}
-
-/**
- * The bookable lines used the most, most used first
- * @param {Set<string>} bookableIds
- * @param {{ line_id: string }[]} usage - per line, already sorted by use
- */
-export function favouriteLinesOf(bookableIds, usage) {
-  return usage
-    .map((row) => row.line_id)
-    .filter((id) => bookableIds.has(id))
-    .slice(0, FAVOURITE_COUNT)
-}
-
-/**
- * Lines put forward on the expense form: every line typed by hand before any habit, then the favourites,
- * topped up so at least two sub-groups show, each with at least two lines
- * @param {{ id: string, lines: { id: string }[] }[]} groups - ranked by use, lines too
- * @param {Set<string>} bookableIds
- * @param {{ line_id: string }[]} usage - per line, already sorted by use
- * @param {string[]} hiddenIds - sub-groups taken off the form by hand, neither counted nor used to top up
- */
-export function suggestedLinesOf(groups, bookableIds, usage, hiddenIds) {
-  const favourites = favouriteLinesOf(bookableIds, usage)
-
-  if (!favourites.length) {
-    return [...bookableIds]
-  }
-
-  const shownGroups = groups
-    .filter((group) => !hiddenIds.includes(group.id))
-    .map((group) => group.lines.map((line) => line.id).filter((id) => bookableIds.has(id)))
-    .filter((ids) => !!ids.length)
-
-  // Sub-groups holding a favourite, then the next most used ones until the minimum is reached
-  const withFavourite = shownGroups.filter((ids) => ids.some((id) => favourites.includes(id)))
-  const others = shownGroups.filter((ids) => !withFavourite.includes(ids))
-  const featuredGroups = [...withFavourite, ...others.slice(0, Math.max(MIN_SUGGESTED_GROUPS - withFavourite.length, 0))]
-  const toppedUp = featuredGroups.flatMap((ids) => ids.slice(0, MIN_SUGGESTED_LINES))
-
-  return [...new Set([...favourites, ...toppedUp])]
 }

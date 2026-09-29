@@ -15,89 +15,19 @@ function toneClass(base, color) {
   return `${base} subgroup--${color}`
 }
 
-/**
- * Pinned sub-groups first, the rest keeping its order
- * @param {{ id: string }[]} groups
- * @param {string[]} pinnedIds
- */
-function pinnedFirst(groups, pinnedIds) {
-  return [
-    ...groups.filter((group) => pinnedIds.includes(group.id)),
-    ...groups.filter((group) => !pinnedIds.includes(group.id)),
-  ]
-}
-
 // How long the confirmation stays at the top of the screen
 const TOAST_MS = 2500
 
 /**
- * The sub-groups narrowed to the featured lines, the selected one joining them so the current choice stays in sight.
- * A pinned sub-group shows all its lines typed by hand, and comes first; a hidden one shows only a line picked from it
+ * The sub-groups narrowed to the offered lines, the selected one joining them so a corrected expense stays in sight
  * @param {{ id: string, lines: { id: string }[] }[]} groups
- * @param {string[]} featured
+ * @param {Set<string>} offeredIds
  * @param {string | undefined} selected
- * @param {string[]} pinnedIds
- * @param {string[]} hiddenIds
- * @param {Set<string>} bookableIds
  */
-function visibleGroupsOf(groups, featured, selected, pinnedIds, hiddenIds, bookableIds) {
-  const isShown = (group, line) => {
-    if (line.id === selected) {
-      return true
-    }
-
-    if (hiddenIds.includes(group.id)) {
-      return false
-    }
-
-    return featured.includes(line.id) || (pinnedIds.includes(group.id) && bookableIds.has(line.id))
-  }
-  const visible = groups
-    .map((group) => ({ ...group, lines: group.lines.filter((line) => isShown(group, line)) }))
+function shownGroupsOf(groups, offeredIds, selected) {
+  return groups
+    .map((group) => ({ ...group, lines: group.lines.filter((line) => offeredIds.has(line.id) || line.id === selected) }))
     .filter((group) => !!group.lines.length)
-
-  return pinnedFirst(visible, pinnedIds)
-}
-
-/**
- * "Autre…": every line, automatic debits included, in a sheet where sub-groups are pinned
- * @param {object} props
- * @param {object[]} props.groups - from groupLinesOf
- * @param {string | undefined} props.selected
- * @param {(id: string) => void} props.onSelect
- * @param {string[]} props.pinnedIds
- * @param {(groupId: string, pinned: boolean) => void} props.onTogglePin
- */
-function OtherCategory({ groups, selected, onSelect, pinnedIds, onTogglePin }) {
-  const [open, setOpen] = useState(false)
-
-  function pick(id) {
-    onSelect(id)
-    setOpen(false)
-  }
-
-  return (
-    <>
-      <button type="button" className="chip chip--other" onClick={() => setOpen(true)}>
-        Autre…
-      </button>
-
-      <Sheet
-        open={open}
-        title="Toutes les catégories"
-        description="Épinglez un sous-groupe pour afficher toutes ses catégories sur le formulaire."
-        onClose={() => setOpen(false)}
-      >
-        <CategoryGroups
-          groups={pinnedFirst(groups, pinnedIds)}
-          selected={selected}
-          onSelect={pick}
-          pinnedIds={pinnedIds}
-          onTogglePin={onTogglePin}
-        />
-      </Sheet>
-    </>
-  )
 }
 
 /**
@@ -118,13 +48,9 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
 
   return (
     <>
-      <button
-        type="button"
-        className="quick-add__history"
-        onClick={() => setOpen(true)}
-        aria-label="Historique des dépenses"
-      >
+      <button type="button" className="quick-add__history" onClick={() => setOpen(true)}>
         <Icon name="history" className="icon" />
+        Historique des dépenses
       </button>
 
       <Sheet
@@ -170,18 +96,17 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
 }
 
 /**
- * Fast entry of an expense: amount and date on top, the choices scrolling in the middle, the button always in sight
+ * Fast entry of an expense: the filter on top, the choices scrolling in the middle, the amount and the button at the
+ * bottom, under the thumb
  * @param {object} props
  * @param {object} props.plan - for the calendar of the date picker
  * @param {string} props.slotId - the place this person holds in the plan
- * @param {{ id: string, label: string, color?: string, lines: object[] }[]} props.groups - every bookable line, most used first
+ * @param {{ id: string, label: string }[]} props.scopes - parts of the plan to filter the categories on, none on a solo plan
+ * @param {string} props.scope - the part shown
+ * @param {(scope: string) => void} props.onScopeChange
+ * @param {{ id: string, label: string, color?: string, lines: object[] }[]} props.groups - every line of the viewer, most used first
+ * @param {Set<string>} props.offeredIds - lines shown as categories: typed by hand and in the part of the plan filtered on
  * @param {Record<string, { label: string, color?: string }>} props.lines - from indexLines
- * @param {Set<string>} props.bookableIds - lines typed by hand, automatic debits left out
- * @param {string[]} props.featured - line ids put forward as chips
- * @param {string[]} props.pinnedIds - sub-groups whose lines are always shown
- * @param {string[]} props.hiddenIds - sub-groups taken off the form
- * @param {(groupId: string, pinned: boolean) => void} props.onTogglePin
- * @param {(groupId: string) => void} props.onHideGroup
  * @param {{ id: string, line_id: string, label: string, amount: number }[]} props.presets - one-tap expenses
  * @param {() => void} props.onManagePresets
  * @param {(input: { id?: string, lineId: string, amount: number, spentOn: string, note: string }) => Promise<string | undefined>} props.onAdd
@@ -191,14 +116,12 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
 export default function QuickAddExpense({
   plan,
   slotId,
+  scopes,
+  scope,
+  onScopeChange,
   groups,
+  offeredIds,
   lines,
-  bookableIds,
-  featured,
-  pinnedIds,
-  hiddenIds,
-  onTogglePin,
-  onHideGroup,
   presets,
   onManagePresets,
   history,
@@ -254,6 +177,12 @@ export default function QuickAddExpense({
     amountRef.current.focus()
   }
 
+  // A category of another part of the plan would stay selected out of sight
+  function changeScope(next) {
+    setLineId(undefined)
+    onScopeChange(next)
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
 
@@ -281,20 +210,33 @@ export default function QuickAddExpense({
 
   return (
     <form className="card quick-add" onSubmit={handleSubmit}>
-      <div className="quick-add__amount">
-        <DatePicker plan={plan} slotId={slotId} value={spentOn} onChange={setSpentOn} />
+      <header className="quick-add__header">
+        <ExpenseHistorySheet history={history} lines={lines} onEdit={edit} onRemove={onRemove} />
 
-        <label className="quick-add__field">
-          <span className="quick-add__currency">CHF</span>
-          <input
-            ref={amountRef}
-            inputMode="decimal"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            placeholder="0.00"
-            aria-label="Montant"
-          />
-        </label>
+        {!!scopes.length && (
+          <span className="switch switch--segmented" role="group" aria-label="Catégories affichées">
+            {scopes.map((option, index) => (
+              <button
+                key={`scope-${option.id}-${index}`}
+                type="button"
+                className="switch__option"
+                onClick={() => changeScope(option.id)}
+                aria-pressed={option.id === scope}
+              >
+                {option.label}
+              </button>
+            ))}
+          </span>
+        )}
+      </header>
+
+      {/* Only this part scrolls, so the shortcuts, the amount and the button never leave the screen */}
+      <div className="quick-add__scroll">
+        <section className="quick-add__block" aria-label="Catégorie">
+          <h3 className="quick-add__legend">Catégorie</h3>
+
+          <CategoryGroups groups={shownGroupsOf(groups, offeredIds, lineId)} selected={lineId} onSelect={setLineId} />
+        </section>
       </div>
 
       {/* One tap books a shortcut; the last pill opens the sheet where they are created and removed */}
@@ -323,41 +265,32 @@ export default function QuickAddExpense({
         </ul>
       </section>
 
-      {/* Only this part scrolls, so the shortcuts, "Autre…" and the button never leave the screen */}
-      <div className="quick-add__scroll">
-        <section className="quick-add__block" aria-label="Catégorie">
-          <h3 className="quick-add__legend">Catégorie</h3>
-
-          <CategoryGroups
-            groups={visibleGroupsOf(groups, featured, lineId, pinnedIds, hiddenIds, bookableIds)}
-            selected={lineId}
-            onSelect={setLineId}
-            onHide={onHideGroup}
-          />
-        </section>
-      </div>
-
       <footer className="quick-add__footer">
-        <OtherCategory
-          groups={groups}
-          selected={lineId}
-          onSelect={setLineId}
-          pinnedIds={pinnedIds}
-          onTogglePin={onTogglePin}
-        />
-
         {!!message && (
           <p className="quick-add__message" role="alert">
             {message}
           </p>
         )}
 
-        <div className="quick-add__actions">
+        {/* Date, amount and button on one row at the bottom, within reach of the thumb */}
+        <div className="quick-add__amount">
+          <DatePicker plan={plan} slotId={slotId} value={spentOn} onChange={setSpentOn} />
+
+          <label className="quick-add__field">
+            <span className="quick-add__currency">CHF</span>
+            <input
+              ref={amountRef}
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="0.00"
+              aria-label="Montant"
+            />
+          </label>
+
           <button type="submit" className="form__submit quick-add__submit">
             Ajouter
           </button>
-
-          <ExpenseHistorySheet history={history} lines={lines} onEdit={edit} onRemove={onRemove} />
         </div>
       </footer>
 

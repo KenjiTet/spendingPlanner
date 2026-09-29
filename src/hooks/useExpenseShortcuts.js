@@ -2,12 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 
 /**
- * Shortcuts of the signed-in person on the expense form: sub-groups pinned or hidden, and the one-tap expenses
+ * Shortcuts of the signed-in person on the expense form: the one-tap expenses
  * @param {string} planId
  */
 export default function useExpenseShortcuts(planId) {
-  const [pinnedGroupIds, setPinnedGroupIds] = useState([])
-  const [hiddenGroupIds, setHiddenGroupIds] = useState([])
   const [presets, setPresets] = useState([])
   const [error, setError] = useState('')
 
@@ -16,8 +14,6 @@ export default function useExpenseShortcuts(planId) {
 
     // Shortcuts are a convenience: on failure the form simply works without them
     if (!failure) {
-      setPinnedGroupIds(data.pinnedGroupIds)
-      setHiddenGroupIds(data.hiddenGroupIds)
       setPresets(data.presets.map((preset) => ({ ...preset, amount: Number(preset.amount) })))
     }
   }, [planId])
@@ -38,33 +34,6 @@ export default function useExpenseShortcuts(planId) {
   }
 
   /**
-   * @param {string} groupId
-   * @param {boolean} pinned
-   */
-  function pinGroup(groupId, pinned) {
-    if (pinned) {
-      // Pinning brings back a sub-group taken off the form
-      setHiddenGroupIds((current) => current.filter((id) => id !== groupId))
-      setPinnedGroupIds((current) => [...current, groupId])
-      persist(api.put(`/plans/${planId}/expenses/pins/${groupId}`))
-      return
-    }
-
-    setPinnedGroupIds((current) => current.filter((id) => id !== groupId))
-    persist(api.remove(`/plans/${planId}/expenses/pins/${groupId}`))
-  }
-
-  /**
-   * Takes a sub-group off the expense form, unpinning it if needed
-   * @param {string} groupId
-   */
-  function hideGroup(groupId) {
-    setPinnedGroupIds((current) => current.filter((id) => id !== groupId))
-    setHiddenGroupIds((current) => [...current, groupId])
-    persist(api.put(`/plans/${planId}/expenses/hidden/${groupId}`))
-  }
-
-  /**
    * @param {{ lineId: string, label: string, amount: number }} input
    */
   function addPreset({ lineId, label, amount }) {
@@ -82,5 +51,5 @@ export default function useExpenseShortcuts(planId) {
     persist(api.remove(`/plans/${planId}/expenses/presets/${id}`))
   }
 
-  return { pinnedGroupIds, hiddenGroupIds, presets, error, pinGroup, hideGroup, addPreset, removePreset }
+  return { presets, error, addPreset, removePreset }
 }

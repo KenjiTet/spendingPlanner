@@ -2928,7 +2928,7 @@ a.form__submit {
 }
 
 /* Quick add */
-/* The whole card fits the screen: amount on top, choices scrolling in the middle, the button always at the bottom */
+/* The whole card fits the screen: filter on top, choices scrolling in the middle, amount and button at the bottom */
 .quick-add {
   display: flex;
   flex-direction: column;
@@ -2977,6 +2977,8 @@ a.form__submit {
 .quick-add__footer {
   flex: none;
   display: grid;
+  /* A grid track defaults to its content width, which let the amount field push the row past the card */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -3050,21 +3052,38 @@ a.form__submit {
   color: var(--danger);
 }
 
-/* Add button taking the width, the history button square on its right */
-.quick-add__actions {
-  display: flex;
+/* The history button on top on the right, the filter across the card under it */
+.quick-add__header {
+  flex: none;
+  display: grid;
   gap: 8px;
 }
 
-.quick-add__actions .quick-add__submit {
+.quick-add__header .switch {
+  display: flex;
+}
+
+.quick-add__header .switch__option {
   flex: 1;
 }
 
-.quick-add__history {
+/* Next to the amount, the button keeps its label's width rather than the whole row */
+.quick-add__amount .quick-add__submit {
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 48px;
+  width: auto;
+  padding-inline: 18px;
+}
+
+.quick-add__history {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface-muted);
@@ -3073,8 +3092,8 @@ a.form__submit {
 }
 
 .quick-add__history .icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
 }
 
 .quick-add__history:hover {
@@ -3637,56 +3656,6 @@ a.form__submit {
   color: var(--muted);
 }
 
-/* Pin of a sub-group in the category sheet, pushed to the right of its heading */
-.categories__pin {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  font: inherit;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-/* Takes a sub-group off the expense form, discreet until hovered */
-.categories__hide {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.categories__hide:hover {
-  background: var(--neutral-tint);
-  color: var(--danger);
-}
-
-.categories__pin .icon {
-  width: 14px;
-  height: 14px;
-}
-
-.categories__pin[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--success-tint);
-  color: var(--accent);
-  font-weight: 600;
-}
-
 /* Shortcut sheet: the existing shortcuts, then the form creating a new one */
 .presets {
   display: flex;
@@ -4053,7 +4022,7 @@ a.form__submit {
     order: 2;
   }
 
-  /* The expense entry: a raised red "+" button in place of its icon */
+  /* The expense entry: a raised green "+" button in place of its icon */
   .sidebar__item--featured .sidebar__link > .sidebar__icon {
     display: none;
   }
@@ -4080,7 +4049,7 @@ a.form__submit {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--accent);
     color: var(--on-accent);
     box-shadow: 0 4px 12px var(--shadow);
   }
@@ -4143,9 +4112,10 @@ a.form__submit {
     padding: 14px;
   }
 
-  /* The card stops above the tab bar, and its scrolling part reaches the narrower padding */
+  /* The card fills the screen down to the tab bar, so the amount and the button sit at the bottom, under the thumb */
   .quick-add {
-    max-height: calc(100dvh - 52px - var(--tabbar-height) - env(safe-area-inset-bottom));
+    height: calc(100dvh - 52px - var(--tabbar-height) - env(safe-area-inset-bottom));
+    max-height: none;
   }
 
   .quick-add__scroll {
