@@ -76,5 +76,13 @@ export default function useSettlements(planId) {
     return applyAndReload(api.remove(`/plans/${planId}/settlements/${id}`))
   }
 
-  return { data, error, reload, declare, validate, cancel, dismissError: () => setError('') }
+  /**
+   * Deletes one of the viewer's own expenses not yet covered, the amount owed being recomputed
+   * @param {string} id
+   */
+  function removeExpense(id) {
+    return applyAndReload(api.remove(`/plans/${planId}/expenses/${id}`))
+  }
+
+  return { data, error, reload, declare, validate, cancel, removeExpense, dismissError: () => setError('') }
 }

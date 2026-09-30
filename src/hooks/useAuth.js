@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { createExamplePlan, EXAMPLE_INCOME } from '../lib/planImport.js'
+import { setMainCurrency } from '../utils/format.js'
 
 // Session of the signed-in person, held by the server in an http-only cookie
 export default function useAuth() {
   const [user, setUser] = useState(undefined)
   const [loading, setLoading] = useState(true)
 
+  // The amounts switch to the account's currency before anything renders with it
+  function applyUser(next) {
+    setMainCurrency(next?.main_currency)
+    setUser(next)
+  }
+
   useEffect(() => {
     api.get('/auth/session').then(({ data }) => {
-      setUser(data?.user ?? undefined)
+      applyUser(data?.user ?? undefined)
       setLoading(false)
     })
   }, [])
@@ -23,7 +30,7 @@ export default function useAuth() {
     const { data, error } = await api.post('/auth/login', { username, password })
 
     if (!error) {
-      setUser(data.user)
+      applyUser(data.user)
     }
 
     return error?.message
@@ -43,26 +50,27 @@ export default function useAuth() {
     }
 
     // Set up before the session is exposed, so the plans list loads with the example already in it
-    const profile = await api.patch('/auth/profile', { display_name: data.user.display_name, net_monthly: EXAMPLE_INCOME })
+    const profile = await api.patch('/auth/profile', { display_name: data.user.display_name, net_monthly: EXAMPLE_INCOME, main_currency: data.user.main_currency })
 
     // A failed example leaves a working, empty account: the sign-up itself succeeded
     await createExamplePlan()
-    setUser(profile.data?.user ?? data.user)
+    applyUser(profile.data?.user ?? data.user)
 
     return undefined
   }
 
   /**
-   * The income every plan reads, and the name shown to the other person
+   * The income every plan reads, the name shown to the other person and the currency amounts are converted into
    * @param {string} displayName
    * @param {number | string} netMonthly
+   * @param {string} mainCurrency
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function updateProfile(displayName, netMonthly) {
-    const { data, error } = await api.patch('/auth/profile', { display_name: displayName, net_monthly: netMonthly })
+  async function updateProfile(displayName, netMonthly, mainCurrency) {
+    const { data, error } = await api.patch('/auth/profile', { display_name: displayName, net_monthly: netMonthly, main_currency: mainCurrency })
 
     if (!error) {
-      setUser(data.user)
+      applyUser(data.user)
     }
 
     return error?.message
@@ -77,7 +85,7 @@ export default function useAuth() {
     const { data, error } = await api.patch('/auth/preferences', preferences)
 
     if (!error) {
-      setUser(data.user)
+      applyUser(data.user)
     }
 
     return error?.message
@@ -88,13 +96,13 @@ export default function useAuth() {
     const { data, error } = await api.post('/auth/tutorial')
 
     if (!error) {
-      setUser(data.user)
+      applyUser(data.user)
     }
   }
 
   async function signOut() {
     await api.post('/auth/logout')
-    setUser(undefined)
+    applyUser(undefined)
   }
 
   return { user, loading, signIn, signUp, updateProfile, updatePreferences, completeTutorial, signOut }

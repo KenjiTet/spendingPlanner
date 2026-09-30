@@ -47,6 +47,7 @@ addColumnIfMissing('plan_lines', 'auto_book', 'integer not null default 0 check 
 addColumnIfMissing('users', 'show_savings', 'integer not null default 1 check (show_savings in (0, 1))')
 addColumnIfMissing('users', 'show_taxes', 'integer not null default 1 check (show_taxes in (0, 1))')
 addColumnIfMissing('users', 'tutorial_done', 'integer not null default 1 check (tutorial_done in (0, 1))')
+addColumnIfMissing('users', 'main_currency', "text not null default 'CHF'")
 addColumnIfMissing('expenses', 'settlement_id', 'text references settlements (id) on delete set null')
 
 // Existing plans start their settlements from zero: older common expenses are left out

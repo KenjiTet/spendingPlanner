@@ -1,8 +1,37 @@
-// Single place where amounts are turned into display strings
-const formatter = new Intl.NumberFormat('fr-CH', {
-  style: 'currency',
-  currency: 'CHF',
-})
+// Reference currency of the account, every stored amount being expressed in it
+export const DEFAULT_CURRENCY = 'CHF'
+
+/**
+ * Currency formatter of a given code
+ * @param {string} currency
+ */
+function currencyFormatter(currency) {
+  return new Intl.NumberFormat('fr-CH', { style: 'currency', currency })
+}
+
+// Single place where amounts are turned into display strings, in the reference currency of the signed-in account
+let mainCurrency = DEFAULT_CURRENCY
+let formatter = currencyFormatter(mainCurrency)
+
+/**
+ * Switches the currency amounts are shown in, set from the profile as soon as the account is known
+ * @param {string | undefined} currency
+ */
+export function setMainCurrency(currency) {
+  const next = currency ?? DEFAULT_CURRENCY
+
+  if (next === mainCurrency) {
+    return
+  }
+
+  mainCurrency = next
+  formatter = currencyFormatter(next)
+}
+
+// The currency amounts are currently shown in
+export function getMainCurrency() {
+  return mainCurrency
+}
 
 // Formats an amount as currency, falling back to zero for unusable input
 export function formatAmount(amount) {
@@ -13,6 +42,15 @@ export function formatAmount(amount) {
   }
 
   return formatter.format(value)
+}
+
+/**
+ * Formats an amount in a currency other than the reference one, e.g. the one a receipt was paid in
+ * @param {number} amount
+ * @param {string} currency
+ */
+export function formatAmountIn(amount, currency) {
+  return currencyFormatter(currency).format(amount)
 }
 
 /**

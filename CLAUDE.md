@@ -112,7 +112,7 @@ server/auth.js                 the password seam (clear text for now) and the si
 server/access.js               who may read and edit what, the former RLS policies
 server/input.js                shared readers for values coming from the browser
 server/routes/                 auth (and the profile), plans (slots, join, templates, groups, lines, import), expenses,
-                               settlements (repayments between the two members)
+                               settlements (repayments between the two members), rates (exchange rates, cached an hour)
 src/main.jsx                   React entry point, router
 src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
@@ -122,7 +122,7 @@ src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage 
                                PlanPicker (plans list, active plan), ProfilePage, SettlementsPage (repayments)
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
-                               useSettlements, useDailySpending, usePullToRefresh)
+                               useSettlements, useExchangeRates, useDailySpending, usePullToRefresh)
 src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
 src/data/plan.json             sample plan, importable from the Plan page
 src/data/example-plan.json     solo plan created at sign-up, walked through by the guided tour (components/Tour)
@@ -186,7 +186,9 @@ components, and back into rows. Keep that shape stable rather than leaking colum
 **Components** are presentational and receive data and callbacks through props. Business logic stays in
 `src/utils/plan.js` and `src/utils/tracking.js` (gauge thresholds, month ranges).
 
-**Currency and dates** are formatted in one place, `src/utils/format.js`, currently `fr-CH` / CHF.
+**Currency and dates** are formatted in one place, `src/utils/format.js`, in `fr-CH`. Amounts are stored and shown in
+the account's main currency (`users.main_currency`, CHF by default, set from the profile); an expense typed in another
+currency is converted on entry with the ECB rates of Frankfurter, proxied by `/api/rates`.
 
 ## Git workflow
 

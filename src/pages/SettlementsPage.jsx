@@ -105,6 +105,21 @@ function SettlementSummary({ data, members, slotId, busy, onDeclare, onValidate,
   )
 }
 
+/**
+ * What deleting an expense removes, named so the right row is confirmed
+ * @param {{ line_id?: string, amount: number, spent_on: string } | undefined} expense
+ * @param {Record<string, { label: string }>} lines
+ */
+function removalMessageOf(expense, lines) {
+  if (!expense) {
+    return ''
+  }
+
+  const label = lines[expense.line_id]?.label ?? 'Ligne supprimée'
+
+  return `La dépense « ${label} » de ${formatAmount(expense.amount)} du ${formatShortDay(expense.spent_on)} sera supprimée définitivement.`
+}
+
 // Oldest first, as in the history
 function byDate(left, right) {
   if (left.spent_on !== right.spent_on) {
@@ -120,8 +135,10 @@ function byDate(left, right) {
  * @param {object[]} props.expenses
  * @param {Record<string, { name: string }>} props.members
  * @param {Record<string, object>} props.lines - from indexLines
+ * @param {string} props.slotId
+ * @param {(expense: object) => void} props.onRemove - asks before deleting one of the viewer's expenses
  */
-function OpenSequence({ expenses, members, lines }) {
+function OpenSequence({ expenses, members, lines, slotId, onRemove }) {
   return (
     <section className="card settlement">
       <header className="settlement__head">
@@ -131,7 +148,9 @@ function OpenSequence({ expenses, members, lines }) {
 
       {!expenses.length && <p className="section__hint">Aucune dépense commune depuis le dernier remboursement.</p>}
 
-      {!!expenses.length && <SettlementTable expenses={expenses} lines={lines} members={members} />}
+      {!!expenses.length && (
+        <SettlementTable expenses={expenses} lines={lines} members={members} slotId={slotId} onRemove={onRemove} />
+      )}
     </section>
   )
 }
@@ -178,6 +197,8 @@ export default function SettlementsPage() {
   const { plan, slotId, settlements, reload: reloadPlan } = useOutletContext()
   // The action waiting for a confirmation: 'declare' or 'validate'
   const [confirming, setConfirming] = useState(undefined)
+  // The expense waiting for its deletion to be confirmed
+  const [removing, setRemoving] = useState(undefined)
   const [busy, setBusy] = useState(false)
   const { data, error } = settlements
 
@@ -200,6 +221,13 @@ export default function SettlementsPage() {
     setBusy(true)
     await change()
     setBusy(false)
+  }
+
+  function confirmRemoval() {
+    const { id } = removing
+
+    setRemoving(undefined)
+    run(() => settlements.removeExpense(id))
   }
 
   function confirm() {
@@ -255,7 +283,7 @@ export default function SettlementsPage() {
         />
       )}
 
-      <OpenSequence expenses={inProgress} members={members} lines={lines} />
+      <OpenSequence expenses={inProgress} members={members} lines={lines} slotId={slotId} onRemove={setRemoving} />
 
       {!!data.history.length && <SettlementHistory settlements={data.history} members={members} lines={lines} />}
 
@@ -266,6 +294,15 @@ export default function SettlementsPage() {
         confirmLabel="Confirmer"
         onConfirm={confirm}
         onClose={() => setConfirming(undefined)}
+      />
+
+      <ConfirmSheet
+        open={!!removing}
+        title="Supprimer la dépense"
+        message={removalMessageOf(removing, lines)}
+        confirmLabel="Supprimer"
+        onConfirm={confirmRemoval}
+        onClose={() => setRemoving(undefined)}
       />
     </>
   )

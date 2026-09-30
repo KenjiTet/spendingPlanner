@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { formatAmount, formatShortDay, parseAmount } from '../utils/format.js'
+import { formatAmount, formatAmountIn, formatShortDay, parseAmount } from '../utils/format.js'
 import { toDateValue } from '../utils/tracking.js'
 import CategoryGroups from './CategoryGroups.jsx'
+import CurrencySelect from './CurrencySelect.jsx'
 import DatePicker from './DatePicker.jsx'
 import Icon from './Icon.jsx'
 import Sheet from './Sheet.jsx'
@@ -14,6 +15,20 @@ function toneClass(base, color) {
   }
 
   return `${base} subgroup--${color}`
+}
+
+/**
+ * The amount as paid, added to the confirmation when it was typed in another currency than the reference one
+ * @param {number} amount
+ * @param {string} currency
+ * @param {string} mainCurrency
+ */
+function paidNoteOf(amount, currency, mainCurrency) {
+  if (currency === mainCurrency) {
+    return ''
+  }
+
+  return ` (${formatAmountIn(amount, currency)})`
 }
 
 /**
@@ -48,7 +63,7 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
     <>
       <button type="button" className="quick-add__history" onClick={() => setOpen(true)}>
         <Icon name="history" className="icon" />
-        Historique des dépenses
+        Historique
       </button>
 
       <Sheet
@@ -110,6 +125,10 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
  * @param {Record<string, { label: string, color?: string }>} props.lines - from indexLines
  * @param {{ id: string, line_id: string, label: string, amount: number }[]} props.presets - one-tap expenses
  * @param {() => void} props.onManagePresets
+ * @param {string} props.mainCurrency - every amount is booked in it
+ * @param {string[]} props.currencies - those an amount may be typed in, the likeliest first
+ * @param {number} props.likelyCurrencyCount - how many of them lead the list
+ * @param {(amount: number, currency: string) => number | undefined} props.toMainCurrency - undefined without a known rate
  * @param {(input: { id?: string, lineId: string, amount: number, spentOn: string, note: string }) => Promise<string | undefined>} props.onAdd
  * @param {object[]} props.history - the viewer's expenses of the month, latest entry first
  * @param {(id: string) => void} props.onRemove
@@ -125,28 +144,38 @@ export default function QuickAddExpense({
   lines,
   presets,
   onManagePresets,
+  mainCurrency,
+  currencies,
+  likelyCurrencyCount,
+  toMainCurrency,
   history,
   onAdd,
   onRemove,
 }) {
   const amountRef = useRef(undefined)
   const [amount, setAmount] = useState('')
+  // Kept from one entry to the next, as abroad every receipt comes in the same currency
+  const [currency, setCurrency] = useState(mainCurrency)
   // No category is chosen in advance: a wrong default would be booked without a second look
   const [lineId, setLineId] = useState(undefined)
   const [spentOn, setSpentOn] = useState(() => toDateValue(new Date()))
   const [message, setMessage] = useState('')
-  // Confirmation shown at the top of the screen, its id restarting the animation on each entry
+  // Pill shown at the top of the screen, its id restarting the animation on each one
   const [toast, setToast] = useState(undefined)
 
-  // Books an expense and confirms it at the top of the screen
-  async function book(input) {
+  /**
+   * Books an expense and confirms it at the top of the screen
+   * @param {{ lineId: string, amount: number, note?: string }} input - the amount in the reference currency
+   * @param {string} [paidNote] - the amount as paid, when typed in another currency
+   */
+  async function book(input, paidNote = '') {
     const id = crypto.randomUUID()
     const error = await onAdd({ ...input, id, spentOn, note: input.note ?? '' })
 
     setMessage(error ?? '')
 
     if (!error) {
-      setToast({ id, text: `${lines[input.lineId].label} ${formatAmount(input.amount)} a été ajouté` })
+      setToast({ id, tone: 'success', text: `${lines[input.lineId].label} ${formatAmount(input.amount)} a été ajouté${paidNote}` })
     }
 
     return error
@@ -160,7 +189,9 @@ export default function QuickAddExpense({
   // Correcting an expense takes it back into the form, to be fixed and added again
   function edit(expense) {
     onRemove(expense.id)
+    // A booked amount is always in the reference currency
     setAmount(expense.amount.toFixed(2))
+    setCurrency(mainCurrency)
     setLineId(expense.line_id)
     setSpentOn(expense.spent_on)
     setMessage('')
@@ -184,12 +215,21 @@ export default function QuickAddExpense({
       return
     }
 
+    // The inline message sits below the list, out of sight: the missing category pops at the top instead
     if (!lineId) {
-      setMessage('Choisissez une catégorie.')
+      setMessage('')
+      setToast({ id: crypto.randomUUID(), tone: 'warning', text: 'Choisissez une catégorie.' })
       return
     }
 
-    const error = await book({ lineId, amount: value })
+    const converted = toMainCurrency(value, currency)
+
+    if (converted === undefined) {
+      setMessage(`Taux de change ${currency} indisponible, réessayez plus tard.`)
+      return
+    }
+
+    const error = await book({ lineId, amount: converted }, paidNoteOf(value, currency, mainCurrency))
 
     // The form starts over, the date kept: several receipts of the same day are often typed in a row
     if (!error) {
@@ -200,7 +240,9 @@ export default function QuickAddExpense({
 
   return (
     <form className="card quick-add" onSubmit={handleSubmit}>
+      {/* The date sits on top beside the history, leaving the whole bottom row to the amount */}
       <header className="quick-add__header">
+        <DatePicker plan={plan} slotId={slotId} value={spentOn} onChange={setSpentOn} />
         <ExpenseHistorySheet history={history} lines={lines} onEdit={edit} onRemove={onRemove} />
       </header>
 
@@ -265,12 +307,12 @@ export default function QuickAddExpense({
           </p>
         )}
 
-        {/* Date, amount and button on one row at the bottom, within reach of the thumb */}
+        {/* Amount and button on one row at the bottom, within reach of the thumb */}
         <div className="quick-add__amount">
-          <DatePicker plan={plan} slotId={slotId} value={spentOn} onChange={setSpentOn} />
-
-          <label className="quick-add__field">
-            <span className="quick-add__currency">CHF</span>
+          {/* Not a label: tapping the field would open the currency list, the first control inside it */}
+          <div className="quick-add__field">
+            {/* Another currency than the reference one is converted into it when the expense is added */}
+            <CurrencySelect currencies={currencies} pinned={likelyCurrencyCount} value={currency} onChange={setCurrency} />
             <input
               ref={amountRef}
               inputMode="decimal"
@@ -279,7 +321,7 @@ export default function QuickAddExpense({
               placeholder="0.00"
               aria-label="Montant"
             />
-          </label>
+          </div>
 
           <button type="submit" className="form__submit quick-add__submit">
             Ajouter
@@ -287,7 +329,7 @@ export default function QuickAddExpense({
         </div>
       </footer>
 
-      {!!toast && <Toast key={toast.id} text={toast.text} onDone={() => setToast(undefined)} />}
+      {!!toast && <Toast key={toast.id} text={toast.text} tone={toast.tone} onDone={() => setToast(undefined)} />}
     </form>
   )
 }

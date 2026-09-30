@@ -28,11 +28,11 @@ function planStatusOf(plan, isCurrent) {
 /**
  * The account's own figures and settings, its plans and the account actions
  * @param {object} props
- * @param {{ username: string, display_name: string, net_monthly: number, show_savings: number, show_taxes: number }} props.user
+ * @param {{ username: string, display_name: string, net_monthly: number, main_currency: string, show_savings: number, show_taxes: number }} props.user
  * @param {{ id: string, name: string, is_template: number, free_slots: number }[]} props.plans
  * @param {string} [props.currentPlanId]
  * @param {(id: string) => void} props.onSelectPlan
- * @param {(displayName: string, netMonthly: string) => Promise<string | undefined>} props.onSave
+ * @param {(displayName: string, netMonthly: string, mainCurrency: string) => Promise<string | undefined>} props.onSave
  * @param {(preferences: { show_savings: boolean, show_taxes: boolean }) => Promise<string | undefined>} props.onSavePreferences
  * @param {() => void} props.onReplayTutorial
  * @param {() => void} props.onSignOut

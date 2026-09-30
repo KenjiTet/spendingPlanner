@@ -36,6 +36,7 @@ function OpenPlan({ user, currentPlan }) {
             slotId: mySlot?.id,
             showSavings: !!user.show_savings,
             showTaxes: !!user.show_taxes,
+            mainCurrency: user.main_currency,
           }}
         />
       )}

@@ -24,8 +24,12 @@ function triggerClassOf(isToday) {
   return 'date-trigger date-trigger--set'
 }
 
-// Short name of a date other than today, shown on the calendar button
-function shortLabelOf(value, yesterday) {
+// Short name of the date, always written on the calendar button
+function shortLabelOf(value, today, yesterday) {
+  if (value === today) {
+    return 'Aujourd’hui'
+  }
+
   if (value === yesterday) {
     return 'Hier'
   }
@@ -85,7 +89,7 @@ function DateCalendar({ plan, slotId, value, onPick }) {
 
 /**
  * Date of an expense behind a calendar button: today by default, yesterday in one tap, any past day from the calendar.
- * The button names the date only once it is not today, keeping the amount row short
+ * The button always names the date, standing out once it is not today
  * @param {object} props
  * @param {object} props.plan
  * @param {string} props.slotId - the place this person holds in the plan
@@ -112,7 +116,7 @@ export default function DatePicker({ plan, slotId, value, onChange }) {
         aria-label={`Date de la dépense : ${formatShortDay(value)}`}
       >
         <Icon name="calendar" className="icon" />
-        {value !== today && <span>{shortLabelOf(value, yesterday)}</span>}
+        <span>{shortLabelOf(value, today, yesterday)}</span>
       </button>
 
       <Sheet open={open} title="Date de la dépense" onClose={() => setOpen(false)}>

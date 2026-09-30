@@ -66,3 +66,17 @@ export function readPosition(value) {
 
   return position
 }
+
+/**
+ * ISO 4217 currency code, e.g. CHF
+ * @param {unknown} value
+ */
+export function readCurrency(value) {
+  const currency = String(value ?? '')
+
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    fail(400, 'Devise invalide.')
+  }
+
+  return currency
+}

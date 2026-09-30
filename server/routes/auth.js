@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { clearSession, hashPassword, requireUser, setSession, verifyPassword } from '../auth.js'
 import { db } from '../db.js'
-import { readAmount, readFlag } from '../input.js'
+import { readAmount, readCurrency, readFlag } from '../input.js'
 
 const MIN_PASSWORD_LENGTH = 6
 const MAX_USERNAME_LENGTH = 32
@@ -11,13 +11,13 @@ const router = Router()
 
 const findByUsername = db.prepare('select * from users where username = ?')
 const findById = db.prepare(
-  'select id, username, display_name, net_monthly, show_savings, show_taxes, tutorial_done from users where id = ?'
+  'select id, username, display_name, net_monthly, main_currency, show_savings, show_taxes, tutorial_done from users where id = ?'
 )
 const insertUser = db.prepare(
   'insert into users (id, username, display_name, password, tutorial_done, created_at) values (?, ?, ?, ?, 0, ?)'
 )
 const updateProfile = db.prepare(
-  'update users set display_name = ?, net_monthly = ? where id = ?'
+  'update users set display_name = ?, net_monthly = ?, main_currency = ? where id = ?'
 )
 const updatePreferences = db.prepare('update users set show_savings = ?, show_taxes = ? where id = ?')
 const completeTutorial = db.prepare('update users set tutorial_done = 1 where id = ?')
@@ -32,6 +32,7 @@ function toPublicUser(user) {
     username: user.username,
     display_name: user.display_name,
     net_monthly: user.net_monthly,
+    main_currency: user.main_currency,
     show_savings: user.show_savings,
     show_taxes: user.show_taxes,
     tutorial_done: user.tutorial_done,
@@ -90,7 +91,7 @@ router.post('/login', (req, res) => {
   res.json({ user: toPublicUser(user) })
 })
 
-// The name and income every plan reads, guarded on its own: /session stays anonymous
+// The name, income and reference currency every plan reads, guarded on its own: /session stays anonymous
 router.patch('/profile', requireUser, (req, res) => {
   const displayName = String(req.body.display_name ?? '').trim()
 
@@ -99,7 +100,7 @@ router.patch('/profile', requireUser, (req, res) => {
     return
   }
 
-  updateProfile.run(displayName, readAmount(req.body.net_monthly), req.userId)
+  updateProfile.run(displayName, readAmount(req.body.net_monthly), readCurrency(req.body.main_currency), req.userId)
   res.json({ user: findById.get(req.userId) })
 })
 

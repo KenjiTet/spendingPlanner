@@ -13,6 +13,8 @@ create table if not exists users (
   show_taxes integer not null default 1 check (show_taxes in (0, 1)),
   -- The guided tour, shown once to accounts created since it exists: signup sets it to 0 explicitly
   tutorial_done integer not null default 1 check (tutorial_done in (0, 1)),
+  -- Reference currency: amounts typed in another one are converted into it on entry
+  main_currency text not null default 'CHF',
   created_at text not null
 );
 

@@ -3289,7 +3289,9 @@ html:has(.pull) {
   gap: 8px;
 }
 
+/* Anchors the currency list, which opens above the field */
 .quick-add__field {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -3397,10 +3399,12 @@ html:has(.pull) {
   color: var(--danger);
 }
 
-/* The history button alone on top, on the right */
+/* The history and the date side by side on top, sharing the width */
 .quick-add__header {
   flex: none;
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 /* The categories take the height left, their title and filter staying above the scrolling list; the rule above
@@ -3445,9 +3449,9 @@ html:has(.pull) {
 }
 
 .quick-add__history {
-  justify-self: end;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-height: 36px;
   padding: 0 12px;
@@ -3492,6 +3496,11 @@ html:has(.pull) {
   translate: calc(-50% + var(--sidebar-width) / 2) 0;
 }
 
+/* A warning, such as a missing category, pops in orange */
+.toast--warning {
+  background: var(--warning);
+}
+
 /* The popover defaults stretch it over the screen with a border: only the pill is kept */
 .toast[popover] {
   right: auto;
@@ -3506,19 +3515,19 @@ html:has(.pull) {
   stroke-width: 2.5;
 }
 
-/* Calendar button left of the amount, naming the date once it is not today */
+/* Calendar button beside the history, always naming the date */
 .date-trigger {
-  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-width: 56px;
+  min-width: 0;
+  min-height: 36px;
   padding: 0 12px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   background: var(--surface-muted);
-  color: var(--muted);
+  color: var(--text);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
@@ -3527,12 +3536,19 @@ html:has(.pull) {
 }
 
 .date-trigger .icon {
-  width: 22px;
-  height: 22px;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.date-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .date-trigger:hover {
-  color: var(--text);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .date-trigger--set {
@@ -3546,9 +3562,116 @@ html:has(.pull) {
   gap: 16px;
 }
 
-.quick-add__currency {
+/* Currency dropdown inside the amount field: the code as trigger, the list unfolding upwards over the shortcuts */
+.currency-select {
+  flex: none;
+}
+
+.currency-select__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.currency-select__trigger:hover,
+.currency-select__trigger[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* About five rows in sight, the next one peeking out to show the list scrolls */
+.currency-select__panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  width: min(240px, 100%);
+  max-height: 228px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+/* As a form field: the trigger looks like an input and the list opens under it */
+.currency-select--field {
+  position: relative;
+}
+
+.currency-select--field .currency-select__trigger {
+  width: 100%;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.currency-select--field .currency-select__panel {
+  top: calc(100% + 6px);
+  bottom: auto;
+  width: 100%;
+}
+
+.currency-select__rest {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.currency-select__option {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.currency-select__option:hover {
+  background: var(--neutral-tint);
+}
+
+.currency-select__option.is-active {
+  background: var(--success-tint);
+  color: var(--accent);
+}
+
+.currency-select__code {
+  flex: none;
+  width: 3em;
+  font-weight: 700;
+}
+
+.currency-select__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--muted);
-  font-weight: 600;
 }
 
 .quick-add__field input {
@@ -4393,6 +4516,12 @@ html:has(.pull) {
   white-space: nowrap;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* Narrow column holding the delete button of the viewer's own expenses */
+.ledger__action {
+  width: 1%;
+  text-align: right;
 }
 
 /* Repayments folded to one row each, unfolding their expenses */

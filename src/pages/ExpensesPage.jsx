@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import NoLinesNotice from '../components/NoLinesNotice.jsx'
 import PresetSheet from '../components/PresetSheet.jsx'
 import QuickAddExpense from '../components/QuickAddExpense.jsx'
+import useExchangeRates from '../hooks/useExchangeRates.js'
 import useExpenseShortcuts from '../hooks/useExpenseShortcuts.js'
 import useExpenseSuggestions from '../hooks/useExpenseSuggestions.js'
 import useExpenses from '../hooks/useExpenses.js'
@@ -36,12 +37,13 @@ function byCreation(left, right) {
 
 // Entry of the expenses as they happen, the monitoring living on the overview
 export default function ExpensesPage() {
-  const { plan, slotId, settlements } = useOutletContext()
+  const { plan, slotId, settlements, mainCurrency } = useOutletContext()
   // Past expenses are browsed from the calendars, this page only records new ones
   const month = useMemo(() => toMonthValue(new Date()), [])
   const { expenses, error, addExpense, removeExpense } = useExpenses(plan.id, slotId, month)
   const usage = useExpenseSuggestions(plan.id)
   const shortcuts = useExpenseShortcuts(plan.id)
+  const exchange = useExchangeRates(mainCurrency)
   const [managingPresets, setManagingPresets] = useState(false)
   const [scope, setScope] = useState(ALL_SCOPES)
 
@@ -102,6 +104,10 @@ export default function ExpensesPage() {
         lines={lines}
         presets={shortcuts.presets.filter((preset) => bookableIds.has(preset.line_id))}
         onManagePresets={() => setManagingPresets(true)}
+        mainCurrency={mainCurrency}
+        currencies={exchange.currencies}
+        likelyCurrencyCount={exchange.likelyCount}
+        toMainCurrency={exchange.toBase}
         history={expenses.filter((expense) => expense.slot_id === slotId).sort(byCreation)}
         onAdd={handleAdd}
         onRemove={removeExpense}

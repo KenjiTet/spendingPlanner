@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatAmount, parseAmount } from '../utils/format.js'
+import { formatAmount, getMainCurrency, parseAmount } from '../utils/format.js'
 import CategorySelect from './CategorySelect.jsx'
 import PresetList from './PresetList.jsx'
 import Sheet from './Sheet.jsx'
@@ -49,7 +49,8 @@ function PresetForm({ groups, lines, onAdd }) {
       </div>
 
       <label className="form__field presets__amount">
-        <span>Montant (CHF)</span>
+        {/* Shortcuts are booked as they are, in the reference currency */}
+        <span>Montant ({getMainCurrency()})</span>
         <input
           inputMode="decimal"
           value={amount}
