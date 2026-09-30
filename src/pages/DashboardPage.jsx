@@ -11,11 +11,18 @@ import SpendingPace from '../components/SpendingPace.jsx'
 import useExpenses from '../hooks/useExpenses.js'
 import usePullToRefresh from '../hooks/usePullToRefresh.js'
 import useYearExpenses from '../hooks/useYearExpenses.js'
-import { formatMonth } from '../utils/format.js'
+import { formatMonth, formatShortDay } from '../utils/format.js'
 import { loadPreference, savePreference } from '../utils/storage.js'
-import { accountBalanceOf, buildTracking, dailyBudgetOf, dailySpendingOf, daysLeftIn, firstWeekdayOf, indexLines, spendingPaceOf, toDateValue, toMonthValue, viewerExpensesOf, viewerShareOf, yearToDateTrackingOf } from '../utils/tracking.js'
+import { accountBalanceOf, buildTracking, dailyBudgetOf, dailySpendingOf, daysLeftIn, firstWeekdayOf, indexLines, spendingPaceOf, toDateValue, toMonthValue, viewerExpensesOf, viewerShareOf, weekRangeOf, weekTrackingOf, yearToDateTrackingOf } from '../utils/tracking.js'
 
 const PERIOD_KEY = 'dashboard-gauges-period'
+
+// Periods the category gauges can follow
+const PERIODS = [
+  { id: 'weekly', label: 'Semaine' },
+  { id: 'monthly', label: 'Mois' },
+  { id: 'annual', label: 'Année' },
+]
 
 // Months covered by the yearly gauges, from January to the month shown
 function yearNoteOf(month) {
@@ -26,11 +33,20 @@ function yearNoteOf(month) {
   return `Budget et dépenses cumulés de janvier à ${formatMonth(month)}`
 }
 
+// Days covered by the weekly gauges
+function weekNoteOf(week) {
+  if (week.from === week.to) {
+    return `Budget et dépenses du ${formatShortDay(week.from)}`
+  }
+
+  return `Budget et dépenses du ${formatShortDay(week.from)} au ${formatShortDay(week.to)}`
+}
+
 // Landing page: where the month stands against the plan, at a glance
 export default function DashboardPage() {
   const { plan, slotId, settlements, reload: reloadPlan } = useOutletContext()
   const [month, setMonth] = useState(() => toMonthValue(new Date()))
-  // The category gauges follow the month or the year so far, a choice remembered on the device
+  // The category gauges follow the week, the month or the year so far, a choice remembered on the device
   const [period, setPeriod] = useState(() => loadPreference(PERIOD_KEY) ?? 'monthly')
   const isAnnual = period === 'annual'
   const { expenses, error, reload: reloadExpenses, removeExpense } = useExpenses(plan.id, slotId, month)
@@ -70,22 +86,31 @@ export default function DashboardPage() {
   let gaugeTracking = tracking
   let gaugeNote = undefined
 
+  if (period === 'weekly') {
+    const week = weekRangeOf(month, today)
+
+    gaugeTracking = weekTrackingOf(plan, expenses, slotId, month, week)
+    gaugeNote = weekNoteOf(week)
+  }
+
   if (isAnnual) {
     gaugeTracking = yearTracking
     gaugeNote = yearNoteOf(month)
   }
 
   const periodSwitch = (
-    <span className={`switch switch--small switch--${period}`} role="group" aria-label="Période des jauges">
-      <span className="switch__thumb" aria-hidden="true" />
-
-      <button type="button" className="switch__option" onClick={() => changePeriod('monthly')} aria-pressed={!isAnnual}>
-        Mois
-      </button>
-
-      <button type="button" className="switch__option" onClick={() => changePeriod('annual')} aria-pressed={isAnnual}>
-        Année
-      </button>
+    <span className="switch switch--segmented switch--small" role="group" aria-label="Période des jauges">
+      {PERIODS.map((option, index) => (
+        <button
+          key={`period-${option.id}-${index}`}
+          type="button"
+          className="switch__option"
+          onClick={() => changePeriod(option.id)}
+          aria-pressed={option.id === period}
+        >
+          {option.label}
+        </button>
+      ))}
     </span>
   )
 

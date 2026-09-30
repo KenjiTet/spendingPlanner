@@ -2805,6 +2805,8 @@ a.form__submit {
 
 .pace__area {
   fill: var(--success-tint);
+  /* Translucent, so the planned pace stays visible beneath */
+  fill-opacity: 0.45;
 }
 
 .pace__spent {

@@ -51,9 +51,7 @@ export default function SpendingCalendar({ days, firstWeekday, dailyBudget, toda
         <section className="calendar__details" aria-live="polite">
           <header className="calendar__details-head">
             <h3 className="history__date">{formatDay(selected.date)}</h3>
-            <span className="history__amount">
-              {formatAmount(selected.spent)} / {formatAmount(dailyBudget)}
-            </span>
+            <span className="history__amount">{formatAmount(selected.spent)}</span>
           </header>
 
           {!selected.items.length && <p className="section__hint">Aucune dépense ce jour-là.</p>}

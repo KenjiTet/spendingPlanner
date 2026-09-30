@@ -198,6 +198,50 @@ export function yearToDateTrackingOf(plan, expenses, slotId, month) {
 }
 
 /**
+ * Monday-first week of the month to follow, cut at the month's edges: the current week for the current month,
+ * the last one for a past month, the first one for a month to come
+ * @param {string} month - YYYY-MM
+ * @param {Date} today
+ */
+export function weekRangeOf(month, today) {
+  const { from, to } = monthRange(month)
+  let reference = new Date(`${from}T00:00`)
+
+  if (month === toMonthValue(today)) {
+    reference = today
+  }
+
+  if (month < toMonthValue(today)) {
+    reference = new Date(`${to}T00:00`)
+  }
+
+  const weekday = (reference.getDay() + 6) % 7
+  const monday = toDateValue(new Date(reference.getFullYear(), reference.getMonth(), reference.getDate() - weekday))
+  const sunday = toDateValue(new Date(reference.getFullYear(), reference.getMonth(), reference.getDate() - weekday + 6))
+
+  // YYYY-MM-DD dates sort as text: the later of the two starts, the earlier of the two ends
+  return { from: [monday, from].sort()[1], to: [sunday, to].sort()[0] }
+}
+
+/**
+ * Tracking of one week of a month: each line's budget prorated to the days of the week, against the expenses booked
+ * over those days
+ * @param {object} plan
+ * @param {{ line_id: string, amount: number, spent_on: string }[]} expenses - of the month
+ * @param {string} slotId - the place this person holds in the plan
+ * @param {string} month - YYYY-MM
+ * @param {{ from: string, to: string }} week - from weekRangeOf
+ */
+export function weekTrackingOf(plan, expenses, slotId, month, week) {
+  const lastDay = Number(monthRange(month).to.slice(8))
+  const days = Number(week.to.slice(8)) - Number(week.from.slice(8)) + 1
+  const categories = plan.categories.map((line) => ({ ...line, amount: (toAmount(line.amount) * days) / lastDay }))
+  const weekExpenses = expenses.filter((expense) => expense.spent_on >= week.from && expense.spent_on <= week.to)
+
+  return buildTracking({ ...plan, categories }, weekExpenses, slotId)
+}
+
+/**
  * Share of the budget consumed, spending without any budget counting in full
  * @param {{ spent: number, budget: number }} gauge
  */
