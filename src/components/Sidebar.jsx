@@ -17,8 +17,8 @@ const BUDGET_LINK = { to: '/plan', label: 'Budget', short: 'Budget', icon: 'wall
 const PLANS_LINK = { to: '/plans', label: 'Mes plans', short: 'Plans', icon: 'layers' }
 const SETTLEMENTS_LINK = { to: '/remboursements', label: 'Remboursements', short: 'Rembours.', icon: 'transfer' }
 
-// Entries folded under "Plan", the last one taking the phone bar cell after the "+": the repayments take it,
-// "Mes plans" leaving the phone bar for the profile
+// Entries folded under "Plan"; on the phone bar the budget takes the cell after the "+" and the repayments the one
+// before it, "Mes plans" leaving the bar for the profile
 const PLAN_LINKS = [BUDGET_LINK, { ...PLANS_LINK, desktopOnly: true }, SETTLEMENTS_LINK]
 
 // Highlights the menu entry of the current page

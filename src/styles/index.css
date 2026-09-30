@@ -4892,12 +4892,12 @@ html:has(.pull) {
     display: block;
   }
 
-  /* Expenses in the middle of the five cells: Vue d’ensemble, Budget, Dépenses, Plans, Profil */
+  /* Expenses in the middle of the five cells: Vue d’ensemble, Remboursements, Dépenses, Budget, Profil */
   .sidebar__item--featured {
     order: 1;
   }
 
-  .sidebar__sublist > li:last-child {
+  .sidebar__sublist > li:first-child {
     order: 2;
   }
 
