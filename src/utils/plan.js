@@ -149,6 +149,18 @@ export function withDefaults(plan) {
 }
 
 /**
+ * What a person's tax takes each month: a tax paid once a year does not leave the account month by month
+ * @param {{ annualTax: number | string, taxTiming?: string }} person
+ */
+export function monthlyTaxOf(person) {
+  if (person.taxTiming === 'yearly') {
+    return 0
+  }
+
+  return toAmount(person.annualTax) / MONTHS_PER_YEAR
+}
+
+/**
  * Shapes one recap column, the leftover being derived in both periods
  * @param {string} id
  * @param {string} label
@@ -188,12 +200,8 @@ export function computeTotals(plan) {
   const expensesByScope = sumByScope(plan.subgroups, plan.categories)
   const savingsByScope = sumByScope(plan.savingGroups, plan.savings)
 
-  // Spreading the tax over the year is a cash-flow choice, it never changes the annual result
-  let monthlyTax = 0
-
-  if (plan.settings.taxTiming === 'monthly') {
-    monthlyTax = annualTax / MONTHS_PER_YEAR
-  }
+  // Spreading the tax over the year is each person's cash-flow choice, it never changes the annual result
+  const monthlyTax = plan.people.reduce((sum, person) => sum + monthlyTaxOf(person), 0)
 
   // The tax is a flow of its own, kept out of the expense totals
   const monthlyExpenses = monthlyCategories
@@ -203,12 +211,6 @@ export function computeTotals(plan) {
 
   // One recap column per person, then the household one, each in both periods
   const columns = plan.people.map((person) => {
-    let personTax = 0
-
-    if (plan.settings.taxTiming === 'monthly') {
-      personTax = toAmount(person.annualTax) / MONTHS_PER_YEAR
-    }
-
     // Common lines are split equally, personal ones count for their owner only
     const netMonthly = toAmount(person.netMonthly)
     const share = (expensesByScope[SHARED] ?? 0) / shareCount
@@ -218,7 +220,7 @@ export function computeTotals(plan) {
     return toColumn(person.id, person.label, {
       income: netMonthly,
       expenses,
-      tax: personTax,
+      tax: monthlyTaxOf(person),
       savings,
       annualIncome: netMonthly * MONTHS_PER_YEAR,
       annualExpenses: expenses * MONTHS_PER_YEAR,

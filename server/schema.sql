@@ -21,6 +21,7 @@ create table if not exists users (
 create table if not exists plans (
   id text primary key,
   name text not null,
+  -- Former plan-wide tax timing, copied onto every place when it moved there; no longer read
   tax_timing text not null default 'monthly' check (tax_timing in ('monthly', 'yearly')),
   share_code text not null unique,
   is_template integer not null default 0 check (is_template in (0, 1)),
@@ -39,6 +40,8 @@ create table if not exists plan_slots (
   user_id text references users (id) on delete set null,
   net_monthly real not null default 0,
   annual_tax real not null default 0,
+  -- Whether this place's tax leaves the account every month or once a year
+  tax_timing text not null default 'monthly' check (tax_timing in ('monthly', 'yearly')),
   position integer not null default 0
 );
 

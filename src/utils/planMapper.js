@@ -55,7 +55,8 @@ export function rowsToPlan({ plan, slots, groups, lines }) {
     id: plan.id,
     name: plan.name,
     createdBy: plan.created_by,
-    settings: { taxTiming: plan.tax_timing },
+    // Kept for the plan file format; the tax timing now belongs to each person
+    settings: {},
     // A person is a place in the plan: its name is derived from the account holding it, if any
     people: slots.map((slot) => ({
       id: slot.id,
@@ -63,6 +64,7 @@ export function rowsToPlan({ plan, slots, groups, lines }) {
       label: slot.display_name ?? slot.label,
       netMonthly: Number(slot.net_monthly),
       annualTax: Number(slot.annual_tax),
+      taxTiming: slot.tax_timing,
     })),
     subgroups: groups.filter((group) => group.kind === 'expense').map(toGroup),
     savingGroups: groups.filter((group) => group.kind === 'saving').map(toGroup),
@@ -155,7 +157,9 @@ export function toImportPayload(source, scopeByPerson) {
       slot_id: scopeByPerson[person.id],
       net_monthly: toAmount(person.netMonthly),
       annual_tax: toAmount(person.annualTax),
+      // Files saved before the timing moved to each person carry a single one for the whole plan
+      tax_timing: person.taxTiming ?? source.settings.taxTiming,
     }))
 
-  return { groups, lines, slots, tax_timing: source.settings.taxTiming }
+  return { groups, lines, slots }
 }

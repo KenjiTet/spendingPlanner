@@ -4,12 +4,32 @@ const RADIUS = 70
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 /**
+ * The legend split under its headings, empty groups left out; a single untitled list without groups
+ * @param {{ group?: string, value: number }[]} segments
+ * @param {{ id: string, label: string }[] | undefined} groups
+ */
+function legendsOf(segments, groups) {
+  if (!groups) {
+    return [{ id: 'all', label: '', segments, total: 0 }]
+  }
+
+  return groups
+    .map((group) => {
+      const members = segments.filter((segment) => segment.group === group.id)
+
+      return { ...group, segments: members, total: members.reduce((sum, segment) => sum + segment.value, 0) }
+    })
+    .filter((legend) => !!legend.segments.length)
+}
+
+/**
  * Donut chart with its legend, drawn as plain SVG so the app keeps no chart dependency
  * @param {object} props
  * @param {string} props.title
- * @param {{ id: string, label: string, value: number, tone: string }[]} props.slices
+ * @param {{ id: string, label: string, value: number, tone: string, group?: string }[]} props.slices
+ * @param {{ id: string, label: string }[]} [props.groups] - headings splitting the legend, matched on each slice's group
  */
-export default function PieChart({ title, slices }) {
+export default function PieChart({ title, slices, groups }) {
   const visible = slices.filter((slice) => slice.value > 0)
   const total = visible.reduce((sum, slice) => sum + slice.value, 0)
 
@@ -56,16 +76,29 @@ export default function PieChart({ title, slices }) {
         </g>
       </svg>
 
-      <ul className="legend">
-        {segments.map((segment, index) => (
-          <li key={`legend-${segment.id}-${index}`} className="legend__item">
-            <span className={`swatch swatch--${segment.tone}`} aria-hidden="true" />
-            <span className="legend__label">{segment.label}</span>
-            <span className="legend__share">{formatShare(segment.share)}</span>
-            <span className="legend__value">{formatAmount(segment.value)}</span>
-          </li>
+      <div className="chart__legends">
+        {legendsOf(segments, groups).map((legend, legendIndex) => (
+          <section key={`legend-${legend.id}-${legendIndex}`} className={`legend legend--${legend.id}`}>
+            {!!legend.label && (
+              <header className="legend__header">
+                <h4 className="legend__title">{legend.label}</h4>
+                <span className="legend__subtotal">{formatAmount(legend.total)}</span>
+              </header>
+            )}
+
+            <ul className="legend__list">
+              {legend.segments.map((segment, index) => (
+                <li key={`legend-item-${segment.id}-${index}`} className="legend__item">
+                  <span className={`swatch swatch--${segment.tone}`} aria-hidden="true" />
+                  <span className="legend__label">{segment.label}</span>
+                  <span className="legend__share">{formatShare(segment.share)}</span>
+                  <span className="legend__value">{formatAmount(segment.value)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </figure>
   )
 }

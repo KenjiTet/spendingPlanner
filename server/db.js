@@ -50,6 +50,11 @@ addColumnIfMissing('users', 'tutorial_done', 'integer not null default 1 check (
 addColumnIfMissing('users', 'main_currency', "text not null default 'CHF'")
 addColumnIfMissing('expenses', 'settlement_id', 'text references settlements (id) on delete set null')
 
+// Each place inherits the timing its plan used to set for everyone
+if (addColumnIfMissing('plan_slots', 'tax_timing', "text not null default 'monthly' check (tax_timing in ('monthly', 'yearly'))")) {
+  db.exec('update plan_slots set tax_timing = (select tax_timing from plans where plans.id = plan_slots.plan_id)')
+}
+
 // Existing plans start their settlements from zero: older common expenses are left out
 if (addColumnIfMissing('plans', 'settlements_since', "text not null default ''")) {
   db.prepare('update plans set settlements_since = ?').run(new Date().toISOString())

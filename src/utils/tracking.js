@@ -1,5 +1,5 @@
 // Pure maths of the monthly expense tracking, kept apart from the hooks and the components
-import { MONTHS_PER_YEAR, scopeOf, SHARED, sumByScope, toAmount, toScopeTree } from './plan.js'
+import { monthlyTaxOf, scopeOf, SHARED, sumByScope, toAmount, toScopeTree } from './plan.js'
 
 // Share of the budget from which a gauge warns that the limit is close
 export const WARNING_RATIO = 0.8
@@ -494,13 +494,7 @@ export function accountBalanceOf(plan, share, slotId) {
   const savingsByScope = sumByScope(plan.savingGroups, plan.savings)
   const income = toAmount(person.netMonthly)
   const savings = (savingsByScope[SHARED] ?? 0) / shareCountOf(plan) + (savingsByScope[slotId] ?? 0)
-
-  // A tax paid at the end of the year does not leave the account month by month
-  let tax = 0
-
-  if (plan.settings.taxTiming === 'monthly') {
-    tax = toAmount(person.annualTax) / MONTHS_PER_YEAR
-  }
+  const tax = monthlyTaxOf(person)
 
   const remaining = share.budget - share.spent
   const unbudgeted = income - tax - savings - share.budget

@@ -171,13 +171,22 @@ export default function usePlan(planId) {
   }
 
   /**
-   * Updates one shared setting, such as when the tax is deducted
-   * @param {'taxTiming'} key
-   * @param {string} value
+   * Sets whether the tax of one place is paid every month or once a year
+   * @param {string} id - the place being edited
+   * @param {'monthly' | 'yearly'} value
    */
-  function updateSetting(key, value) {
-    setPlan((current) => ({ ...current, settings: { ...current.settings, [key]: value } }))
-    persist(api.patch(`/plans/${planId}`, { tax_timing: value }))
+  function updateTaxTiming(id, value) {
+    setPlan((current) => ({
+      ...current,
+      people: current.people.map((person) => {
+        if (person.id !== id) {
+          return person
+        }
+
+        return { ...person, taxTiming: value }
+      }),
+    }))
+    persist(api.patch(`/plans/${planId}/slots/${id}/tax-timing`, { tax_timing: value }))
   }
 
   /**
@@ -299,7 +308,7 @@ export default function usePlan(planId) {
     reload,
     flush,
     updateTax,
-    updateSetting,
+    updateTaxTiming,
     addItem,
     updateItem,
     removeItem,

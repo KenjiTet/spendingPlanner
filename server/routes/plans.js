@@ -36,14 +36,14 @@ const insertSlot = db.prepare(
   'insert into plan_slots (id, plan_id, label, user_id, net_monthly, annual_tax, position) values (@id, @plan_id, @label, @user_id, @net_monthly, @annual_tax, @position)'
 )
 const findPlan = db.prepare(
-  'select id, name, created_by, tax_timing, share_code, is_template from plans where id = ?'
+  'select id, name, created_by, share_code, is_template from plans where id = ?'
 )
 const findByCode = db.prepare('select id, name from plans where share_code = ?')
-const findTemplate = db.prepare('select id, tax_timing from plans where id = ? and is_template = 1')
+const findTemplate = db.prepare('select id from plans where id = ? and is_template = 1')
 const findProfile = db.prepare('select display_name, net_monthly from users where id = ?')
 // A taken place reads its income from the account profile; the tax belongs to the place, set in the budget
 const listSlots = db.prepare(`
-  select s.id, s.label, s.user_id, u.display_name, s.annual_tax,
+  select s.id, s.label, s.user_id, u.display_name, s.annual_tax, s.tax_timing,
          coalesce(u.net_monthly, s.net_monthly) as net_monthly
   from plan_slots s left join users u on u.id = s.user_id
   where s.plan_id = ? order by s.position
@@ -54,8 +54,9 @@ const claimSlot = db.prepare(
   'update plan_slots set user_id = ?, net_monthly = ? where id = ? and plan_id = ? and user_id is null'
 )
 const updateTax = db.prepare('update plan_slots set annual_tax = ? where id = ? and plan_id = ?')
+const updateTaxTiming = db.prepare('update plan_slots set tax_timing = ? where id = ? and plan_id = ?')
 const updateFigures = db.prepare(
-  'update plan_slots set net_monthly = ?, annual_tax = ? where id = ? and plan_id = ?'
+  'update plan_slots set net_monthly = ?, annual_tax = ?, tax_timing = ? where id = ? and plan_id = ?'
 )
 const updateTemplate = db.prepare('update plans set is_template = ? where id = ?')
 const listGroups = db.prepare('select * from plan_groups where plan_id = ? order by position')
@@ -68,7 +69,6 @@ const listSharedLines = db.prepare(
 )
 const findGroup = db.prepare('select * from plan_groups where id = ?')
 const findLine = db.prepare('select * from plan_lines where id = ?')
-const updateTaxTiming = db.prepare('update plans set tax_timing = ? where id = ?')
 const insertGroup = db.prepare(
   'insert into plan_groups (id, plan_id, kind, label, color, owner_id, position) values (@id, @plan_id, @kind, @label, @color, @owner_id, @position)'
 )
@@ -137,6 +137,33 @@ function readOwner(slotId, value) {
   }
 
   return ownerId
+}
+
+// An unknown timing falls back to the monthly one, the default of every place
+function readTaxTiming(value) {
+  if (!TAX_TIMINGS.includes(value)) {
+    return 'monthly'
+  }
+
+  return value
+}
+
+/**
+ * Only your own tax may be changed, or that of a free place by the plan creator
+ * @param {string} planId
+ * @param {string} slotId
+ * @param {string} userId
+ */
+function checkTaxAccess(planId, slotId, userId) {
+  const slot = findSlot.get(slotId, planId)
+
+  if (!slot) {
+    fail(404, 'Cette place n’existe plus.')
+  }
+
+  if (slot.user_id !== userId && (!!slot.user_id || !isPlanCreator(planId, userId))) {
+    fail(403, 'Vous ne pouvez modifier que vos propres impôts.')
+  }
 }
 
 /**
@@ -231,7 +258,7 @@ function toLineRow(req) {
 /**
  * Common structure of a published template, with fresh identifiers and no amounts
  * @param {string} planId
- * @param {{ id: string, tax_timing: string }} template
+ * @param {{ id: string }} template
  */
 function copyTemplate(planId, template) {
   const groupIds = {}
@@ -264,9 +291,6 @@ function copyTemplate(planId, template) {
       position: line.position,
     })
   })
-
-  // A cash-flow setting rather than an amount, so it travels with the structure
-  updateTaxTiming.run(template.tax_timing, planId)
 }
 
 // A plan, its places, the creator's claim on the first one and the copied template go together
@@ -312,12 +336,8 @@ const importPlan = db.transaction((planId, payload, slotIds) => {
   payload.slots.forEach((slot) => {
     const slotId = readImportedOwner(slotIds, slot.slot_id)
 
-    updateFigures.run(readAmount(slot.net_monthly), readAmount(slot.annual_tax), slotId, planId)
+    updateFigures.run(readAmount(slot.net_monthly), readAmount(slot.annual_tax), readTaxTiming(slot.tax_timing), slotId, planId)
   })
-
-  if (TAX_TIMINGS.includes(payload.tax_timing)) {
-    updateTaxTiming.run(payload.tax_timing, planId)
-  }
 })
 
 // Plans the person holds a place in
@@ -433,32 +453,26 @@ router.get('/:planId', (req, res) => {
   })
 })
 
-// Only the shared settings, the rest of the plan row is never rewritten by clients
-router.patch('/:planId', (req, res) => {
+// Your own tax, or that of a free place for as long as nobody has taken it
+router.patch('/:planId/slots/:slotId/tax', (req, res) => {
+  const { planId, slotId } = req.params
+
+  checkTaxAccess(planId, slotId, req.userId)
+  updateTax.run(readAmount(req.body.annual_tax), slotId, planId)
+  res.json({})
+})
+
+// Whether that same tax is paid every month or once a year
+router.patch('/:planId/slots/:slotId/tax-timing', (req, res) => {
+  const { planId, slotId } = req.params
   const taxTiming = String(req.body.tax_timing ?? '')
 
   if (!TAX_TIMINGS.includes(taxTiming)) {
     fail(400, 'Réglage inconnu.')
   }
 
-  updateTaxTiming.run(taxTiming, req.params.planId)
-  res.json({})
-})
-
-// Your own tax, or that of a free place for as long as nobody has taken it
-router.patch('/:planId/slots/:slotId/tax', (req, res) => {
-  const { planId, slotId } = req.params
-  const slot = findSlot.get(slotId, planId)
-
-  if (!slot) {
-    fail(404, 'Cette place n’existe plus.')
-  }
-
-  if (slot.user_id !== req.userId && (!!slot.user_id || !isPlanCreator(planId, req.userId))) {
-    fail(403, 'Vous ne pouvez modifier que vos propres impôts.')
-  }
-
-  updateTax.run(readAmount(req.body.annual_tax), slotId, planId)
+  checkTaxAccess(planId, slotId, req.userId)
+  updateTaxTiming.run(taxTiming, slotId, planId)
   res.json({})
 })
 

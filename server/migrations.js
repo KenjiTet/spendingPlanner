@@ -81,11 +81,11 @@ function copyPlans(db) {
   })
 }
 
-// One taken slot per member, in the order they joined
+// One taken slot per member, in the order they joined, paying their tax as the plan did
 function copySlots(db) {
   const insertSlot = db.prepare(`
-    insert into plan_slots (id, plan_id, label, user_id, net_monthly, annual_tax, position)
-    values (?, ?, ?, ?, ?, ?, ?)
+    insert into plan_slots (id, plan_id, label, user_id, net_monthly, annual_tax, tax_timing, position)
+    values (?, ?, ?, ?, ?, ?, (select tax_timing from plans where id = ?), ?)
   `)
   const members = db.prepare('select * from legacy_plan_members order by plan_id, joined_at').all()
   const positions = new Map()
@@ -94,7 +94,7 @@ function copySlots(db) {
     const position = positions.get(member.plan_id) ?? 0
 
     positions.set(member.plan_id, position + 1)
-    insertSlot.run(randomUUID(), member.plan_id, `Personne ${position + 1}`, member.user_id, member.net_monthly, member.annual_tax, position)
+    insertSlot.run(randomUUID(), member.plan_id, `Personne ${position + 1}`, member.user_id, member.net_monthly, member.annual_tax, member.plan_id, position)
   })
 }
 

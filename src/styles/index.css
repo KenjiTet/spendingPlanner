@@ -30,6 +30,11 @@
   --savings: #0f9d76;
   --savings-tint: #e2f5ee;
   --neutral-tint: #eeece7;
+  /* Parts of a shared plan: the common one and the viewer's own, the other person's staying neutral */
+  --common: #4f46e5;
+  --common-tint: #ecebfd;
+  --own: #0e7490;
+  --own-tint: #e1f2f6;
   /* Every progress bar of the app, whatever its status */
   --progress: var(--accent);
 
@@ -139,21 +144,77 @@ body {
   --section-tint: var(--neutral-tint);
 }
 
-/* Each row names its person, so unlike the other field rows every label stays visible */
-.tax__item {
+/* One block per person: their yearly tax as a budget line, then how it is paid */
+.tax__people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.tax__person {
+  display: grid;
+  gap: 8px;
+}
+
+.tax__person + .tax__person {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.tax__line .line__name {
+  padding: 0 0 0 9px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+}
+
+/* The timing switch sits between the name and the amount; on a very narrow screen the amount drops below */
+.section--tax .line {
   flex-wrap: wrap;
-  align-items: end;
+  gap: 6px 14px;
 }
 
-.tax__item .form__field {
-  flex: 0 1 240px;
+.section--tax .line__name {
+  flex: none;
 }
 
-.tax__monthly {
-  padding-bottom: 10px;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
+/* The amount and its payment are pushed to the end of the row, the timing staying right beside the name */
+.tax__figure {
+  display: inline-grid;
+  justify-items: end;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.tax__timing {
+  font-size: 0.8rem;
   color: var(--muted);
+}
+
+/* A slim switch, the size of a chip rather than of a control bar */
+.section--tax .switch {
+  flex: none;
+  padding: 2px;
+}
+
+.section--tax .switch__option {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+/* Out of the flex row, the field needs its own width */
+.tax__figure .line__amount {
+  width: 96px;
+  text-align: right;
+}
+
+.tax__payment {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .section--summary {
@@ -187,21 +248,9 @@ body {
   color: var(--section-color);
 }
 
-.section__totals {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
 .section__total {
   color: var(--section-color);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.section__subtotal {
-  font-size: 0.8rem;
-  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -516,14 +565,59 @@ body {
   stroke-width: 26;
 }
 
+.chart__legends {
+  width: 100%;
+  display: grid;
+  gap: 20px;
+}
+
+/* One block per part of the plan, headed by its name and subtotal */
 .legend {
+  --legend-color: var(--muted);
+  --legend-tint: var(--neutral-tint);
+  display: grid;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.legend--common {
+  --legend-color: var(--common);
+  --legend-tint: var(--common-tint);
+}
+
+.legend--own {
+  --legend-color: var(--own);
+  --legend-tint: var(--own-tint);
+}
+
+.legend__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--legend-tint);
+  color: var(--legend-color);
+}
+
+.legend__title {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.legend__subtotal {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend__list {
   list-style: none;
   margin: 0;
   padding: 0;
-  width: 100%;
   display: grid;
-  gap: 6px;
-  font-size: 0.85rem;
 }
 
 .legend__item {
@@ -531,7 +625,13 @@ body {
   /* A long label shrinks to an ellipsis instead of widening the chart */
   grid-template-columns: 12px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legend__item:last-child {
+  border-bottom: 0;
 }
 
 .legend__label {
@@ -541,11 +641,18 @@ body {
 }
 
 .legend__share {
+  min-width: 3.4em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--neutral-tint);
+  font-size: 0.75rem;
+  text-align: center;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 .legend__value {
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -688,13 +795,31 @@ body {
 
 
 .scope {
+  /* The common part, the viewer's own and the other person's each carry a colour, set by the modifiers below */
+  --scope-color: var(--muted);
+  --scope-tint: var(--neutral-tint);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
-  padding: 12px;
+  padding: 0 12px 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-muted);
+}
+
+.scope--common {
+  --scope-color: var(--common);
+  --scope-tint: var(--common-tint);
+}
+
+.scope--own {
+  --scope-color: var(--own);
+  --scope-tint: var(--own-tint);
+}
+
+/* A folded scope is reduced to its banner */
+.scope:has(> .scope__header:only-child) {
+  padding-bottom: 0;
 }
 
 /* Solo plan: the only scope loses its frame, its groups sitting straight in the section */
@@ -704,22 +829,33 @@ body {
   background: none;
 }
 
+/* A tinted banner naming the part */
 .scope__header {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin: 0 -12px;
+  padding: 10px 12px;
+  border-radius: 11px 11px 0 0;
+  background: var(--scope-tint);
+  color: var(--scope-color);
+}
+
+.scope__header:only-child {
+  border-radius: 11px;
 }
 
 .scope__title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .scope__total {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .scope__actions {
@@ -2187,6 +2323,7 @@ input.subgroup__name,
 }
 
 .scope__badge {
+  white-space: nowrap;
   font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 999px;
@@ -4954,11 +5091,22 @@ html:has(.pull) {
     height: 38px;
   }
 
-  /* Plan editor: one frame less, the common and personal parts reading as headings rather than boxes */
+  /* Plan editor: one frame less, each part opened by its tinted banner and set well apart from the next */
   .scope {
     padding: 0;
     border: 0;
     background: transparent;
+  }
+
+  /* Title and total share one row */
+  .scope > .scope__header {
+    flex-wrap: nowrap;
+    margin: 0;
+    border-radius: 10px;
+  }
+
+  .scope + .scope {
+    margin-top: 16px;
   }
 
   .subgroup {

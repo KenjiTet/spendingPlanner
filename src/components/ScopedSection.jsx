@@ -26,13 +26,26 @@ function autoClassOf(autoBook) {
   return 'line__auto'
 }
 
-// A flat scope drops its frame, its content sitting straight in the section
-function scopeClassOf(flat) {
+/**
+ * A flat scope drops its frame; otherwise the common part, the viewer's own and the other person's each get their colour
+ * @param {string} scopeId
+ * @param {boolean} editable
+ * @param {boolean} flat
+ */
+function scopeClassOf(scopeId, editable, flat) {
   if (flat) {
     return 'scope scope--flat'
   }
 
-  return 'scope'
+  if (scopeId === SHARED) {
+    return 'scope scope--common'
+  }
+
+  if (editable) {
+    return 'scope scope--own'
+  }
+
+  return 'scope scope--other'
 }
 
 /**
@@ -76,7 +89,6 @@ function toggleIn(ids, id) {
  * @param {string} props.addLabel - wording of the button adding a line
  * @param {boolean} [props.autoBookable] - lines may be flagged as debited automatically every month
  * @param {number} props.total
- * @param {number} [props.annualTotal] - shown beside the monthly total when given
  * @param {{ id: string, label: string }[]} props.scopes - common first, then one per person
  * @param {string[]} [props.editableScopes] - scopes the viewer may change, all of them when omitted
  * @param {number} [props.shareCount] - people the common scope is split between, its per-person amounts shown above one
@@ -97,7 +109,6 @@ export default function ScopedSection({
   addLabel,
   autoBookable,
   total,
-  annualTotal,
   scopes,
   editableScopes,
   shareCount = 1,
@@ -315,12 +326,7 @@ export default function ScopedSection({
     )
   }
 
-  const totals = (
-    <span className="section__totals">
-      <span className="section__total">{formatAmount(total)} / mois</span>
-      {annualTotal !== undefined && <span className="section__subtotal">{formatAmount(annualTotal)} / an</span>}
-    </span>
-  )
+  const totals = <span className="section__total">{formatAmount(total)} / mois</span>
 
   return (
     <Section title={title} id={sectionAnchor(anchor)} tone={tone} actions={totals}>
@@ -331,7 +337,7 @@ export default function ScopedSection({
           <article
             key={`scope-${scope.id}-${scopeIndex}`}
             id={scopeAnchor(anchor, scope.id)}
-            className={scopeClassOf(flat)}
+            className={scopeClassOf(scope.id, editable, flat)}
           >
             {!flat && (
               <header className="scope__header">
@@ -344,8 +350,6 @@ export default function ScopedSection({
                   <span className="chevron" aria-hidden="true" />
                   <h3 className="scope__title">{scope.label}</h3>
                 </button>
-
-                {!editable && <span className="scope__badge">Lecture seule</span>}
 
                 <span className="scope__total">
                   {formatAmount(scope.total)} / mois

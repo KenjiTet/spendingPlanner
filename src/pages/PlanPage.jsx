@@ -7,25 +7,26 @@ import TaxSection from '../components/TaxSection.jsx'
 import UnnamedLinesBanner from '../components/UnnamedLinesBanner.jsx'
 import PlanTree from '../components/PlanTree.jsx'
 import SavePanel from '../components/SavePanel.jsx'
-import { MONTHS_PER_YEAR, SHARED, toAmount, toScopeTree } from '../utils/plan.js'
+import { monthlyTaxOf, SHARED, toScopeTree } from '../utils/plan.js'
 
-// The fixed scopes, which drive how the recap splits common from personal amounts
-function scopesOf(people, commonLabel, personLabel) {
-  const personal = people.map((person) => ({
-    id: person.id,
-    label: `${personLabel} ${person.label}`,
-  }))
+/**
+ * The fixed scopes, the viewer's own part right after the common one and named as theirs
+ * @param {{ id: string, label: string }[]} people
+ * @param {string | undefined} slotId - the viewer's place in the plan
+ * @param {{ common: string, own: string, other: string }} labels - the other one is followed by the person's name
+ */
+function scopesOf(people, slotId, labels) {
+  const own = people.filter((person) => person.id === slotId).map((person) => ({ id: person.id, label: labels.own }))
+  const others = people
+    .filter((person) => person.id !== slotId)
+    .map((person) => ({ id: person.id, label: `${labels.other} ${person.label}` }))
 
-  return [{ id: SHARED, label: commonLabel }, ...personal]
+  return [{ id: SHARED, label: labels.common }, ...own, ...others]
 }
 
 // Monthly tax of each person, for the charts; nothing leaves the account monthly when it is paid once a year
-function taxByPersonOf(people, taxTiming) {
-  if (taxTiming !== 'monthly') {
-    return {}
-  }
-
-  return Object.fromEntries(people.map((person) => [person.id, toAmount(person.annualTax) / MONTHS_PER_YEAR]))
+function taxByPersonOf(people) {
+  return Object.fromEntries(people.map((person) => [person.id, monthlyTaxOf(person)]))
 }
 
 /**
@@ -65,7 +66,7 @@ export default function PlanPage() {
     userId,
     slotId,
     updateTax,
-    updateSetting,
+    updateTaxTiming,
     addItem,
     updateItem,
     removeItem,
@@ -78,9 +79,9 @@ export default function PlanPage() {
   } = useOutletContext()
 
   const isSolo = plan.people.length < 2
-  const expenseScopes = scopesOf(plan.people, 'Budget commun', 'Budget personnel')
-  const savingScopes = scopesOf(plan.people, 'Épargne commune', 'Épargne')
-  const taxByPerson = taxByPersonOf(plan.people, plan.settings.taxTiming)
+  const expenseScopes = scopesOf(plan.people, slotId, { common: 'Budget commun', own: 'Mon budget', other: 'Budget de' })
+  const savingScopes = scopesOf(plan.people, slotId, { common: 'Épargne commune', own: 'Mon épargne', other: 'Épargne de' })
+  const taxByPerson = taxByPersonOf(plan.people)
   const editableScopes = [SHARED, slotId]
   const visibleExpenseScopes = visibleScopesOf(expenseScopes, isSolo)
   const visibleSavingScopes = visibleScopesOf(savingScopes, isSolo)
@@ -149,7 +150,6 @@ export default function PlanPage() {
             tone="savings"
             addLabel="Ligne d’épargne"
             total={totals.monthlySavings}
-            annualTotal={totals.annualSavings}
             scopes={visibleSavingScopes}
             editableScopes={editableScopes}
             shareCount={plan.people.length}
@@ -169,10 +169,9 @@ export default function PlanPage() {
           <TaxSection
             people={plan.people}
             editableIds={editableIdsOf(plan, userId)}
-            taxTiming={plan.settings.taxTiming}
             annualTax={totals.annualTax}
             onUpdateTax={updateTax}
-            onUpdateSetting={updateSetting}
+            onUpdateTaxTiming={updateTaxTiming}
           />
         )}
 
