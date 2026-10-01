@@ -4272,6 +4272,8 @@ html:has(.pull) {
   left: var(--bubble-left, 50%);
   width: min(340px, calc(100vw - 32px));
   display: grid;
+  /* The column never grows past the bubble, whatever the width of what it holds */
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 16px;
   border-radius: 14px;
@@ -4305,6 +4307,32 @@ html:has(.pull) {
 
 .tour__demo .settlement-summary__amount {
   font-size: 1.4rem;
+}
+
+/* On a phone the example keeps what it shows, who paid how much, and drops the dates to fit the bubble */
+@media (max-width: 760px) {
+  .tour__demo {
+    padding: 8px;
+  }
+
+  .tour__demo .ledger {
+    font-size: 0.8rem;
+  }
+
+  .tour__demo .ledger__date {
+    display: none;
+  }
+
+  /* The expense becomes the first column shown, aligned on the card's edge */
+  .tour__demo .ledger__date + * {
+    padding-left: 0;
+  }
+}
+
+/* A centred bubble taller than a small screen scrolls rather than leaving it; it has no arrow to clip */
+.tour.is-centered .tour__bubble {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .tour.is-searching .tour__bubble {
@@ -4404,9 +4432,13 @@ html:has(.pull) {
 
 @media (prefers-reduced-motion: no-preference) {
   /* The spotlight and the bubble glide from one element to the next */
-  .tour__spotlight,
-  .tour__bubble {
+  .tour__spotlight {
     transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  }
+
+  /* The bubble's width is not animated: it is measured to place the bubble, and must be its final one */
+  .tour__bubble {
+    transition: top 0.3s ease, left 0.3s ease;
   }
 }
 

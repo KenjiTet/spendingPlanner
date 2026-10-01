@@ -20,8 +20,8 @@ const STEPS = [
     to: '/plan',
     title: 'Un petit tour pour commencer',
     text: {
-      solo: 'Votre budget est prêt ! Faisons un petit tour de l’app pour le prendre en main.',
-      duo: 'Votre budget à deux est prêt ! Faisons un petit tour de l’app pour le prendre en main ensemble.',
+      solo: 'Votre budget est prêt ! Faisons un petit tour de l’app pour la prendre en main.',
+      duo: 'Votre budget à deux est prêt ! Faisons un petit tour de l’app pour la prendre en main ensemble.',
     },
   },
   {
@@ -246,8 +246,9 @@ function bubblePositionOf(box, size) {
   // The bubble never slides under the menu docked at the bottom of a phone
   const viewportHeight = visibleBottom()
 
+  // Without element, the bubble sits in the middle of the whole screen, the menu being dimmed with the rest
   if (!box) {
-    return { placement: 'center', top: (viewportHeight - size.height) / 2, left: (viewportWidth - size.width) / 2, arrow: 0 }
+    return { placement: 'center', top: Math.max((window.innerHeight - size.height) / 2, GUTTER), left: (viewportWidth - size.width) / 2, arrow: 0 }
   }
 
   const centreX = box.left + box.width / 2
