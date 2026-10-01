@@ -121,7 +121,8 @@ src/App.jsx                    routing: login, then every page inside the sideba
 src/lib/api.js                 the single API client
 src/lib/appUpdate.js           reloads the page when a new deploy is detected (home-screen apps never reload on their own)
 src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the onboarding's starter plan
-src/pages/                     LoginPage, OnboardingPage (first questions of a new account, then its starter plan),
+src/pages/                     LoginPage, InstallPage (phone visitors in the browser: how to add the app to the home screen),
+                               OnboardingPage (first questions of a new account, then its starter plan),
                                DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
                                ProfilePage (account, plans list and active plan), SettlementsPage (repayments),
                                AdminPage (/admin, localhost only, no sign-in: the starter plans)

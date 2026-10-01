@@ -7,17 +7,21 @@ import useAuth from './hooks/useAuth.js'
 import usePlans from './hooks/usePlans.js'
 import DashboardPage from './pages/DashboardPage.jsx'
 import ExpensesPage from './pages/ExpensesPage.jsx'
+import InstallPage from './pages/InstallPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OnboardingPage from './pages/OnboardingPage.jsx'
 import PlanPage from './pages/PlanPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import SettlementsPage from './pages/SettlementsPage.jsx'
+import { isMobile, isStandalone } from './utils/device.js'
 
 // Routes the visitor through sign-in, then the app itself, always framed by the sidebar
 export default function App() {
   const { user, loading, signIn, signUp, updateProfile, updatePreferences, completeTutorial, signOut } = useAuth()
   // The tour replayed from the profile; a new account sees it until it is finished or skipped
   const [replaying, setReplaying] = useState(false)
+  // A phone visitor in the browser is first advised to install the app, unless they choose to go on anyway
+  const [installSkipped, setInstallSkipped] = useState(false)
   const {
     plans,
     loading: plansLoading,
@@ -33,6 +37,10 @@ export default function App() {
 
   if (loading || (!!user && plansLoading)) {
     return <p className="splash">Chargement…</p>
+  }
+
+  if (!user && !installSkipped && isMobile() && !isStandalone()) {
+    return <InstallPage onContinue={() => setInstallSkipped(true)} />
   }
 
   if (!user) {

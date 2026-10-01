@@ -1801,6 +1801,72 @@ input.subgroup__name,
   color: var(--muted);
 }
 
+/* Install advice: numbered steps, each with a drawing of the browser button to touch */
+.install__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.install__step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.install__number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--savings-tint);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.install__text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Mimics the browser button: a soft pill, icon then label */
+.install__shot {
+  grid-column: 2;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  box-shadow: 0 1px 3px var(--shadow);
+  color: var(--income);
+  font-size: 0.9rem;
+}
+
+.install__shot span {
+  color: var(--text);
+}
+
+.install__skip {
+  justify-self: center;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ------------------------------------------------------------------ */
 /* Onboarding: the first questions, then the starter plan proposed      */
 /* ------------------------------------------------------------------ */
