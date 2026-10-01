@@ -13,29 +13,35 @@ export function hasName(line) {
   return !!line.label?.trim()
 }
 
-// The colours a sub-group can take, matching the chart tones
-export const GROUP_COLORS = [
-  { id: '1', label: 'Océan' },
-  { id: '2', label: 'Corail' },
-  { id: '3', label: 'Émeraude' },
-  { id: '4', label: 'Violet' },
-  { id: '5', label: 'Ambre' },
-  { id: '6', label: 'Rose' },
-  { id: '7', label: 'Cyan' },
-  { id: '8', label: 'Citron' },
-  { id: '9', label: 'Indigo' },
-  { id: '10', label: 'Rubis' },
-  { id: '11', label: 'Turquoise' },
-  { id: '12', label: 'Mandarine' },
-  { id: '13', label: 'Lavande' },
-  { id: '14', label: 'Menthe' },
-  { id: '15', label: 'Fuchsia' },
-  { id: '16', label: 'Azur' },
-  { id: '17', label: 'Olive' },
-  { id: '18', label: 'Prune' },
-  { id: '19', label: 'Brique' },
-  { id: '20', label: 'Ardoise' },
+// Colours given in turn to new sub-groups, far enough apart for two neighbours never to look alike
+export const AUTO_COLORS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
+
+// Shades of each hue, from the lightest to the deepest, matching the `--chart-<id>` tokens
+const SHADES = ['pâle', 'clair', 'vif', 'foncé']
+
+// Every colour a sub-group can take, hue after hue around the colour wheel so the picker reads as a gradient
+export const COLOR_HUES = [
+  { label: 'Rouge', ids: ['21', '22', '10', '23'] },
+  { label: 'Orange', ids: ['24', '12', '2', '25'] },
+  { label: 'Ambre', ids: ['26', '27', '5', '19'] },
+  { label: 'Citron', ids: ['28', '29', '8', '17'] },
+  { label: 'Émeraude', ids: ['30', '14', '3', '31'] },
+  { label: 'Turquoise', ids: ['32', '33', '11', '34'] },
+  { label: 'Cyan', ids: ['35', '36', '7', '37'] },
+  { label: 'Azur', ids: ['38', '16', '39', '40'] },
+  { label: 'Bleu', ids: ['41', '42', '1', '43'] },
+  { label: 'Indigo', ids: ['44', '45', '46', '9'] },
+  { label: 'Violet', ids: ['47', '13', '4', '48'] },
+  { label: 'Pourpre', ids: ['49', '50', '51', '18'] },
+  { label: 'Fuchsia', ids: ['52', '53', '15', '54'] },
+  { label: 'Rose', ids: ['55', '56', '6', '57'] },
+  { label: 'Ardoise', ids: ['58', '59', '20', '60'] },
 ]
+
+// The palette flattened in gradient order, each colour named after its hue and shade
+export const GROUP_COLORS = COLOR_HUES.flatMap((hue) =>
+  hue.ids.map((id, index) => ({ id, label: `${hue.label} ${SHADES[index]}` }))
+)
 
 
 // Turns any user input into a usable number, empty fields counting as zero

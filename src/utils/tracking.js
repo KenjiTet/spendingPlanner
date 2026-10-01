@@ -1,5 +1,5 @@
 // Pure maths of the monthly expense tracking, kept apart from the hooks and the components
-import { monthlyTaxOf, scopeOf, SHARED, sumByScope, toAmount, toScopeTree } from './plan.js'
+import { scopeOf, SHARED, toAmount, toScopeTree } from './plan.js'
 
 // Share of the budget from which a gauge warns that the limit is close
 export const WARNING_RATIO = 0.8
@@ -477,29 +477,35 @@ export function dailyBudgetOf(plan, slotId, month) {
 }
 
 /**
- * What is left on the viewer's account this month, split into what the budget still plans to spend and what no
- * budget line uses
+ * What the viewer's spent amount is made of, one slice per sub-group in the shape of the plan's donut: the common part
+ * cut to the viewer's share as in viewerShareOf, then their own, the largest first in each, automatic debits kept apart
  * @param {object} plan
- * @param {{ spent: number, budget: number }} share - the viewer's part, from viewerShareOf
+ * @param {object[]} tracking - scopes from buildTracking
  * @param {string} slotId - the place this person holds in the plan
- * @returns {{ income: number, tax: number, savings: number, spent: number, remaining: number, unbudgeted: number, available: number } | undefined}
+ * @returns {{ id: string, label: string, value: number, committed: number, tone: string, group: 'common' | 'own' }[]}
  */
-export function accountBalanceOf(plan, share, slotId) {
-  const person = plan.people.find((candidate) => candidate.id === slotId)
+export function spentSlicesOf(plan, tracking, slotId) {
+  const slicesOf = (scope, group, share) => {
+    if (!scope) {
+      return []
+    }
 
-  if (!person) {
-    return undefined
+    return [...scope.subgroups, { ...scope.loose, label: 'Hors groupe', color: 'neutral' }]
+      .map((subgroup) => ({
+        id: `${group}-${subgroup.id}`,
+        label: subgroup.label,
+        value: subgroup.spent / share,
+        committed: subgroup.committed / share,
+        tone: subgroup.color,
+        group,
+      }))
+      .sort((left, right) => right.value - left.value)
   }
 
-  const savingsByScope = sumByScope(plan.savingGroups, plan.savings)
-  const income = toAmount(person.netMonthly)
-  const savings = (savingsByScope[SHARED] ?? 0) / shareCountOf(plan) + (savingsByScope[slotId] ?? 0)
-  const tax = monthlyTaxOf(person)
+  const common = tracking.find((scope) => scope.id === SHARED)
+  const own = tracking.find((scope) => scope.id === slotId)
 
-  const remaining = share.budget - share.spent
-  const unbudgeted = income - tax - savings - share.budget
-
-  return { income, tax, savings, spent: share.spent, remaining, unbudgeted, available: remaining + unbudgeted }
+  return [...slicesOf(common, 'common', shareCountOf(plan)), ...slicesOf(own, 'own', 1)]
 }
 
 /**

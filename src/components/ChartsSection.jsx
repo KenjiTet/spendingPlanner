@@ -1,12 +1,6 @@
-import PieChart from './PieChart.jsx'
+import PieChart, { legendGroupsOf } from './PieChart.jsx'
 import Section from './Section.jsx'
 import { SHARED, toScopeTree } from '../utils/plan.js'
-
-// Headings splitting each legend, used only when the plan is shared
-const LEGEND_GROUPS = [
-  { id: 'common', label: 'Part commune' },
-  { id: 'own', label: 'Personnel' },
-]
 
 // Largest share first inside a group
 function byValue(first, second) {
@@ -57,15 +51,6 @@ function slicesFor(person, tree, shareCount, tax) {
 
   // The donut follows its legend: one group after the other, the largest share first in each
   return [...commonPart.sort(byValue), ...ownPart.sort(byValue)]
-}
-
-// A solo plan has nothing to split, its legend stays a single list
-function legendGroupsOf(shareCount) {
-  if (shareCount < 2) {
-    return undefined
-  }
-
-  return LEGEND_GROUPS
 }
 
 /**

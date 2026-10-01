@@ -3,6 +3,25 @@ import { formatAmount, formatShare } from '../utils/format.js'
 const RADIUS = 70
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
+// Headings splitting each legend, used only when the plan is shared
+const LEGEND_GROUPS = [
+  { id: 'common', label: 'Part commune' },
+  { id: 'own', label: 'Personnel' },
+]
+
+/**
+ * Legend headings for a plan split between a number of people: a solo plan has nothing to split, its legend stays a
+ * single list
+ * @param {number} shareCount
+ */
+export function legendGroupsOf(shareCount) {
+  if (shareCount < 2) {
+    return undefined
+  }
+
+  return LEGEND_GROUPS
+}
+
 /**
  * The legend split under its headings, empty groups left out; a single untitled list without groups
  * @param {{ group?: string, value: number }[]} segments
@@ -26,7 +45,7 @@ function legendsOf(segments, groups) {
  * Donut chart with its legend, drawn as plain SVG so the app keeps no chart dependency
  * @param {object} props
  * @param {string} props.title
- * @param {{ id: string, label: string, value: number, tone: string, group?: string }[]} props.slices
+ * @param {{ id: string, label: string, value: number, tone: string, group?: string, note?: string }[]} props.slices - note: one short line under the label
  * @param {{ id: string, label: string }[]} [props.groups] - headings splitting the legend, matched on each slice's group
  */
 export default function PieChart({ title, slices, groups }) {
@@ -90,7 +109,10 @@ export default function PieChart({ title, slices, groups }) {
               {legend.segments.map((segment, index) => (
                 <li key={`legend-item-${segment.id}-${index}`} className="legend__item">
                   <span className={`swatch swatch--${segment.tone}`} aria-hidden="true" />
-                  <span className="legend__label">{segment.label}</span>
+                  <span className="legend__label">
+                    {segment.label}
+                    {!!segment.note && <small className="legend__note">{segment.note}</small>}
+                  </span>
                   <span className="legend__share">{formatShare(segment.share)}</span>
                   <span className="legend__value">{formatAmount(segment.value)}</span>
                 </li>

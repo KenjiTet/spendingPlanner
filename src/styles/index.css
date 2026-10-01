@@ -44,18 +44,18 @@
   --chart-savings: #0f9d76;
   --chart-rest: #f5a524;
   --chart-neutral: #a8a49c;
-  --chart-1: #2f80ed;
-  --chart-2: #f2603c;
+  --chart-1: #3b82f6;
+  --chart-2: #f97316;
   --chart-3: #10b981;
   --chart-4: #8b5cf6;
-  --chart-5: #f5a524;
+  --chart-5: #f59e0b;
   --chart-6: #ec4899;
   --chart-7: #06b6d4;
   --chart-8: #84cc16;
   --chart-9: #4f46e5;
   --chart-10: #ef4444;
   --chart-11: #14b8a6;
-  --chart-12: #fb8c00;
+  --chart-12: #fb923c;
   --chart-13: #a78bfa;
   --chart-14: #34d399;
   --chart-15: #d946ef;
@@ -64,6 +64,46 @@
   --chart-18: #9333ea;
   --chart-19: #b45309;
   --chart-20: #64748b;
+  --chart-21: #fca5a5;
+  --chart-22: #f87171;
+  --chart-23: #b91c1c;
+  --chart-24: #fdba74;
+  --chart-25: #c2410c;
+  --chart-26: #fcd34d;
+  --chart-27: #fbbf24;
+  --chart-28: #bef264;
+  --chart-29: #a3e635;
+  --chart-30: #6ee7b7;
+  --chart-31: #059669;
+  --chart-32: #5eead4;
+  --chart-33: #2dd4bf;
+  --chart-34: #0d9488;
+  --chart-35: #67e8f9;
+  --chart-36: #22d3ee;
+  --chart-37: #0891b2;
+  --chart-38: #7dd3fc;
+  --chart-39: #0ea5e9;
+  --chart-40: #0284c7;
+  --chart-41: #93c5fd;
+  --chart-42: #60a5fa;
+  --chart-43: #2563eb;
+  --chart-44: #a5b4fc;
+  --chart-45: #818cf8;
+  --chart-46: #6366f1;
+  --chart-47: #c4b5fd;
+  --chart-48: #7c3aed;
+  --chart-49: #d8b4fe;
+  --chart-50: #c084fc;
+  --chart-51: #a855f7;
+  --chart-52: #f0abfc;
+  --chart-53: #e879f9;
+  --chart-54: #c026d3;
+  --chart-55: #f9a8d4;
+  --chart-56: #f472b6;
+  --chart-57: #db2777;
+  --chart-58: #cbd5e1;
+  --chart-59: #94a3b8;
+  --chart-60: #475569;
 
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -601,6 +641,29 @@ body {
   justify-items: center;
 }
 
+/* Dashboard breakdown on computers: the legend on the left, the donut on the right, the title over both */
+@media (min-width: 761px) {
+  .spent-breakdown .chart {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    grid-template-rows: auto auto;
+    column-gap: 32px;
+    align-items: center;
+  }
+
+  .spent-breakdown .chart__title {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .spent-breakdown .chart__svg {
+    grid-area: 2 / 2;
+  }
+
+  .spent-breakdown .chart__legends {
+    grid-area: 2 / 1;
+  }
+}
+
 .chart__title {
   font-size: 0.8rem;
   color: var(--muted);
@@ -621,6 +684,7 @@ body {
 
 .chart__slice {
   fill: none;
+  stroke: var(--subgroup-color);
   stroke-width: 26;
 }
 
@@ -699,6 +763,15 @@ body {
   white-space: nowrap;
 }
 
+/* One line under the label, such as the automatic debits of the dashboard's breakdown */
+.legend__note {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
 .legend__share {
   min-width: 3.4em;
   padding: 1px 6px;
@@ -731,49 +804,73 @@ body {
   stroke: var(--chart-rest);
 }
 
+/* Palette: each numbered colour sets the tone read by the swatches, the donut slices and the sub-groups */
+.swatch--1, .chart__slice--1, .subgroup--1 { --subgroup-color: var(--chart-1); }
+.swatch--2, .chart__slice--2, .subgroup--2 { --subgroup-color: var(--chart-2); }
+.swatch--3, .chart__slice--3, .subgroup--3 { --subgroup-color: var(--chart-3); }
+.swatch--4, .chart__slice--4, .subgroup--4 { --subgroup-color: var(--chart-4); }
+.swatch--5, .chart__slice--5, .subgroup--5 { --subgroup-color: var(--chart-5); }
+.swatch--6, .chart__slice--6, .subgroup--6 { --subgroup-color: var(--chart-6); }
+.swatch--7, .chart__slice--7, .subgroup--7 { --subgroup-color: var(--chart-7); }
+.swatch--8, .chart__slice--8, .subgroup--8 { --subgroup-color: var(--chart-8); }
+.swatch--9, .chart__slice--9, .subgroup--9 { --subgroup-color: var(--chart-9); }
+.swatch--10, .chart__slice--10, .subgroup--10 { --subgroup-color: var(--chart-10); }
+.swatch--11, .chart__slice--11, .subgroup--11 { --subgroup-color: var(--chart-11); }
+.swatch--12, .chart__slice--12, .subgroup--12 { --subgroup-color: var(--chart-12); }
+.swatch--13, .chart__slice--13, .subgroup--13 { --subgroup-color: var(--chart-13); }
+.swatch--14, .chart__slice--14, .subgroup--14 { --subgroup-color: var(--chart-14); }
+.swatch--15, .chart__slice--15, .subgroup--15 { --subgroup-color: var(--chart-15); }
+.swatch--16, .chart__slice--16, .subgroup--16 { --subgroup-color: var(--chart-16); }
+.swatch--17, .chart__slice--17, .subgroup--17 { --subgroup-color: var(--chart-17); }
+.swatch--18, .chart__slice--18, .subgroup--18 { --subgroup-color: var(--chart-18); }
+.swatch--19, .chart__slice--19, .subgroup--19 { --subgroup-color: var(--chart-19); }
+.swatch--20, .chart__slice--20, .subgroup--20 { --subgroup-color: var(--chart-20); }
+.swatch--21, .chart__slice--21, .subgroup--21 { --subgroup-color: var(--chart-21); }
+.swatch--22, .chart__slice--22, .subgroup--22 { --subgroup-color: var(--chart-22); }
+.swatch--23, .chart__slice--23, .subgroup--23 { --subgroup-color: var(--chart-23); }
+.swatch--24, .chart__slice--24, .subgroup--24 { --subgroup-color: var(--chart-24); }
+.swatch--25, .chart__slice--25, .subgroup--25 { --subgroup-color: var(--chart-25); }
+.swatch--26, .chart__slice--26, .subgroup--26 { --subgroup-color: var(--chart-26); }
+.swatch--27, .chart__slice--27, .subgroup--27 { --subgroup-color: var(--chart-27); }
+.swatch--28, .chart__slice--28, .subgroup--28 { --subgroup-color: var(--chart-28); }
+.swatch--29, .chart__slice--29, .subgroup--29 { --subgroup-color: var(--chart-29); }
+.swatch--30, .chart__slice--30, .subgroup--30 { --subgroup-color: var(--chart-30); }
+.swatch--31, .chart__slice--31, .subgroup--31 { --subgroup-color: var(--chart-31); }
+.swatch--32, .chart__slice--32, .subgroup--32 { --subgroup-color: var(--chart-32); }
+.swatch--33, .chart__slice--33, .subgroup--33 { --subgroup-color: var(--chart-33); }
+.swatch--34, .chart__slice--34, .subgroup--34 { --subgroup-color: var(--chart-34); }
+.swatch--35, .chart__slice--35, .subgroup--35 { --subgroup-color: var(--chart-35); }
+.swatch--36, .chart__slice--36, .subgroup--36 { --subgroup-color: var(--chart-36); }
+.swatch--37, .chart__slice--37, .subgroup--37 { --subgroup-color: var(--chart-37); }
+.swatch--38, .chart__slice--38, .subgroup--38 { --subgroup-color: var(--chart-38); }
+.swatch--39, .chart__slice--39, .subgroup--39 { --subgroup-color: var(--chart-39); }
+.swatch--40, .chart__slice--40, .subgroup--40 { --subgroup-color: var(--chart-40); }
+.swatch--41, .chart__slice--41, .subgroup--41 { --subgroup-color: var(--chart-41); }
+.swatch--42, .chart__slice--42, .subgroup--42 { --subgroup-color: var(--chart-42); }
+.swatch--43, .chart__slice--43, .subgroup--43 { --subgroup-color: var(--chart-43); }
+.swatch--44, .chart__slice--44, .subgroup--44 { --subgroup-color: var(--chart-44); }
+.swatch--45, .chart__slice--45, .subgroup--45 { --subgroup-color: var(--chart-45); }
+.swatch--46, .chart__slice--46, .subgroup--46 { --subgroup-color: var(--chart-46); }
+.swatch--47, .chart__slice--47, .subgroup--47 { --subgroup-color: var(--chart-47); }
+.swatch--48, .chart__slice--48, .subgroup--48 { --subgroup-color: var(--chart-48); }
+.swatch--49, .chart__slice--49, .subgroup--49 { --subgroup-color: var(--chart-49); }
+.swatch--50, .chart__slice--50, .subgroup--50 { --subgroup-color: var(--chart-50); }
+.swatch--51, .chart__slice--51, .subgroup--51 { --subgroup-color: var(--chart-51); }
+.swatch--52, .chart__slice--52, .subgroup--52 { --subgroup-color: var(--chart-52); }
+.swatch--53, .chart__slice--53, .subgroup--53 { --subgroup-color: var(--chart-53); }
+.swatch--54, .chart__slice--54, .subgroup--54 { --subgroup-color: var(--chart-54); }
+.swatch--55, .chart__slice--55, .subgroup--55 { --subgroup-color: var(--chart-55); }
+.swatch--56, .chart__slice--56, .subgroup--56 { --subgroup-color: var(--chart-56); }
+.swatch--57, .chart__slice--57, .subgroup--57 { --subgroup-color: var(--chart-57); }
+.swatch--58, .chart__slice--58, .subgroup--58 { --subgroup-color: var(--chart-58); }
+.swatch--59, .chart__slice--59, .subgroup--59 { --subgroup-color: var(--chart-59); }
+.swatch--60, .chart__slice--60, .subgroup--60 { --subgroup-color: var(--chart-60); }
 
-
-
-
-.chart__slice--1 {
-  stroke: var(--chart-1);
+/* Swatches of a numbered colour, a named one setting its own background below */
+[class^='swatch--'],
+[class*=' swatch--'] {
+  background: var(--subgroup-color);
 }
-
-
-.chart__slice--2 {
-  stroke: var(--chart-2);
-}
-
-
-.chart__slice--3 {
-  stroke: var(--chart-3);
-}
-
-
-.chart__slice--4 {
-  stroke: var(--chart-4);
-}
-
-
-.chart__slice--5 {
-  stroke: var(--chart-5);
-}
-
-
-.chart__slice--6 {
-  stroke: var(--chart-6);
-}
-
-
-.chart__slice--7 {
-  stroke: var(--chart-7);
-}
-
-
-.chart__slice--8 {
-  stroke: var(--chart-8);
-}
-
 
 .swatch {
   width: 12px;
@@ -806,52 +903,11 @@ body {
   stroke: var(--chart-neutral);
 }
 
-.swatch--1 {
-  background: var(--chart-1);
-}
-
-.swatch--2 {
-  background: var(--chart-2);
-}
-
-.swatch--3 {
-  background: var(--chart-3);
-}
-
-.swatch--4 {
-  background: var(--chart-4);
-}
-
-.swatch--5 {
-  background: var(--chart-5);
-}
-
-.swatch--6 {
-  background: var(--chart-6);
-}
-
-.swatch--7 {
-  background: var(--chart-7);
-}
-
-.swatch--8 {
-  background: var(--chart-8);
-}
-
 .toggle--compact {
   padding-top: 0;
   border-top: 0;
   gap: 10px;
 }
-
-
-
-
-
-
-
-
-
 
 .scope {
   /* The common part, the viewer's own and the other person's each carry a colour, set by the modifiers below */
@@ -1059,38 +1115,6 @@ body {
   color: var(--section-color);
 }
 
-.subgroup--1 {
-  --subgroup-color: var(--chart-1);
-}
-
-.subgroup--2 {
-  --subgroup-color: var(--chart-2);
-}
-
-.subgroup--3 {
-  --subgroup-color: var(--chart-3);
-}
-
-.subgroup--4 {
-  --subgroup-color: var(--chart-4);
-}
-
-.subgroup--5 {
-  --subgroup-color: var(--chart-5);
-}
-
-.subgroup--6 {
-  --subgroup-color: var(--chart-6);
-}
-
-.subgroup--7 {
-  --subgroup-color: var(--chart-7);
-}
-
-.subgroup--8 {
-  --subgroup-color: var(--chart-8);
-}
-
 .line__grip {
   color: var(--muted);
   font-size: 0.9rem;
@@ -1130,8 +1154,9 @@ body {
   margin: 0;
   padding: 8px;
   display: grid;
+  /* One hue per row, its four shades from light to deep, so the palette reads as a gradient */
   grid-template-columns: repeat(4, auto);
-  gap: 6px;
+  gap: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1150,30 +1175,6 @@ body {
 
 .picker__option[aria-pressed='true'] {
   border-color: var(--text);
-}
-
-.swatch--9 {
-  background: var(--chart-9);
-}
-
-.chart__slice--9 {
-  stroke: var(--chart-9);
-}
-
-.subgroup--9 {
-  --subgroup-color: var(--chart-9);
-}
-
-.swatch--10 {
-  background: var(--chart-10);
-}
-
-.chart__slice--10 {
-  stroke: var(--chart-10);
-}
-
-.subgroup--10 {
-  --subgroup-color: var(--chart-10);
 }
 
 .section__toggle,
@@ -1219,6 +1220,11 @@ input.subgroup__name,
 .subgroup__header .list__remove {
   position: relative;
   z-index: 1;
+}
+
+/* An open palette rises above the controls of the headers further down, which share its level otherwise */
+.subgroup__header .picker:has(> .picker__menu) {
+  z-index: 5;
 }
 
 .chevron {
@@ -1286,126 +1292,6 @@ input.subgroup__name,
 /* The column picker of the recap only matters on phones, where one column shows at a time; declared after .switch so it wins */
 .summary__columns {
   display: none;
-}
-
-.swatch--11 {
-  background: var(--chart-11);
-}
-
-.chart__slice--11 {
-  stroke: var(--chart-11);
-}
-
-.subgroup--11 {
-  --subgroup-color: var(--chart-11);
-}
-
-.swatch--12 {
-  background: var(--chart-12);
-}
-
-.chart__slice--12 {
-  stroke: var(--chart-12);
-}
-
-.subgroup--12 {
-  --subgroup-color: var(--chart-12);
-}
-
-.swatch--13 {
-  background: var(--chart-13);
-}
-
-.chart__slice--13 {
-  stroke: var(--chart-13);
-}
-
-.subgroup--13 {
-  --subgroup-color: var(--chart-13);
-}
-
-.swatch--14 {
-  background: var(--chart-14);
-}
-
-.chart__slice--14 {
-  stroke: var(--chart-14);
-}
-
-.subgroup--14 {
-  --subgroup-color: var(--chart-14);
-}
-
-.swatch--15 {
-  background: var(--chart-15);
-}
-
-.chart__slice--15 {
-  stroke: var(--chart-15);
-}
-
-.subgroup--15 {
-  --subgroup-color: var(--chart-15);
-}
-
-.swatch--16 {
-  background: var(--chart-16);
-}
-
-.chart__slice--16 {
-  stroke: var(--chart-16);
-}
-
-.subgroup--16 {
-  --subgroup-color: var(--chart-16);
-}
-
-.swatch--17 {
-  background: var(--chart-17);
-}
-
-.chart__slice--17 {
-  stroke: var(--chart-17);
-}
-
-.subgroup--17 {
-  --subgroup-color: var(--chart-17);
-}
-
-.swatch--18 {
-  background: var(--chart-18);
-}
-
-.chart__slice--18 {
-  stroke: var(--chart-18);
-}
-
-.subgroup--18 {
-  --subgroup-color: var(--chart-18);
-}
-
-.swatch--19 {
-  background: var(--chart-19);
-}
-
-.chart__slice--19 {
-  stroke: var(--chart-19);
-}
-
-.subgroup--19 {
-  --subgroup-color: var(--chart-19);
-}
-
-.swatch--20 {
-  background: var(--chart-20);
-}
-
-.chart__slice--20 {
-  stroke: var(--chart-20);
-}
-
-.subgroup--20 {
-  --subgroup-color: var(--chart-20);
 }
 
 .banner {
@@ -3086,70 +2972,6 @@ a.form__submit {
 
 .month-budget__figures strong {
   color: var(--text);
-}
-
-.balance {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 32px;
-}
-
-.balance__head {
-  display: grid;
-  gap: 4px;
-}
-
-.balance__value {
-  font-size: 2rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-.balance--over .balance__value {
-  color: var(--danger);
-}
-
-.balance__detail {
-  flex: 1 1 280px;
-  max-width: 420px;
-  display: grid;
-  gap: 12px;
-}
-
-.balance__rows {
-  margin: 0;
-  display: grid;
-  gap: 6px;
-  font-size: 0.9rem;
-}
-
-/* What the available amount is made of, set apart from the way it is reached */
-.balance__rows--split {
-  padding-top: 10px;
-  border-top: 2px solid var(--border);
-}
-
-.balance__rows--split dd {
-  font-weight: 600;
-}
-
-.balance__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 6px;
-  border-bottom: 1px dashed var(--border);
-}
-
-.balance__row dt {
-  color: var(--muted);
-}
-
-.balance__row dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Calendar and pace chart side by side, stacked on phones */
@@ -5380,20 +5202,7 @@ html:has(.pull) {
     padding: 4px 14px 12px;
   }
 
-  .balance {
-    gap: 16px;
-  }
-
-  .balance__value {
-    font-size: 1.6rem;
-  }
-
-  .balance__detail {
-    flex-basis: 100%;
-    max-width: none;
-  }
-
-  /* Dashboard: the month budget and the account balance stacked, the amounts shrinking on narrow screens */
+  /* Dashboard: the month budget amounts shrinking on narrow screens */
   .month-budget__value {
     font-size: clamp(1.25rem, 7vw, 1.6rem);
   }

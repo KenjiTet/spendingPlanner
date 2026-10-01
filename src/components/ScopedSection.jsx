@@ -6,7 +6,7 @@ import ColorPicker from './ColorPicker.jsx'
 import ConfirmSheet from './ConfirmSheet.jsx'
 import NameInput from './NameInput.jsx'
 import Section from './Section.jsx'
-import { createItem, createSubgroup, GROUP_COLORS, SHARED, toScopeTree } from '../utils/plan.js'
+import { AUTO_COLORS, createItem, createSubgroup, SHARED, toScopeTree } from '../utils/plan.js'
 
 // Names given to a sub-group and a line the moment they are created, before they are renamed
 const NEW_SUBGROUP = 'Nouveau groupe'
@@ -14,7 +14,7 @@ const NEW_LINE = 'Nouvelle ligne'
 
 // Picks the next colour so two sub-groups created in a row do not look alike
 function nextColor(count) {
-  return GROUP_COLORS[count % GROUP_COLORS.length].id
+  return AUTO_COLORS[count % AUTO_COLORS.length]
 }
 
 // Class of the automatic debit toggle, lit when the line is booked on its own

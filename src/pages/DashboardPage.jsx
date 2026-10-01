@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import AccountBalance from '../components/AccountBalance.jsx'
 import BudgetGauges from '../components/BudgetGauges.jsx'
 import MonthBudget from '../components/MonthBudget.jsx'
 import MonthSwitcher from '../components/MonthSwitcher.jsx'
@@ -8,12 +7,13 @@ import NoLinesNotice from '../components/NoLinesNotice.jsx'
 import PullIndicator from '../components/PullIndicator.jsx'
 import SpendingCalendar from '../components/SpendingCalendar.jsx'
 import SpendingPace from '../components/SpendingPace.jsx'
+import SpentBreakdown from '../components/SpentBreakdown.jsx'
 import useExpenses from '../hooks/useExpenses.js'
 import usePullToRefresh from '../hooks/usePullToRefresh.js'
 import useYearExpenses from '../hooks/useYearExpenses.js'
 import { formatMonth, formatShortDay } from '../utils/format.js'
 import { loadPreference, savePreference } from '../utils/storage.js'
-import { accountBalanceOf, buildTracking, dailyBudgetOf, dailySpendingOf, daysLeftIn, firstWeekdayOf, indexLines, spendingPaceOf, toDateValue, toMonthValue, viewerExpensesOf, viewerShareOf, weekRangeOf, weekTrackingOf, yearToDateTrackingOf } from '../utils/tracking.js'
+import { buildTracking, dailyBudgetOf, dailySpendingOf, daysLeftIn, firstWeekdayOf, indexLines, shareCountOf, spendingPaceOf, spentSlicesOf, toDateValue, toMonthValue, viewerExpensesOf, viewerShareOf, weekRangeOf, weekTrackingOf, yearToDateTrackingOf } from '../utils/tracking.js'
 
 const PERIOD_KEY = 'dashboard-gauges-period'
 
@@ -65,10 +65,9 @@ export default function DashboardPage() {
   }
 
   const today = new Date()
-  // Every headline figure is the viewer's part, so they all add up with the account balance
+  // Every headline figure is the viewer's part, so the breakdown adds up to the spent amount
   const { spent, budget } = viewerShareOf(plan, tracking, slotId)
   const daysLeft = daysLeftIn(month, today)
-  const balance = accountBalanceOf(plan, { spent, budget }, slotId)
   const dailyBudget = dailyBudgetOf(plan, slotId, month)
   const days = dailySpendingOf(viewerExpensesOf(plan, expenses, lines), month, today, dailyBudget)
 
@@ -126,7 +125,7 @@ export default function DashboardPage() {
 
       <MonthBudget spent={spent} budget={budget} daysLeft={daysLeft} />
 
-      {!!balance && <AccountBalance balance={balance} />}
+      <SpentBreakdown slices={spentSlicesOf(plan, tracking, slotId)} shareCount={shareCountOf(plan)} />
 
       <div className="dashboard__charts">
         <SpendingCalendar
