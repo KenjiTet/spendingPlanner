@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import useTourTarget from '../hooks/useTourTarget.js'
+import useTourTarget, { visibleBottom } from '../hooks/useTourTarget.js'
+import SettlementDemo from './SettlementDemo.jsx'
 
 // Room around the element lit, between it and the bubble, and along the screen edges
 const SPOTLIGHT_PADDING = 6
@@ -11,7 +12,8 @@ const ARROW_INSET = 20
 
 // One element per step, on the page it lives on; a step without target, or whose element is missing, is explained
 // in the middle of the screen. `only` keeps a step to a plan for two ('duo') or with a free place ('invite'),
-// a text worded for each kind of plan carries both versions
+// a text worded for each kind of plan carries both versions. `demo` illustrates the repayments in a wider bubble,
+// none existing yet while the tour is played
 const STEPS = [
   {
     chapter: 'Bienvenue',
@@ -97,7 +99,15 @@ const STEPS = [
     to: '/remboursements',
     target: '.sidebar a[href="/remboursements"]',
     title: 'Les comptes à deux',
-    text: 'Les dépenses communes sont partagées à parts égales : cette page fait les comptes entre vous deux.',
+    text: 'Cette page fait les comptes entre vous deux. Voici comment, sur un exemple.',
+  },
+  {
+    chapter: 'Remboursements',
+    only: 'duo',
+    to: '/remboursements',
+    demo: true,
+    title: 'Comment ça marche',
+    text: 'Les dépenses communes sont réparties à parts égales, vous savez directement qui doit combien à qui.',
   },
   {
     chapter: 'Vue d’ensemble',
@@ -180,6 +190,15 @@ function rootClassOf(status) {
   return 'tour'
 }
 
+// A bubble carrying an illustration gets the room it needs
+function bubbleClassOf(step) {
+  if (step.demo) {
+    return 'tour__bubble tour__bubble--wide'
+  }
+
+  return 'tour__bubble'
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
@@ -224,7 +243,8 @@ function paddedBoxOf(rect) {
  */
 function bubblePositionOf(box, size) {
   const viewportWidth = document.documentElement.clientWidth
-  const viewportHeight = window.innerHeight
+  // The bubble never slides under the menu docked at the bottom of a phone
+  const viewportHeight = visibleBottom()
 
   if (!box) {
     return { placement: 'center', top: (viewportHeight - size.height) / 2, left: (viewportWidth - size.width) / 2, arrow: 0 }
@@ -381,7 +401,7 @@ export default function Tour({ isDuo, canInvite, onClose }) {
     <div className={rootClassOf(target.status)}>
       <div ref={spotlightRef} className="tour__spotlight" aria-hidden="true" />
 
-      <section ref={bubbleRef} className="tour__bubble" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <section ref={bubbleRef} className={bubbleClassOf(step)} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="tour__header">
           <span className="tour__chapter">{step.chapter}</span>
           <span className="tour__count">
@@ -393,6 +413,8 @@ export default function Tour({ isDuo, canInvite, onClose }) {
           {step.title}
         </h2>
         <p className="tour__text">{step.text}</p>
+
+        {!!step.demo && <SettlementDemo />}
 
         <footer className="tour__footer">
           {!isLast && (

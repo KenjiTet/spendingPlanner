@@ -4458,6 +4458,33 @@ html:has(.pull) {
   box-shadow: 0 12px 32px var(--shadow);
 }
 
+.tour__bubble--wide {
+  width: min(520px, calc(100vw - 32px));
+}
+
+/* A screen of the app shown as an example, set on the page background like a glimpse of it */
+.tour__demo {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+/* The screens stacked, tightened so the bubble still fits a phone */
+.tour__demo .card {
+  padding: 12px;
+}
+
+.tour__demo .settlement-summary .member-pair {
+  font-size: 1rem;
+}
+
+.tour__demo .settlement-summary__amount {
+  font-size: 1.4rem;
+}
+
 .tour.is-searching .tour__bubble {
   visibility: hidden;
 }

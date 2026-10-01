@@ -15,11 +15,25 @@ function hasBox(element) {
   return !!rect.width && !!rect.height
 }
 
-// Brings the element into sight, a tall one from its top so its beginning is the part shown
+/**
+ * Bottom of the screen area left to the page: on a phone, the menu docked at the bottom covers the rest
+ * @returns {number}
+ */
+export function visibleBottom() {
+  const menu = document.querySelector('.sidebar')?.getBoundingClientRect()
+
+  if (!menu || menu.top < window.innerHeight / 2) {
+    return window.innerHeight
+  }
+
+  return menu.top
+}
+
+// Brings the element into sight, a tall one from its top so its beginning is the part shown; the menu itself never scrolls
 function scrollIntoSight(element) {
   const rect = element.getBoundingClientRect()
 
-  if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+  if (element.closest('.sidebar') || (rect.top >= 0 && rect.bottom <= visibleBottom())) {
     return
   }
 

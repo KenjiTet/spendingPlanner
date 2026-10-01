@@ -20,8 +20,7 @@
               "label": "Courses",
               "kind": "fixed",
               "value": 100,
-              "autoBook": false,
-              "shortcut": 40
+              "autoBook": false
             },
             {
               "label": "Bus",
@@ -40,8 +39,7 @@
               "label": "Sorties",
               "kind": "percent",
               "value": 10,
-              "autoBook": false,
-              "shortcut": 20
+              "autoBook": false
             },
             {
               "label": "Jeux",
@@ -53,8 +51,7 @@
               "label": "Restaurant",
               "kind": "percent",
               "value": 10,
-              "autoBook": false,
-              "shortcut": 30
+              "autoBook": false
             }
           ]
         },
@@ -157,15 +154,14 @@
               "label": "Courses",
               "kind": "fixed",
               "value": 100,
-              "autoBook": false,
-              "shortcut": 40
+              "autoBook": false
             },
             {
-              "label": "Transport",
+              "label": "Bus",
               "kind": "fixed",
               "value": 30,
               "autoBook": false,
-              "shortcut": 3.5
+              "shortcut": 2
             }
           ]
         },
@@ -177,8 +173,7 @@
               "label": "Sorties",
               "kind": "percent",
               "value": 10,
-              "autoBook": false,
-              "shortcut": 20
+              "autoBook": false
             },
             {
               "label": "Jeux",
@@ -190,8 +185,7 @@
               "label": "Restaurant",
               "kind": "fixed",
               "value": 100,
-              "autoBook": false,
-              "shortcut": 30
+              "autoBook": false
             }
           ]
         },
@@ -305,14 +299,14 @@
               "label": "Courses",
               "kind": "fixed",
               "value": 100,
-              "autoBook": false,
-              "shortcut": 40
+              "autoBook": false
             },
             {
-              "label": "Transport",
+              "label": "Bus",
               "kind": "fixed",
               "value": 30,
-              "autoBook": true
+              "autoBook": false,
+              "shortcut": 2
             }
           ]
         },
@@ -330,8 +324,7 @@
               "label": "Carburant et entretien",
               "kind": "fixed",
               "value": 160,
-              "autoBook": false,
-              "shortcut": 80
+              "autoBook": false
             }
           ]
         },
@@ -344,15 +337,13 @@
               "kind": "percent",
               "value": 8,
               "autoBook": false,
-              "max": 500,
-              "shortcut": 20
+              "max": 500
             },
             {
               "label": "Restaurant",
               "kind": "fixed",
               "value": 100,
-              "autoBook": false,
-              "shortcut": 30
+              "autoBook": false
             }
           ]
         },
@@ -437,7 +428,6 @@
               "kind": "fixed",
               "value": 200,
               "autoBook": false,
-              "shortcut": 40,
               "scope": "shared"
             },
             {
@@ -445,8 +435,8 @@
               "kind": "fixed",
               "value": 25,
               "autoBook": false,
-              "shortcut": 2,
-              "scope": "personal"
+              "scope": "personal",
+              "shortcut": 2
             }
           ]
         },
@@ -459,7 +449,6 @@
               "kind": "percent",
               "value": 10,
               "autoBook": false,
-              "shortcut": 20,
               "scope": "personal"
             },
             {
@@ -474,7 +463,6 @@
               "kind": "percent",
               "value": 10,
               "autoBook": false,
-              "shortcut": 60,
               "scope": "shared"
             }
           ]
@@ -587,16 +575,15 @@
               "kind": "fixed",
               "value": 200,
               "autoBook": false,
-              "shortcut": 40,
               "scope": "shared"
             },
             {
-              "label": "Transport",
+              "label": "Bus",
               "kind": "fixed",
               "value": 30,
               "autoBook": false,
-              "shortcut": 3.5,
-              "scope": "personal"
+              "scope": "personal",
+              "shortcut": 2
             }
           ]
         },
@@ -609,7 +596,6 @@
               "kind": "percent",
               "value": 10,
               "autoBook": false,
-              "shortcut": 20,
               "scope": "personal"
             },
             {
@@ -624,7 +610,6 @@
               "kind": "fixed",
               "value": 200,
               "autoBook": false,
-              "shortcut": 60,
               "scope": "shared"
             }
           ]
@@ -749,15 +734,15 @@
               "kind": "fixed",
               "value": 200,
               "autoBook": false,
-              "shortcut": 40,
               "scope": "shared"
             },
             {
-              "label": "Transport",
+              "label": "Bus",
               "kind": "fixed",
               "value": 30,
-              "autoBook": true,
-              "scope": "personal"
+              "autoBook": false,
+              "scope": "personal",
+              "shortcut": 2
             }
           ]
         },
@@ -777,7 +762,6 @@
               "kind": "fixed",
               "value": 160,
               "autoBook": false,
-              "shortcut": 80,
               "scope": "shared"
             }
           ]
@@ -792,7 +776,6 @@
               "value": 8,
               "autoBook": false,
               "max": 500,
-              "shortcut": 20,
               "scope": "personal"
             },
             {
@@ -800,7 +783,6 @@
               "kind": "fixed",
               "value": 200,
               "autoBook": false,
-              "shortcut": 60,
               "scope": "shared"
             }
           ]

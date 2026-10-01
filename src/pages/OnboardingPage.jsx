@@ -10,6 +10,18 @@ import { buildStarterPlan, incomeRangesIn, rangeLabelOf, TIER_CURRENCY } from '.
 // income, each mode offering brackets of its own
 const STEPS = ['name', 'currency', 'mode', 'income', 'ready']
 
+// The second person of a pair gives the partner's code first, then their bracket, and joins instead of creating a plan
+const JOIN_STEPS = ['name', 'currency', 'mode', 'join', 'income']
+
+// The questions of the path taken
+function stepsOf(joining) {
+  if (joining) {
+    return JOIN_STEPS
+  }
+
+  return STEPS
+}
+
 // The pressed choice is highlighted
 function choiceClassOf(isSelected) {
   if (isSelected) {
@@ -54,8 +66,10 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
   const [currency, setCurrency] = useState(user.main_currency)
   const [rangeId, setRangeId] = useState('')
   const [isDuo, setIsDuo] = useState(false)
-  // The second person of a pair joining an existing plan instead of creating one, once their bracket is picked
+  // The second person of a pair joining an existing plan instead of creating one
   const [joining, setJoining] = useState(false)
+  // The plan code and the free place picked on the join step, taken once the bracket is known
+  const [joinTarget, setJoinTarget] = useState(undefined)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   // Brackets are set in one currency: the rates express them in the chosen one and bring the income back for the tier
@@ -64,7 +78,10 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
   const rate = rateOf(toBase, currency)
   const ranges = incomeRangesIn(starterPlans ?? [], isDuo, rate)
   const selectedRange = ranges.find((range) => range.id === rangeId)
-  const step = STEPS[index]
+  const steps = stepsOf(joining)
+  const step = steps[index]
+  // The closing screen is not counted as a question
+  const stepCount = steps.filter((name) => name !== 'ready').length
 
   const answers = {
     firstName: firstName.trim(),
@@ -78,10 +95,15 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
     setIndex(index + 1)
   }
 
-  // Going back always leaves the join path, the mode being asked again
+  // Going back to the mode leaves the join path, the mode being asked again
   function previous() {
     setMessage('')
-    setJoining(false)
+
+    if (steps[index - 1] === 'mode') {
+      setJoining(false)
+      setJoinTarget(undefined)
+    }
+
     setIndex(index - 1)
   }
 
@@ -94,10 +116,40 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
     setRangeId('')
   }
 
-  // The second person of a pair still gives their bracket, then joins with the code instead of creating a plan
+  // The second person of a pair gives the code first, then their bracket
   function startJoining() {
     setJoining(true)
     setIndex(index + 1)
+  }
+
+  /**
+   * Keeps the place picked in the partner's plan and moves on to the bracket, the place being taken only then
+   * @param {string} code
+   * @param {string} slotId
+   */
+  async function pickPlace(code, slotId) {
+    setJoinTarget({ code, slotId })
+    setIndex(index + 1)
+  }
+
+  // Without the code at hand, back to the usual path: a starter plan is created, the partner's one joined later from
+  // the profile. The join step and the income step share the same index, so the bracket is asked next
+  function postponeJoin() {
+    setJoining(false)
+    setJoinTarget(undefined)
+  }
+
+  // Saves the profile and takes the place; on success the app leaves the onboarding for the guided tour
+  async function join() {
+    setBusy(true)
+    setMessage('')
+
+    const failure = await onJoin(profileOf(answers, currency), joinTarget.code, joinTarget.slotId)
+
+    if (failure) {
+      setMessage(failure)
+      setBusy(false)
+    }
   }
 
   // Saves the profile and creates the plan; on success the app leaves the onboarding for the guided tour
@@ -119,9 +171,9 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
         {step !== 'ready' && (
           <header className="onboarding__header">
             <span className="onboarding__count">
-              Étape {index + 1} sur {STEPS.length - 1}
+              Étape {index + 1} sur {stepCount}
             </span>
-            <progress className="onboarding__progress" max={STEPS.length - 1} value={index + 1} />
+            <progress className="onboarding__progress" max={stepCount} value={index + 1} />
           </header>
         )}
 
@@ -202,7 +254,27 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
           </section>
         )}
 
-        {/* Not a form either: the brackets are buttons, and the join form shown in it brings its own */}
+        {/* The join form brings its own form */}
+        {step === 'join' && (
+          <section className="onboarding__form">
+            <h1 className="auth__title">Rejoignez le plan de votre partenaire</h1>
+            <p className="section__hint">Saisissez le code reçu de votre partenaire, puis choisissez votre place.</p>
+
+            <JoinPlanForm onPreview={onPreviewJoin} onJoin={pickPlace} onJoined={() => {}} />
+
+            <button type="button" className="onboarding__link" onClick={postponeJoin}>
+              Pas de code sous la main ? Saisissez-le plus tard depuis votre profil
+            </button>
+
+            <footer className="onboarding__footer">
+              <button type="button" className="actions__reset onboarding__back" onClick={previous}>
+                Retour
+              </button>
+            </footer>
+          </section>
+        )}
+
+        {/* Not a form either: the brackets are buttons */}
         {step === 'income' && (
           <section className="onboarding__form">
             <h1 className="auth__title">Combien gagnez-vous par mois, environ ?</h1>
@@ -225,12 +297,8 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
               ))}
             </ul>
 
-            {joining && !!selectedRange && (
-              <JoinPlanForm onPreview={onPreviewJoin} onJoin={(code, slotId) => onJoin(profileOf(answers, currency), code, slotId)} onJoined={() => {}} />
-            )}
-
             <footer className="onboarding__footer">
-              <button type="button" className="actions__reset onboarding__back" onClick={previous}>
+              <button type="button" className="actions__reset onboarding__back" onClick={previous} disabled={busy}>
                 Retour
               </button>
               {!joining && (
@@ -238,7 +306,14 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
                   Continuer
                 </button>
               )}
+              {joining && (
+                <button type="button" className="form__submit" disabled={!selectedRange || busy} onClick={join}>
+                  Rejoindre le plan
+                </button>
+              )}
             </footer>
+
+            {!!message && <p className="auth__message">{message}</p>}
           </section>
         )}
 
