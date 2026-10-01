@@ -144,74 +144,133 @@ body {
   --section-tint: var(--neutral-tint);
 }
 
-/* One block per person: their yearly tax as a budget line, then how it is paid */
+/* The payment question, a short muted sentence above the people */
+.tax__timing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Small dropdown for a short list of plain options, the list floating under its trigger */
+.dropdown {
+  position: relative;
+}
+
+.dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  color: var(--text);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.dropdown__trigger .chevron {
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+}
+
+.dropdown__trigger[aria-expanded='true'] {
+  border-color: var(--section-color, var(--accent));
+}
+
+.dropdown__trigger[aria-expanded='true'] .chevron {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+
+.dropdown__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  min-width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.dropdown__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdown__option:hover {
+  background: var(--neutral-tint);
+}
+
+.dropdown__option.is-active {
+  font-weight: 600;
+  background: var(--neutral-tint);
+}
+
+/* One budget line per person */
 .tax__people {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 16px;
-}
-
-.tax__person {
-  display: grid;
   gap: 8px;
 }
 
-.tax__person + .tax__person {
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+/* Same inset as the locked line below, so the names line up */
+.tax__line {
+  padding: 0 9px;
 }
 
 .tax__line .line__name {
-  padding: 0 0 0 9px;
+  padding: 0;
   border: 0;
   background: transparent;
   font-weight: 600;
 }
 
-/* The timing switch sits between the name and the amount; on a very narrow screen the amount drops below */
-.section--tax .line {
-  flex-wrap: wrap;
-  gap: 6px 14px;
-}
-
-.section--tax .line__name {
-  flex: none;
-}
-
-/* The amount and its payment are pushed to the end of the row, the timing staying right beside the name */
+/* The amount in the chosen period, the other one in small right under it */
 .tax__figure {
   display: inline-grid;
   justify-items: end;
   gap: 2px;
-  margin-left: auto;
 }
 
-.tax__timing {
-  font-size: 0.8rem;
-  color: var(--muted);
+.tax__amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* A slim switch, the size of a chip rather than of a control bar */
-.section--tax .switch {
-  flex: none;
-  padding: 2px;
-}
-
-.section--tax .switch__option {
-  padding: 3px 8px;
-  font-size: 0.75rem;
-  line-height: 1.2;
-}
-
-/* Out of the flex row, the field needs its own width */
-.tax__figure .line__amount {
-  width: 96px;
+.tax__amount .line__amount {
+  width: 110px;
   text-align: right;
 }
 
-.tax__payment {
+.tax__unit {
+  min-width: 3.2em;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tax__hint {
   font-size: 0.75rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;

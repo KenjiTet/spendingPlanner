@@ -14,14 +14,20 @@ function shownValueOf(value, cleared) {
  * @param {object} props - any other prop goes to the input
  * @param {number | string} props.value
  * @param {(event: import('react').ChangeEvent<HTMLInputElement>) => void} props.onChange
+ * @param {() => void} [props.onBlur]
  */
-export default function AmountInput({ value, onChange, ...inputProps }) {
+export default function AmountInput({ value, onChange, onBlur, ...inputProps }) {
   const [cleared, setCleared] = useState(false)
 
   function handleFocus() {
     if (!Number(value)) {
       setCleared(true)
     }
+  }
+
+  function handleBlur() {
+    setCleared(false)
+    onBlur?.()
   }
 
   function handleChange(event) {
@@ -36,7 +42,7 @@ export default function AmountInput({ value, onChange, ...inputProps }) {
       value={shownValueOf(value, cleared)}
       onFocus={handleFocus}
       onChange={handleChange}
-      onBlur={() => setCleared(false)}
+      onBlur={handleBlur}
     />
   )
 }
