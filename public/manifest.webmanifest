@@ -1,6 +1,6 @@
 {
-  "name": "Budget du ménage",
-  "short_name": "Budget",
+  "name": "SpendingPlanner",
+  "short_name": "SpendingPlanner",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
