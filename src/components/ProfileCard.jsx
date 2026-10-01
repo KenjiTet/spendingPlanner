@@ -31,7 +31,7 @@ export default function ProfileCard({ user, onSave }) {
   return (
     <form className="card profile__panel profile__form" onSubmit={handleSubmit} data-tour="profile-info">
       <header className="profile__panel-intro">
-        <h2 className="plan-card__title">Informations personnelles</h2>
+        <h2 className="profile__title">Informations personnelles</h2>
         <p className="section__hint">Ce revenu alimente tous vos plans.</p>
       </header>
 
@@ -52,7 +52,7 @@ export default function ProfileCard({ user, onSave }) {
       </label>
 
       {/* Amounts typed in another currency are converted into this one; those already saved are left as they are */}
-      <div className="form__field" data-tour="profile-currency">
+      <div className="form__field">
         <span>Devise principale</span>
         <CurrencySelect variant="field" currencies={currencies} pinned={likelyCount} value={mainCurrency} onChange={setMainCurrency} />
       </div>

@@ -11,28 +11,24 @@ import Sheet from './Sheet.jsx'
  * @param {object} props
  * @param {{ id: string }} props.user
  * @param {object[]} props.plans
- * @param {{ id: string, name: string }[]} props.templates
  * @param {string} [props.currentPlanId]
  * @param {(id: string) => void} props.onSelect
- * @param {(name: string, slotCount: number, templateId?: string, source?: object) => Promise<string | undefined>} props.onCreate
+ * @param {(name: string, slotCount: number, source?: object) => Promise<string | undefined>} props.onCreate
  * @param {(code: string) => Promise<{ data?: object, error?: { message: string } }>} props.onPreviewJoin
  * @param {(code: string, slotId: string) => Promise<string | undefined>} props.onJoin
  * @param {(planId: string, name: string) => Promise<string | undefined>} props.onRename
- * @param {(planId: string, isTemplate: boolean) => Promise<string | undefined>} props.onPublishTemplate
  * @param {(planId: string) => Promise<string | undefined>} props.onExport
  * @param {(planId: string) => Promise<string | undefined>} props.onDelete
  */
 export default function PlansSection({
   user,
   plans,
-  templates,
   currentPlanId,
   onSelect,
   onCreate,
   onPreviewJoin,
   onJoin,
   onRename,
-  onPublishTemplate,
   onExport,
   onDelete,
 }) {
@@ -60,7 +56,6 @@ export default function PlansSection({
         onActivate={onSelect}
         onEdit={edit}
         onRename={onRename}
-        onPublishTemplate={onPublishTemplate}
         onExport={onExport}
         onDelete={onDelete}
       />
@@ -68,10 +63,10 @@ export default function PlansSection({
   }
 
   return (
-    <section className="plans">
+    <section className="card plans">
       <header className="plans__header" data-tour="profile-plans">
         <div className="plans__intro">
-          <h2 className="plans__title">Mes plans</h2>
+          <h2 className="profile__title">Mes plans</h2>
           <p className="section__hint">Le plan actif est celui affiché dans l&rsquo;aperçu, les dépenses et le budget.</p>
         </div>
 
@@ -88,7 +83,11 @@ export default function PlansSection({
         </div>
       </header>
 
-      {!plans.length && <p className="section__hint">Vous ne participez encore à aucun plan.</p>}
+      {!plans.length && (
+        <section className="plans__group">
+          <p className="section__hint">Vous ne participez encore à aucun plan.</p>
+        </section>
+      )}
 
       {!!currentPlan && (
         <section className="plans__group">
@@ -110,7 +109,7 @@ export default function PlansSection({
       )}
 
       <Sheet open={creating} title="Nouveau plan" onClose={() => setCreating(false)}>
-        <CreatePlanForm templates={templates} onCreate={onCreate} onCreated={() => navigate('/plan')} />
+        <CreatePlanForm onCreate={onCreate} onCreated={() => navigate('/plan')} />
       </Sheet>
 
       <Sheet

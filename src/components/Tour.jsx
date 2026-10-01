@@ -137,13 +137,6 @@ const STEPS = [
   {
     chapter: 'Profil',
     to: '/profil',
-    target: '[data-tour="profile-currency"]',
-    title: 'La devise principale',
-    text: 'Tous les montants sont tenus dans cette devise. Une dépense saisie dans une autre devise y est convertie au taux du jour.',
-  },
-  {
-    chapter: 'Profil',
-    to: '/profil',
     target: '[data-tour="profile-plans"]',
     title: 'Vos plans',
     text: 'Activez, renommez ou créez un plan, ou rejoignez celui de quelqu’un avec son code.',

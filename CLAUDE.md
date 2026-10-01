@@ -111,21 +111,26 @@ server/shareCode.js            random plan share codes
 server/auth.js                 the password seam (clear text for now) and the signed session cookie
 server/access.js               who may read and edit what, the former RLS policies
 server/input.js                shared readers for values coming from the browser
-server/routes/                 auth (and the profile), plans (slots, join, templates, groups, lines, import), expenses,
-                               settlements (repayments between the two members), rates (exchange rates, cached an hour)
-src/main.jsx                   React entry point, router
+server/starterPlans.js         reads, checks and writes starterPlans.json
+server/starterPlans.json       plans proposed after signing up, solo and duo, each with its income brackets (CHF), versioned
+server/routes/                 auth (and the profile), plans (slots, join, groups, lines, import), expenses,
+                               settlements (repayments between the two members), rates (exchange rates, cached an hour),
+                               starterPlans (read by anyone, written only from localhost)
+src/main.jsx                   React entry point, router: /admin apart, everything else through App
 src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
 src/lib/appUpdate.js           reloads the page when a new deploy is detected (home-screen apps never reload on their own)
 src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the onboarding's starter plan
 src/pages/                     LoginPage, OnboardingPage (first questions of a new account, then its starter plan),
                                DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
-                               ProfilePage (account, plans list and active plan), SettlementsPage (repayments)
+                               ProfilePage (account, plans list and active plan), SettlementsPage (repayments),
+                               AdminPage (/admin, localhost only, no sign-in: the starter plans)
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
-                               useSettlements, useExchangeRates, useDailySpending, usePullToRefresh, useTourTarget)
+                               useSettlements, useExchangeRates, useStarterPlans, useDailySpending, usePullToRefresh,
+                               useTourTarget)
 src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences,
-                               starter plans by income tier (starterPlan.js)
+                               starter plans built from the income bracket picked (starterPlan.js)
 src/data/plan.json             sample plan, importable from the Plan page
 src/styles/                    global stylesheet and design tokens
 public/                        static assets served as-is
@@ -169,9 +174,7 @@ personal expenses are visible to their author only, expenses on common lines to 
 browser are rebuilt from allowed fields, never inserted as received, and nothing is filtered on the front-end side
 for privacy.
 
-**Joining and templates:** a plan carries a short `share_code`; whoever holds it previews the slots and claims a
-free one. A creator may flag a plan `is_template`, which publishes its **common structure only** — labels, colours
-and positions, amounts reset to zero — for anyone to copy into a private plan of their own.
+**Joining:** a plan carries a short `share_code`; whoever holds it previews the slots and claims a free one.
 
 **State:** `useAuth` (session), `usePlans` (plans list, current plan), `usePlan` (the open plan, optimistic edits
 with debounced writes) and `useExpenses` (one month of expenses), `useYearExpenses` (a whole year, for the dashboard's yearly gauges) and `useExpenseSuggestions` (the viewer's most used lines and frequent

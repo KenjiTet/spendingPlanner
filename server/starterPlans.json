@@ -1,0 +1,876 @@
+{
+  "plans": [
+    {
+      "id": "solo-student",
+      "mode": "solo",
+      "label": "Petit budget",
+      "ranges": [
+        {
+          "min": 0,
+          "max": 1000,
+          "typical": 500
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 100,
+              "autoBook": false,
+              "shortcut": 40
+            },
+            {
+              "label": "Bus",
+              "kind": "fixed",
+              "value": 25,
+              "autoBook": false,
+              "shortcut": 2
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 20
+            },
+            {
+              "label": "Jeux",
+              "kind": "percent",
+              "value": 5,
+              "autoBook": false
+            },
+            {
+              "label": "Restaurant",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 30
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 50,
+              "autoBook": false,
+              "max": 600
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 30,
+              "autoBook": false,
+              "max": 500
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 100
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solo-starter",
+      "mode": "solo",
+      "label": "Premier budget",
+      "ranges": [
+        {
+          "min": 1000,
+          "max": 2000,
+          "typical": 1500
+        },
+        {
+          "min": 2000,
+          "max": 3000,
+          "typical": 2500
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Logement",
+          "color": "1",
+          "lines": [
+            {
+              "label": "Loyer",
+              "kind": "percent",
+              "value": 30,
+              "autoBook": true,
+              "max": 1200
+            },
+            {
+              "label": "Charges",
+              "kind": "fixed",
+              "value": 20,
+              "autoBook": true
+            }
+          ]
+        },
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 100,
+              "autoBook": false,
+              "shortcut": 40
+            },
+            {
+              "label": "Transport",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": false,
+              "shortcut": 3.5
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 20
+            },
+            {
+              "label": "Jeux",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": false
+            },
+            {
+              "label": "Restaurant",
+              "kind": "fixed",
+              "value": 100,
+              "autoBook": false,
+              "shortcut": 30
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 60,
+              "autoBook": false,
+              "max": 600
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 15,
+              "autoBook": false,
+              "max": 500
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 100
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solo-established",
+      "mode": "solo",
+      "label": "Budget installé",
+      "ranges": [
+        {
+          "min": 3000,
+          "max": 5000,
+          "typical": 4000
+        },
+        {
+          "min": 5000,
+          "max": 8000,
+          "typical": 6500
+        },
+        {
+          "min": 8000,
+          "max": null,
+          "typical": 10000
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Logement",
+          "color": "1",
+          "lines": [
+            {
+              "label": "Loyer",
+              "kind": "percent",
+              "value": 25,
+              "autoBook": true,
+              "max": 1200
+            },
+            {
+              "label": "Charges",
+              "kind": "fixed",
+              "value": 20,
+              "autoBook": true
+            },
+            {
+              "label": "Assurance",
+              "kind": "percent",
+              "value": 0.5,
+              "autoBook": true
+            }
+          ]
+        },
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 100,
+              "autoBook": false,
+              "shortcut": 40
+            },
+            {
+              "label": "Transport",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true
+            }
+          ]
+        },
+        {
+          "label": "Voiture",
+          "color": "20",
+          "lines": [
+            {
+              "label": "Leasing et assurance",
+              "kind": "fixed",
+              "value": 240,
+              "autoBook": true
+            },
+            {
+              "label": "Carburant et entretien",
+              "kind": "fixed",
+              "value": 160,
+              "autoBook": false,
+              "shortcut": 80
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 8,
+              "autoBook": false,
+              "max": 500,
+              "shortcut": 20
+            },
+            {
+              "label": "Restaurant",
+              "kind": "fixed",
+              "value": 100,
+              "autoBook": false,
+              "shortcut": 30
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 600
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 3,
+              "autoBook": false,
+              "max": 500
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": false
+            },
+            {
+              "label": "Placements",
+              "kind": "rest",
+              "value": 10,
+              "autoBook": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duo-student",
+      "mode": "duo",
+      "label": "Petit budget",
+      "ranges": [
+        {
+          "min": 0,
+          "max": 1000,
+          "typical": 800
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 200,
+              "autoBook": false,
+              "shortcut": 40,
+              "scope": "shared"
+            },
+            {
+              "label": "Bus",
+              "kind": "fixed",
+              "value": 25,
+              "autoBook": false,
+              "shortcut": 2,
+              "scope": "personal"
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 20,
+              "scope": "personal"
+            },
+            {
+              "label": "Jeux",
+              "kind": "percent",
+              "value": 5,
+              "autoBook": false,
+              "scope": "personal"
+            },
+            {
+              "label": "Restaurant",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 60,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true,
+              "scope": "personal"
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 50,
+              "autoBook": false,
+              "max": 600,
+              "scope": "personal"
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 30,
+              "autoBook": false,
+              "max": 500,
+              "scope": "shared"
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 100,
+              "scope": "personal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duo-starter",
+      "mode": "duo",
+      "label": "Premier budget",
+      "ranges": [
+        {
+          "min": 1000,
+          "max": 2000,
+          "typical": 1500
+        },
+        {
+          "min": 2000,
+          "max": 3000,
+          "typical": 2500
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Logement",
+          "color": "1",
+          "lines": [
+            {
+              "label": "Loyer",
+              "kind": "percent",
+              "value": 30,
+              "autoBook": true,
+              "max": 1200,
+              "scope": "shared"
+            },
+            {
+              "label": "Charges",
+              "kind": "fixed",
+              "value": 20,
+              "autoBook": true,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 200,
+              "autoBook": false,
+              "shortcut": 40,
+              "scope": "shared"
+            },
+            {
+              "label": "Transport",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": false,
+              "shortcut": 3.5,
+              "scope": "personal"
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 10,
+              "autoBook": false,
+              "shortcut": 20,
+              "scope": "personal"
+            },
+            {
+              "label": "Jeux",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": false,
+              "scope": "personal"
+            },
+            {
+              "label": "Restaurant",
+              "kind": "fixed",
+              "value": 200,
+              "autoBook": false,
+              "shortcut": 60,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true,
+              "scope": "personal"
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 60,
+              "autoBook": false,
+              "max": 600,
+              "scope": "personal"
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 15,
+              "autoBook": false,
+              "max": 500,
+              "scope": "shared"
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 100,
+              "scope": "personal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duo-established",
+      "mode": "duo",
+      "label": "Budget installé",
+      "ranges": [
+        {
+          "min": 3000,
+          "max": 5000,
+          "typical": 4000
+        },
+        {
+          "min": 5000,
+          "max": 8000,
+          "typical": 6500
+        },
+        {
+          "min": 8000,
+          "max": null,
+          "typical": 10000
+        }
+      ],
+      "expenses": [
+        {
+          "label": "Logement",
+          "color": "1",
+          "lines": [
+            {
+              "label": "Loyer",
+              "kind": "percent",
+              "value": 25,
+              "autoBook": true,
+              "max": 1200,
+              "scope": "shared"
+            },
+            {
+              "label": "Charges",
+              "kind": "fixed",
+              "value": 20,
+              "autoBook": true,
+              "scope": "shared"
+            },
+            {
+              "label": "Assurance",
+              "kind": "percent",
+              "value": 0.5,
+              "autoBook": true,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Quotidien",
+          "color": "3",
+          "lines": [
+            {
+              "label": "Courses",
+              "kind": "fixed",
+              "value": 200,
+              "autoBook": false,
+              "shortcut": 40,
+              "scope": "shared"
+            },
+            {
+              "label": "Transport",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true,
+              "scope": "personal"
+            }
+          ]
+        },
+        {
+          "label": "Voiture",
+          "color": "20",
+          "lines": [
+            {
+              "label": "Leasing et assurance",
+              "kind": "fixed",
+              "value": 240,
+              "autoBook": true,
+              "scope": "shared"
+            },
+            {
+              "label": "Carburant et entretien",
+              "kind": "fixed",
+              "value": 160,
+              "autoBook": false,
+              "shortcut": 80,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Loisirs",
+          "color": "5",
+          "lines": [
+            {
+              "label": "Sorties",
+              "kind": "percent",
+              "value": 8,
+              "autoBook": false,
+              "max": 500,
+              "shortcut": 20,
+              "scope": "personal"
+            },
+            {
+              "label": "Restaurant",
+              "kind": "fixed",
+              "value": 200,
+              "autoBook": false,
+              "shortcut": 60,
+              "scope": "shared"
+            }
+          ]
+        },
+        {
+          "label": "Abonnements",
+          "color": "6",
+          "lines": [
+            {
+              "label": "Musique",
+              "kind": "fixed",
+              "value": 15,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Téléphone",
+              "kind": "fixed",
+              "value": 30,
+              "autoBook": true,
+              "scope": "personal"
+            },
+            {
+              "label": "Sport",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": true,
+              "scope": "personal"
+            }
+          ]
+        }
+      ],
+      "savings": [
+        {
+          "label": "Épargne",
+          "color": "7",
+          "lines": [
+            {
+              "label": "3e pilier",
+              "kind": "rest",
+              "value": 20,
+              "autoBook": false,
+              "max": 600,
+              "scope": "personal"
+            },
+            {
+              "label": "Voyages",
+              "kind": "rest",
+              "value": 3,
+              "autoBook": false,
+              "max": 500,
+              "scope": "shared"
+            },
+            {
+              "label": "Cadeaux",
+              "kind": "fixed",
+              "value": 50,
+              "autoBook": false,
+              "scope": "personal"
+            },
+            {
+              "label": "Placements",
+              "kind": "rest",
+              "value": 10,
+              "autoBook": false,
+              "scope": "personal"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

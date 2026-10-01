@@ -17,16 +17,14 @@ function slotCountOf(source) {
 }
 
 /**
- * Creates a plan: its name, how many people share it, and an optional template or JSON file to start from
+ * Creates a plan: its name, how many people share it, and an optional JSON file to start from
  * @param {object} props
- * @param {{ id: string, name: string }[]} props.templates
- * @param {(name: string, slotCount: number, templateId?: string, source?: object) => Promise<string | undefined>} props.onCreate
+ * @param {(name: string, slotCount: number, source?: object) => Promise<string | undefined>} props.onCreate
  * @param {() => void} props.onCreated
  */
-export default function CreatePlanForm({ templates, onCreate, onCreated }) {
+export default function CreatePlanForm({ onCreate, onCreated }) {
   const [name, setName] = useState('')
   const [slotCount, setSlotCount] = useState(2)
-  const [templateId, setTemplateId] = useState('')
   const [source, setSource] = useState(undefined)
   const [sourceName, setSourceName] = useState('')
   const [error, setError] = useState('')
@@ -71,14 +69,7 @@ export default function CreatePlanForm({ templates, onCreate, onCreated }) {
     event.preventDefault()
     setBusy(true)
 
-    // The empty option means starting from scratch, and an imported file replaces the template
-    let template = undefined
-
-    if (!!templateId && !source) {
-      template = templateId
-    }
-
-    const failure = await onCreate(name.trim(), slotCount, template, source)
+    const failure = await onCreate(name.trim(), slotCount, source)
 
     setError(failure ?? '')
     setBusy(false)
@@ -111,20 +102,6 @@ export default function CreatePlanForm({ templates, onCreate, onCreated }) {
           </label>
         ))}
       </fieldset>
-
-      {!source && !!templates.length && (
-        <label className="form__field form__field--grow">
-          <span>Partir d&rsquo;un modèle</span>
-          <select value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
-            <option value="">Partir de zéro</option>
-            {templates.map((template, index) => (
-              <option key={`template-${template.id}-${index}`} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
 
       {!source && (
         <div className="actions__buttons">
@@ -159,8 +136,8 @@ export default function CreatePlanForm({ templates, onCreate, onCreated }) {
       </button>
 
       <p className="section__hint">
-        À deux, le budget commun est partagé et chacun garde sa partie personnelle. Seule la structure d&rsquo;un
-        modèle est copiée, jamais les montants. Un plan importé reprend toutes les lignes du fichier.
+        À deux, le budget commun est partagé et chacun garde sa partie personnelle. Un plan importé reprend toutes les
+        lignes du fichier.
       </p>
 
       {!!error && <p className="actions__error">{error}</p>}

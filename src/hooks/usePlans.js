@@ -8,12 +8,11 @@ import { loadPreference, savePreference } from '../utils/storage.js'
 const CURRENT_PLAN_KEY = 'current-plan'
 
 /**
- * Plans the signed-in person holds a place in, the published templates, and which plan is open
+ * Plans the signed-in person holds a place in, and which plan is open
  * @param {string | undefined} userId
  */
 export default function usePlans(userId) {
   const [plans, setPlans] = useState([])
-  const [templates, setTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentPlanId, setCurrentPlanId] = useState(() => loadPreference(CURRENT_PLAN_KEY))
 
@@ -21,19 +20,14 @@ export default function usePlans(userId) {
   const reload = useCallback(async () => {
     if (!userId) {
       setPlans([])
-      setTemplates([])
       setLoading(false)
       return
     }
 
-    const [mine, published] = await Promise.all([api.get('/plans'), api.get('/plans/templates')])
+    const { data, error } = await api.get('/plans')
 
-    if (!mine.error) {
-      setPlans(mine.data)
-    }
-
-    if (!published.error) {
-      setTemplates(published.data)
+    if (!error) {
+      setPlans(data)
     }
 
     setLoading(false)
@@ -56,12 +50,11 @@ export default function usePlans(userId) {
   /**
    * @param {string} name
    * @param {number} slotCount - one or two places
-   * @param {string} [templateId] - a published template to copy the common structure from
    * @param {object} [source] - a plan read from a JSON file, whose lines fill the new plan
    * @returns {Promise<string | undefined>} an error message, if any
    */
-  async function createPlan(name, slotCount, templateId, source) {
-    const { data, error } = await api.post('/plans', { name, slotCount, templateId })
+  async function createPlan(name, slotCount, source) {
+    const { data, error } = await api.post('/plans', { name, slotCount })
 
     if (error) {
       return error.message
@@ -127,22 +120,6 @@ export default function usePlans(userId) {
 
   /**
    * @param {string} planId
-   * @param {boolean} isTemplate
-   * @returns {Promise<string | undefined>} an error message, if any
-   */
-  async function publishTemplate(planId, isTemplate) {
-    const { error } = await api.patch(`/plans/${planId}/template`, { is_template: isTemplate })
-
-    if (error) {
-      return error.message
-    }
-
-    await reload()
-    return undefined
-  }
-
-  /**
-   * @param {string} planId
    * @param {string} name
    * @returns {Promise<string | undefined>} an error message, if any
    */
@@ -186,14 +163,12 @@ export default function usePlans(userId) {
 
   return {
     plans,
-    templates,
     loading,
     currentPlan,
     selectPlan,
     createPlan,
     previewJoin,
     joinPlan,
-    publishTemplate,
     renamePlan,
     exportPlan,
     deletePlan,

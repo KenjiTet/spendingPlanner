@@ -24,6 +24,7 @@ create table if not exists plans (
   -- Former plan-wide tax timing, copied onto every place when it moved there; no longer read
   tax_timing text not null default 'monthly' check (tax_timing in ('monthly', 'yearly')),
   share_code text not null unique,
+  -- Former publishing of the common structure as a template, removed; no longer read
   is_template integer not null default 0 check (is_template in (0, 1)),
   created_by text not null references users (id) on delete cascade,
   -- Common expenses entered before this moment never enter a settlement, '' meaning since the start

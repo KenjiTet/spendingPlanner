@@ -118,6 +118,7 @@ export function itemToRow(plan, listKey, item) {
  */
 export function toImportPayload(source, scopeByPerson) {
   const groupIds = {}
+  const lineIds = {}
 
   // JSON ids are free text, the database needs fresh uuids
   const resolveScope = (scope) => ownerOfScope(scopeByPerson[scope] ?? SHARED)
@@ -137,16 +138,20 @@ export function toImportPayload(source, scopeByPerson) {
     })
 
   const toLines = (lines, kind) =>
-    lines.map((line, index) => ({
-      id: crypto.randomUUID(),
-      kind,
-      label: line.label,
-      amount: toAmount(line.amount),
-      auto_book: !!line.autoBook,
-      group_id: groupIds[line.parent] ?? null,
-      owner_id: resolveScope(line.parent),
-      position: index,
-    }))
+    lines.map((line, index) => {
+      lineIds[line.id] = crypto.randomUUID()
+
+      return {
+        id: lineIds[line.id],
+        kind,
+        label: line.label,
+        amount: toAmount(line.amount),
+        auto_book: !!line.autoBook,
+        group_id: groupIds[line.parent] ?? null,
+        owner_id: resolveScope(line.parent),
+        position: index,
+      }
+    })
 
   const groups = [...toGroups(source.subgroups, 'expense'), ...toGroups(source.savingGroups, 'saving')]
   const lines = [...toLines(source.categories, 'expense'), ...toLines(source.savings, 'saving')]
@@ -163,5 +168,16 @@ export function toImportPayload(source, scopeByPerson) {
       tax_timing: person.taxTiming ?? source.settings.taxTiming,
     }))
 
-  return { groups, lines, slots }
+  // Shortcuts of a starter plan follow their line and their person; one belongs to a place, never to the common part
+  const presets = (source.presets ?? [])
+    .filter((preset) => !!scopeByPerson[preset.person] && scopeByPerson[preset.person] !== SHARED)
+    .map((preset) => ({
+      id: crypto.randomUUID(),
+      slot_id: scopeByPerson[preset.person],
+      line_id: lineIds[preset.line],
+      label: preset.label,
+      amount: toAmount(preset.amount),
+    }))
+
+  return { groups, lines, slots, presets }
 }

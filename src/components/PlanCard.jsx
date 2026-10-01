@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import Icon from './Icon.jsx'
 import Sheet from './Sheet.jsx'
+import Toast from './Toast.jsx'
 
 // The active plan is outlined so it stands out in the list
 function cardClassOf(isCurrent) {
   if (isCurrent) {
-    return 'card plan-card plan-card--active'
+    return 'plan-card plan-card--active'
   }
 
-  return 'card plan-card'
+  return 'plan-card'
 }
 
 // The copy button confirms for a moment that the code is in the clipboard
@@ -24,22 +25,23 @@ function copyLabelOf(copied) {
  * One plan of the list: activating or editing it, its invitation code while a place is free, and a sheet for the rarer
  * actions
  * @param {object} props
- * @param {{ id: string, name: string, created_by: string, share_code: string, is_template: number, free_slots: number }} props.plan
+ * @param {{ id: string, name: string, created_by: string, share_code: string, free_slots: number }} props.plan
  * @param {boolean} props.isCurrent
  * @param {boolean} props.isCreator
  * @param {(id: string) => void} props.onActivate
  * @param {(id: string) => void} props.onEdit
  * @param {(planId: string, name: string) => Promise<string | undefined>} props.onRename
- * @param {(planId: string, isTemplate: boolean) => Promise<string | undefined>} props.onPublishTemplate
  * @param {(planId: string) => Promise<string | undefined>} props.onExport
  * @param {(planId: string) => Promise<string | undefined>} props.onDelete
  */
-export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdit, onRename, onPublishTemplate, onExport, onDelete }) {
+export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdit, onRename, onExport, onDelete }) {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [copied, setCopied] = useState(false)
   const [name, setName] = useState(plan.name)
   const [error, setError] = useState('')
+  // Confirmation of the last rename, its id restarting the animation on each one
+  const [toast, setToast] = useState(undefined)
 
   // Opening the sheet starts from the current name, closing it drops a pending deletion so it is never confirmed by surprise
   function openSheet() {
@@ -59,6 +61,10 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
     const failure = await onRename(plan.id, name.trim())
 
     setError(failure ?? '')
+
+    if (!failure) {
+      setToast({ id: crypto.randomUUID(), tone: 'success', text: `Plan renommé en « ${name.trim()} »` })
+    }
   }
 
   async function handleCopy() {
@@ -88,7 +94,6 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
       <div className="plan-card__main">
         <header className="plan-card__header">
           <h3 className="plan-card__title">{plan.name}</h3>
-          {!!plan.is_template && <span className="scope__badge">Modèle</span>}
         </header>
 
         {!!plan.free_slots && (
@@ -144,21 +149,6 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
             </form>
           )}
 
-          {isCreator && (
-            <section className="plan-card__group">
-              <h3 className="plan-card__group-title">Modèle</h3>
-
-              <label className="plan-card__toggle">
-                <input
-                  type="checkbox"
-                  checked={!!plan.is_template}
-                  onChange={(event) => onPublishTemplate(plan.id, event.target.checked)}
-                />
-                <span>Publier la structure commune comme modèle, copiable par d&rsquo;autres</span>
-              </label>
-            </section>
-          )}
-
           <section className="plan-card__group">
             <h3 className="plan-card__group-title">Sauvegarde</h3>
             <p className="section__hint">Le fichier JSON peut être réimporté dans un nouveau plan.</p>
@@ -205,6 +195,9 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
           {!!error && <p className="actions__error">{error}</p>}
         </div>
       </Sheet>
+
+      {/* Outside the sheet, so closing it right away never cuts the confirmation short */}
+      {!!toast && <Toast key={toast.id} text={toast.text} tone={toast.tone} onDone={() => setToast(undefined)} />}
     </article>
   )
 }

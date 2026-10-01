@@ -5,6 +5,7 @@ import { attachUser } from './auth.js'
 import authRouter from './routes/auth.js'
 import plansRouter from './routes/plans.js'
 import ratesRouter from './routes/rates.js'
+import starterPlansRouter from './routes/starterPlans.js'
 
 const PORT = process.env.PORT ?? 3000
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -18,6 +19,7 @@ app.use(attachUser)
 app.use('/api/auth', authRouter)
 app.use('/api/plans', plansRouter)
 app.use('/api/rates', ratesRouter)
+app.use('/api/starter-plans', starterPlansRouter)
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Route inconnue.' })

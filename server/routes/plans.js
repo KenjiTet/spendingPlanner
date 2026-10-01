@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
-import { canEditScope, isPlanCreator, requireMembership, slotOf } from '../access.js'
+import { canBookOnLine, canEditScope, isPlanCreator, requireMembership, slotOf } from '../access.js'
 import { requireUser } from '../auth.js'
 import { db } from '../db.js'
 import { fail } from '../errors.js'
@@ -18,17 +18,11 @@ const router = Router()
 router.use(requireUser)
 
 const listPlans = db.prepare(`
-  select p.id, p.name, p.created_by, p.share_code, p.is_template,
+  select p.id, p.name, p.created_by, p.share_code,
          (select count(*) from plan_slots f where f.plan_id = p.id and f.user_id is null) as free_slots,
          (select count(*) from plan_slots c where c.plan_id = p.id) as slot_count
   from plans p join plan_slots s on s.plan_id = p.id
   where s.user_id = ? order by p.created_at
-`)
-const listTemplates = db.prepare(`
-  select p.id, p.name from plans p
-  where p.is_template = 1
-    and not exists (select 1 from plan_slots s where s.plan_id = p.id and s.user_id = ?)
-  order by p.name
 `)
 const insertPlan = db.prepare(
   'insert into plans (id, name, share_code, created_by, created_at) values (@id, @name, @share_code, @created_by, @created_at)'
@@ -37,10 +31,9 @@ const insertSlot = db.prepare(
   'insert into plan_slots (id, plan_id, label, user_id, net_monthly, annual_tax, position) values (@id, @plan_id, @label, @user_id, @net_monthly, @annual_tax, @position)'
 )
 const findPlan = db.prepare(
-  'select id, name, created_by, share_code, is_template from plans where id = ?'
+  'select id, name, created_by, share_code from plans where id = ?'
 )
 const findByCode = db.prepare('select id, name from plans where share_code = ?')
-const findTemplate = db.prepare('select id from plans where id = ? and is_template = 1')
 const findProfile = db.prepare('select display_name, net_monthly from users where id = ?')
 // A taken place reads its income from the account profile; the tax belongs to the place, set in the budget
 const listSlots = db.prepare(`
@@ -60,16 +53,9 @@ const updateTaxTiming = db.prepare('update plan_slots set tax_timing = ? where i
 const updateFigures = db.prepare(
   "update plan_slots set label = coalesce(nullif(?, ''), label), net_monthly = ?, annual_tax = ?, tax_timing = ? where id = ? and plan_id = ?"
 )
-const updateTemplate = db.prepare('update plans set is_template = ? where id = ?')
 const updateName = db.prepare('update plans set name = ? where id = ?')
 const listGroups = db.prepare('select * from plan_groups where plan_id = ? order by position')
 const listLines = db.prepare('select * from plan_lines where plan_id = ? order by position')
-const listSharedGroups = db.prepare(
-  'select id, kind, label, color, position from plan_groups where plan_id = ? and owner_id is null order by position'
-)
-const listSharedLines = db.prepare(
-  'select id, kind, label, auto_book, group_id, position from plan_lines where plan_id = ? and owner_id is null order by position'
-)
 const findGroup = db.prepare('select * from plan_groups where id = ?')
 const findLine = db.prepare('select * from plan_lines where id = ?')
 const insertGroup = db.prepare(
@@ -83,6 +69,9 @@ const insertLine = db.prepare(
 )
 const updateLine = db.prepare(
   'update plan_lines set label = @label, amount = @amount, auto_book = @auto_book, owner_id = @owner_id, group_id = @group_id, position = @position where id = @id and plan_id = @plan_id'
+)
+const insertPreset = db.prepare(
+  'insert into expense_presets (id, plan_id, slot_id, line_id, label, amount, created_at) values (?, ?, ?, ?, ?, ?, ?)'
 )
 const deleteGroup = db.prepare('delete from plan_groups where id = ? and plan_id = ?')
 const deleteGroupLines = db.prepare('delete from plan_lines where group_id = ? and plan_id = ?')
@@ -258,52 +247,10 @@ function toLineRow(req) {
   }
 }
 
-/**
- * Common structure of a published template, with fresh identifiers and no amounts
- * @param {string} planId
- * @param {{ id: string }} template
- */
-function copyTemplate(planId, template) {
-  const groupIds = {}
-
-  listSharedGroups.all(template.id).forEach((group) => {
-    groupIds[group.id] = randomUUID()
-
-    insertGroup.run({
-      id: groupIds[group.id],
-      plan_id: planId,
-      kind: group.kind,
-      label: group.label,
-      color: group.color,
-      owner_id: null,
-      position: group.position,
-    })
-  })
-
-  listSharedLines.all(template.id).forEach((line) => {
-    insertLine.run({
-      id: randomUUID(),
-      plan_id: planId,
-      kind: line.kind,
-      label: line.label,
-      amount: 0,
-      // How a line is paid is structure, like its label
-      auto_book: line.auto_book,
-      owner_id: null,
-      group_id: groupIds[line.group_id] ?? null,
-      position: line.position,
-    })
-  })
-}
-
-// A plan, its places, the creator's claim on the first one and the copied template go together
-const createPlan = db.transaction((plan, slots, template) => {
+// A plan, its places and the creator's claim on the first one go together
+const createPlan = db.transaction((plan, slots) => {
   insertPlan.run(plan)
   slots.forEach((slot) => insertSlot.run(slot))
-
-  if (!!template) {
-    copyTemplate(plan.id, template)
-  }
 })
 
 // Appends a whole plan read from a JSON file, including the other place's part
@@ -341,16 +288,29 @@ const importPlan = db.transaction((planId, payload, slotIds) => {
 
     updateFigures.run(String(slot.label ?? '').trim(), readAmount(slot.net_monthly), readAmount(slot.annual_tax), readTaxTiming(slot.tax_timing), slotId, planId)
   })
+
+  // Shortcuts of a starter plan, each on a line its place may book on; a plan file carries none
+  if (!Array.isArray(payload.presets)) {
+    return
+  }
+
+  payload.presets.forEach((preset) => {
+    const slotId = readImportedOwner(slotIds, preset.slot_id)
+    const lineId = String(preset.line_id ?? '')
+    const label = String(preset.label ?? '').trim()
+    const amount = Number(preset.amount)
+
+    if (!slotId || !canBookOnLine(planId, slotId, lineId) || !label || !Number.isFinite(amount) || amount <= 0) {
+      fail(400, 'Raccourci importé invalide.')
+    }
+
+    insertPreset.run(readId(preset.id), planId, slotId, lineId, label, amount, new Date().toISOString())
+  })
 })
 
 // Plans the person holds a place in
 router.get('/', (req, res) => {
   res.json(listPlans.all(req.userId))
-})
-
-// Published templates, name only, and never a plan the person already belongs to
-router.get('/templates', (req, res) => {
-  res.json(listTemplates.all(req.userId))
 })
 
 // What a share code opens onto, so the person picks a place before committing to it
@@ -408,16 +368,6 @@ router.post('/', (req, res) => {
     fail(400, 'Un plan compte une ou deux places.')
   }
 
-  let template
-
-  if (!!req.body.templateId) {
-    template = findTemplate.get(String(req.body.templateId))
-
-    if (!template) {
-      fail(404, 'Ce modèle n’existe plus.')
-    }
-  }
-
   const profile = findProfile.get(req.userId)
   const plan = {
     id: randomUUID(),
@@ -438,7 +388,7 @@ router.post('/', (req, res) => {
     position: index,
   }))
 
-  createPlan(plan, slots, template)
+  createPlan(plan, slots)
   res.json({ id: plan.id })
 })
 
@@ -502,18 +452,6 @@ router.post('/:planId/slots', (req, res) => {
     annual_tax: 0,
     position: slots.length,
   })
-  res.json({})
-})
-
-// Publishing the plan's common structure, so others may start from a copy of it
-router.patch('/:planId/template', (req, res) => {
-  const { planId } = req.params
-
-  if (!isPlanCreator(planId, req.userId)) {
-    fail(403, 'Seul le créateur du plan peut le publier comme modèle.')
-  }
-
-  updateTemplate.run(Number(!!req.body.is_template), planId)
   res.json({})
 })
 

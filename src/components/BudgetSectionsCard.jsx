@@ -40,7 +40,7 @@ export default function BudgetSectionsCard({ user, onSave }) {
   return (
     <section className="card profile__panel options">
       <header className="profile__panel-intro">
-        <h2 className="plan-card__title">Options du budget</h2>
+        <h2 className="profile__title">Options du budget</h2>
         <p className="section__hint">Une option désactivée est masquée du budget de tous vos plans.</p>
       </header>
 

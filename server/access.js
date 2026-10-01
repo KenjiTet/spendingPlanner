@@ -19,7 +19,7 @@ export function slotOf(planId, userId) {
 }
 
 /**
- * Only the creator adds a place, publishes a template and imports a whole plan
+ * Only the creator adds a place, renames, deletes and imports a whole plan
  * @param {string} planId
  * @param {string} userId
  */

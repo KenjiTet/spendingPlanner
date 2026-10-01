@@ -20,14 +20,12 @@ export default function App() {
   const [replaying, setReplaying] = useState(false)
   const {
     plans,
-    templates,
     loading: plansLoading,
     currentPlan,
     selectPlan,
     createPlan,
     previewJoin,
     joinPlan,
-    publishTemplate,
     renamePlan,
     exportPlan,
     deletePlan,
@@ -58,7 +56,7 @@ export default function App() {
       return failure
     }
 
-    return createPlan(plan.name, plan.people.length, undefined, plan)
+    return createPlan(plan.name, plan.people.length, plan)
   }
 
   /**
@@ -107,14 +105,12 @@ export default function App() {
                 onSave={updateProfile}
                 onSavePreferences={updatePreferences}
                 plans={plans}
-                templates={templates}
                 currentPlanId={currentPlan?.id}
                 onSelectPlan={selectPlan}
                 onCreatePlan={createPlan}
                 onPreviewJoin={previewJoin}
                 onJoinPlan={joinPlan}
                 onRenamePlan={renamePlan}
-                onPublishTemplate={publishTemplate}
                 onExportPlan={exportPlan}
                 onDeletePlan={deletePlan}
                 onReplayTutorial={() => setReplaying(true)}

@@ -1938,19 +1938,44 @@ input.subgroup__name,
   gap: 16px;
 }
 
-/* Profile page: the settings on the left, the plans and account on the right */
+/* Profile page, on phones: the person and the budget options, then the plans, then the account actions */
 .profile {
   max-width: 1040px;
-}
-
-.profile__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'info' 'options' 'plans' 'account';
   align-items: start;
-  gap: 16px;
 }
 
-.profile__column,
+/* On wide screens the plans panel takes the right column, the person, the options and the account stacked on the left */
+@media (min-width: 1100px) {
+  .profile {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: 'info plans' 'options plans' 'account plans';
+  }
+}
+
+.profile__form {
+  grid-area: info;
+}
+
+.profile .options {
+  grid-area: options;
+}
+
+.profile .plans {
+  grid-area: plans;
+}
+
+.profile__account {
+  grid-area: account;
+}
+
+.profile__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
 .profile__panel,
 .profile__panel-intro {
   display: grid;
@@ -2059,11 +2084,6 @@ input.subgroup__name,
   gap: 4px;
 }
 
-.plans__title {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
 .plans__toolbar {
   display: flex;
   gap: 8px;
@@ -2099,9 +2119,12 @@ input.subgroup__name,
   filter: brightness(1.08);
 }
 
+/* Groups of the plans panel, each set apart by a rule */
 .plans__group {
   display: grid;
   gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .plans__group-title {
@@ -2129,6 +2152,10 @@ input.subgroup__name,
   justify-content: space-between;
   gap: 12px;
   padding: 12px 12px 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  /* A faint tint so each plan stands out from the white panel */
+  background: var(--surface-muted);
 }
 
 .plan-card__main {
@@ -2178,6 +2205,9 @@ input.subgroup__name,
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
+}
+
+.options__item + .options__item {
   border-top: 1px solid var(--border);
 }
 
@@ -2273,14 +2303,6 @@ input.subgroup__name,
   border-radius: 8px;
   background: var(--surface-muted);
   color: var(--text);
-}
-
-.plan-card__toggle {
-  display: flex;
-  align-items: start;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: var(--muted);
 }
 
 /* Generic outline icon, sized by its context */
@@ -5354,4 +5376,139 @@ html:has(.pull) {
   .auth__card {
     padding: 20px;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin: the starter plans offered after signing up, edited locally   */
+/* ------------------------------------------------------------------ */
+
+.admin {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: grid;
+  gap: 24px;
+}
+
+.admin__header,
+.admin__mode,
+.admin__groups {
+  display: grid;
+  gap: 12px;
+}
+
+.admin__plans,
+.admin__ranges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.admin__ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin__plan,
+.admin__editor {
+  display: grid;
+  gap: 16px;
+}
+
+.admin__plan-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin__subtitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.admin__group {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  display: grid;
+  gap: 8px;
+}
+
+.admin__group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin__group-label {
+  flex: 1;
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.list__item--fields .admin__percent {
+  flex: 0 1 110px;
+}
+
+.admin__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.admin__add {
+  justify-self: start;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.admin__secondary {
+  font: inherit;
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin__secondary:disabled,
+.list__remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin__totals {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pushed to the right end of the line, before its remove button */
+.admin__amount {
+  margin-left: auto;
+  padding-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

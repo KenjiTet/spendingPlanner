@@ -3,11 +3,12 @@ import CurrencySelect from '../components/CurrencySelect.jsx'
 import JoinPlanForm from '../components/JoinPlanForm.jsx'
 import SuccessTick from '../components/SuccessTick.jsx'
 import useExchangeRates from '../hooks/useExchangeRates.js'
-import { formatAxisAmount } from '../utils/format.js'
-import { buildStarterPlan, incomeRangesIn, TIER_CURRENCY } from '../utils/starterPlan.js'
+import useStarterPlans from '../hooks/useStarterPlans.js'
+import { buildStarterPlan, incomeRangesIn, rangeLabelOf, TIER_CURRENCY } from '../utils/starterPlan.js'
 
-// The questions in order, the last screen announcing the plan prepared from the answers
-const STEPS = ['name', 'currency', 'income', 'mode', 'ready']
+// The questions in order, the last screen announcing the plan prepared from the answers; the mode comes before the
+// income, each mode offering brackets of its own
+const STEPS = ['name', 'currency', 'mode', 'income', 'ready']
 
 // The pressed choice is highlighted
 function choiceClassOf(isSelected) {
@@ -33,23 +34,6 @@ function rateOf(toBase, currency) {
   return 1000 / reference
 }
 
-/**
- * How a bracket reads, open at both ends
- * @param {{ min: number, max: number }} range
- * @param {string} currency
- */
-function rangeLabelOf(range, currency) {
-  if (!range.min) {
-    return `Moins de ${formatAxisAmount(range.max)} ${currency}`
-  }
-
-  if (range.max === Infinity) {
-    return `Plus de ${formatAxisAmount(range.min)} ${currency}`
-  }
-
-  return `${formatAxisAmount(range.min)} – ${formatAxisAmount(range.max)} ${currency}`
-}
-
 // What the answers write into the profile
 function profileOf(answers, currency) {
   return { firstName: answers.firstName, income: answers.income, currency }
@@ -70,18 +54,21 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
   const [currency, setCurrency] = useState(user.main_currency)
   const [rangeId, setRangeId] = useState('')
   const [isDuo, setIsDuo] = useState(false)
-  // The second person of a pair joining an existing plan instead of creating one
+  // The second person of a pair joining an existing plan instead of creating one, once their bracket is picked
   const [joining, setJoining] = useState(false)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   // Brackets are set in one currency: the rates express them in the chosen one and bring the income back for the tier
   const { currencies, likelyCount, toBase } = useExchangeRates(TIER_CURRENCY)
-  const ranges = incomeRangesIn(rateOf(toBase, currency))
+  const { plans: starterPlans, error: plansError } = useStarterPlans()
+  const rate = rateOf(toBase, currency)
+  const ranges = incomeRangesIn(starterPlans ?? [], isDuo, rate)
+  const selectedRange = ranges.find((range) => range.id === rangeId)
   const step = STEPS[index]
 
   const answers = {
     firstName: firstName.trim(),
-    income: ranges.find((range) => range.id === rangeId)?.typical ?? 0,
+    income: selectedRange?.typical ?? 0,
     isDuo,
   }
 
@@ -91,16 +78,26 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
     setIndex(index + 1)
   }
 
-  // Leaving the join form brings the choice back, rather than the previous question
+  // Going back always leaves the join path, the mode being asked again
   function previous() {
     setMessage('')
-
-    if (isDuo && joining) {
-      setJoining(false)
-      return
-    }
-
+    setJoining(false)
     setIndex(index - 1)
+  }
+
+  /**
+   * Picks a mode: the brackets differ from one to the other, so the one picked before is dropped
+   * @param {boolean} duo
+   */
+  function chooseMode(duo) {
+    setIsDuo(duo)
+    setRangeId('')
+  }
+
+  // The second person of a pair still gives their bracket, then joins with the code instead of creating a plan
+  function startJoining() {
+    setJoining(true)
+    setIndex(index + 1)
   }
 
   // Saves the profile and creates the plan; on success the app leaves the onboarding for the guided tour
@@ -108,8 +105,7 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
     setBusy(true)
     setMessage('')
 
-    const { plan } = buildStarterPlan(answers, (amount) => toBase(amount, currency))
-    const failure = await onComplete(profileOf(answers, currency), plan)
+    const failure = await onComplete(profileOf(answers, currency), buildStarterPlan(answers, selectedRange.plan, rate))
 
     if (failure) {
       setMessage(failure)
@@ -168,13 +164,56 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
           </form>
         )}
 
+        {/* Not a form: nothing is required here */}
+        {step === 'mode' && (
+          <section className="onboarding__form">
+            <h1 className="auth__title">Vous gérez votre budget…</h1>
+
+            <ul className="onboarding__choices">
+              <li>
+                <button type="button" className={choiceClassOf(!isDuo)} aria-pressed={!isDuo} onClick={() => chooseMode(false)}>
+                  <span className="onboarding__choice-title">Seul</span>
+                  <span className="section__hint">Un budget pour vous, vos dépenses et votre épargne.</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" className={choiceClassOf(isDuo)} aria-pressed={isDuo} onClick={() => chooseMode(true)}>
+                  <span className="onboarding__choice-title">À deux</span>
+                  <span className="section__hint">Des dépenses communes partagées, et une part personnelle chacun.</span>
+                </button>
+              </li>
+            </ul>
+
+            {/* The second person of a pair joins the plan the first one created, rather than starting another */}
+            {isDuo && (
+              <button type="button" className="onboarding__link" onClick={startJoining}>
+                Votre partenaire a déjà créé votre plan ? Rejoignez-le avec son code
+              </button>
+            )}
+
+            <footer className="onboarding__footer">
+              <button type="button" className="actions__reset onboarding__back" onClick={previous}>
+                Retour
+              </button>
+              <button type="button" className="form__submit" onClick={() => setIndex(index + 1)}>
+                Continuer
+              </button>
+            </footer>
+          </section>
+        )}
+
+        {/* Not a form either: the brackets are buttons, and the join form shown in it brings its own */}
         {step === 'income' && (
-          <form className="onboarding__form" onSubmit={next}>
+          <section className="onboarding__form">
             <h1 className="auth__title">Combien gagnez-vous par mois, environ ?</h1>
             <p className="section__hint">
               Revenu net : salaire, bourse, allocations, activité indépendante… Une fourchette suffit, le montant exact se
               règle ensuite dans votre profil.
             </p>
+
+            {!starterPlans && <p className="section__hint">Chargement…</p>}
+
+            {!!plansError && <p className="auth__message">{plansError}</p>}
 
             <ul className="onboarding__choices onboarding__choices--compact" aria-label="Revenu net mensuel">
               {ranges.map((range, rangeIndex) => (
@@ -186,45 +225,7 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
               ))}
             </ul>
 
-            <footer className="onboarding__footer">
-              <button type="button" className="actions__reset onboarding__back" onClick={previous}>
-                Retour
-              </button>
-              <button type="submit" className="form__submit" disabled={!rangeId}>
-                Continuer
-              </button>
-            </footer>
-          </form>
-        )}
-
-        {/* Not a form: nothing is required here, and the join form shown in it brings its own */}
-        {step === 'mode' && (
-          <section className="onboarding__form">
-            <h1 className="auth__title">Vous gérez votre budget…</h1>
-
-            <ul className="onboarding__choices">
-              <li>
-                <button type="button" className={choiceClassOf(!isDuo)} aria-pressed={!isDuo} onClick={() => setIsDuo(false)}>
-                  <span className="onboarding__choice-title">Seul</span>
-                  <span className="section__hint">Un budget pour vous, vos dépenses et votre épargne.</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" className={choiceClassOf(isDuo)} aria-pressed={isDuo} onClick={() => setIsDuo(true)}>
-                  <span className="onboarding__choice-title">À deux</span>
-                  <span className="section__hint">Des dépenses communes partagées, et une part personnelle chacun.</span>
-                </button>
-              </li>
-            </ul>
-
-            {/* The second person of a pair joins the plan the first one created, rather than starting another */}
-            {isDuo && !joining && (
-              <button type="button" className="onboarding__link" onClick={() => setJoining(true)}>
-                Votre partenaire a déjà créé votre plan ? Rejoignez-le avec son code
-              </button>
-            )}
-
-            {isDuo && joining && (
+            {joining && !!selectedRange && (
               <JoinPlanForm onPreview={onPreviewJoin} onJoin={(code, slotId) => onJoin(profileOf(answers, currency), code, slotId)} onJoined={() => {}} />
             )}
 
@@ -232,8 +233,8 @@ export default function OnboardingPage({ user, onComplete, onPreviewJoin, onJoin
               <button type="button" className="actions__reset onboarding__back" onClick={previous}>
                 Retour
               </button>
-              {(!isDuo || !joining) && (
-                <button type="button" className="form__submit" onClick={() => setIndex(index + 1)}>
+              {!joining && (
+                <button type="button" className="form__submit" disabled={!selectedRange} onClick={() => setIndex(index + 1)}>
                   Continuer
                 </button>
               )}

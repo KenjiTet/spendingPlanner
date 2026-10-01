@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 // Wording and browser hints that differ between both modes
 const MODES = {
-  signIn: { submit: 'Se connecter', autoComplete: 'current-password' },
-  signUp: { submit: 'Créer le compte', autoComplete: 'new-password' },
+  signIn: { title: 'Accédez à votre budget', submit: 'Se connecter', autoComplete: 'current-password' },
+  signUp: { title: 'Créez votre budget', submit: 'Créer le compte', autoComplete: 'new-password' },
 }
 
 /**
@@ -48,8 +48,7 @@ export default function LoginPage({ onSignIn, onSignUp }) {
     <main className="auth">
       <section className="card auth__card">
         <header className="auth__header">
-          <h1 className="auth__title">Budget du ménage</h1>
-          <p className="section__hint">Planifiez à deux, suivez vos dépenses chacun de votre côté.</p>
+          <h1 className="auth__title">{MODES[mode].title}</h1>
         </header>
 
         <nav className="switch auth__switch" aria-label="Mode">
