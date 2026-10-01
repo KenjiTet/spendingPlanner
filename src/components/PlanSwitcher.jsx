@@ -105,7 +105,7 @@ export default function PlanSwitcher({ plans, currentPlanId, onSelect }) {
             </ul>
           )}
 
-          <Link to="/plans" className="switcher__manage" onClick={() => setOpen(false)}>
+          <Link to="/profil" className="switcher__manage" onClick={() => setOpen(false)}>
             Gérer, créer ou rejoindre un plan
           </Link>
         </section>

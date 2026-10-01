@@ -142,6 +142,22 @@ export default function usePlans(userId) {
   }
 
   /**
+   * @param {string} planId
+   * @param {string} name
+   * @returns {Promise<string | undefined>} an error message, if any
+   */
+  async function renamePlan(planId, name) {
+    const { error } = await api.patch(`/plans/${planId}/name`, { name })
+
+    if (error) {
+      return error.message
+    }
+
+    await reload()
+    return undefined
+  }
+
+  /**
    * Deletes a plan for everyone; the active plan then falls back to the first one left
    * @param {string} planId
    * @returns {Promise<string | undefined>} an error message, if any
@@ -178,6 +194,7 @@ export default function usePlans(userId) {
     previewJoin,
     joinPlan,
     publishTemplate,
+    renamePlan,
     exportPlan,
     deletePlan,
   }

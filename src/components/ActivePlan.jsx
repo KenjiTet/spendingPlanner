@@ -45,7 +45,7 @@ function OpenPlan({ user, currentPlan }) {
 }
 
 /**
- * Gate of the pages working on a plan, pointing to the plans page while none is active
+ * Gate of the pages working on a plan, pointing to the plans of the profile while none is active
  * @param {object} props
  * @param {{ id: string, show_savings: number, show_taxes: number }} props.user
  * @param {{ id: string }} [props.currentPlan]
@@ -56,7 +56,7 @@ export default function ActivePlan({ user, currentPlan }) {
       <section className="card empty">
         <h1 className="empty__title">Aucun plan actif</h1>
         <p className="section__hint">Créez un plan ou rejoignez celui de quelqu&rsquo;un avec son code.</p>
-        <Link to="/plans" className="form__submit">
+        <Link to="/profil" className="form__submit">
           Voir les plans
         </Link>
       </section>

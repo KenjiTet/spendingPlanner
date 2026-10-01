@@ -10,7 +10,6 @@ import ExpensesPage from './pages/ExpensesPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OnboardingPage from './pages/OnboardingPage.jsx'
 import PlanPage from './pages/PlanPage.jsx'
-import PlanPicker from './pages/PlanPicker.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import SettlementsPage from './pages/SettlementsPage.jsx'
 
@@ -29,6 +28,7 @@ export default function App() {
     previewJoin,
     joinPlan,
     publishTemplate,
+    renamePlan,
     exportPlan,
     deletePlan,
   } = usePlans(user?.id)
@@ -100,33 +100,23 @@ export default function App() {
           }
         >
           <Route
-            path="/plans"
-            element={
-              <PlanPicker
-                user={user}
-                plans={plans}
-                templates={templates}
-                currentPlanId={currentPlan?.id}
-                onSelect={selectPlan}
-                onCreate={createPlan}
-                onPreviewJoin={previewJoin}
-                onJoin={joinPlan}
-                onPublishTemplate={publishTemplate}
-                onExport={exportPlan}
-                onDelete={deletePlan}
-              />
-            }
-          />
-          <Route
             path="/profil"
             element={
               <ProfilePage
                 user={user}
-                plans={plans}
-                currentPlanId={currentPlan?.id}
-                onSelectPlan={selectPlan}
                 onSave={updateProfile}
                 onSavePreferences={updatePreferences}
+                plans={plans}
+                templates={templates}
+                currentPlanId={currentPlan?.id}
+                onSelectPlan={selectPlan}
+                onCreatePlan={createPlan}
+                onPreviewJoin={previewJoin}
+                onJoinPlan={joinPlan}
+                onRenamePlan={renamePlan}
+                onPublishTemplate={publishTemplate}
+                onExportPlan={exportPlan}
+                onDeletePlan={deletePlan}
                 onReplayTutorial={() => setReplaying(true)}
                 onSignOut={signOut}
               />

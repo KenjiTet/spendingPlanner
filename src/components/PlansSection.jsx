@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CreatePlanForm from '../components/CreatePlanForm.jsx'
-import Icon from '../components/Icon.jsx'
-import JoinPlanForm from '../components/JoinPlanForm.jsx'
-import PlanCard from '../components/PlanCard.jsx'
-import Sheet from '../components/Sheet.jsx'
+import CreatePlanForm from './CreatePlanForm.jsx'
+import Icon from './Icon.jsx'
+import JoinPlanForm from './JoinPlanForm.jsx'
+import PlanCard from './PlanCard.jsx'
+import Sheet from './Sheet.jsx'
 
 /**
  * The plans the account holds a place in, which one is active, and the ways into a new one
@@ -17,11 +17,12 @@ import Sheet from '../components/Sheet.jsx'
  * @param {(name: string, slotCount: number, templateId?: string, source?: object) => Promise<string | undefined>} props.onCreate
  * @param {(code: string) => Promise<{ data?: object, error?: { message: string } }>} props.onPreviewJoin
  * @param {(code: string, slotId: string) => Promise<string | undefined>} props.onJoin
+ * @param {(planId: string, name: string) => Promise<string | undefined>} props.onRename
  * @param {(planId: string, isTemplate: boolean) => Promise<string | undefined>} props.onPublishTemplate
  * @param {(planId: string) => Promise<string | undefined>} props.onExport
  * @param {(planId: string) => Promise<string | undefined>} props.onDelete
  */
-export default function PlanPicker({
+export default function PlansSection({
   user,
   plans,
   templates,
@@ -30,6 +31,7 @@ export default function PlanPicker({
   onCreate,
   onPreviewJoin,
   onJoin,
+  onRename,
   onPublishTemplate,
   onExport,
   onDelete,
@@ -38,15 +40,9 @@ export default function PlanPicker({
   const [creating, setCreating] = useState(false)
   const [joining, setJoining] = useState(false)
 
-  // The active plan gets its own block, the others are listed below it
+  // The active plan comes first, the others below it
   const currentPlan = plans.find((plan) => plan.id === currentPlanId)
   const otherPlans = plans.filter((plan) => plan.id !== currentPlanId)
-
-  // Activating a plan leads back to its overview
-  function activate(id) {
-    onSelect(id)
-    navigate('/')
-  }
 
   // Editing a plan makes it the active one and opens its budget
   function edit(id) {
@@ -61,8 +57,9 @@ export default function PlanPicker({
         plan={plan}
         isCurrent={isCurrent}
         isCreator={plan.created_by === user.id}
-        onActivate={activate}
+        onActivate={onSelect}
         onEdit={edit}
+        onRename={onRename}
         onPublishTemplate={onPublishTemplate}
         onExport={onExport}
         onDelete={onDelete}
@@ -72,12 +69,10 @@ export default function PlanPicker({
 
   return (
     <section className="plans">
-      <header className="plans__header">
+      <header className="plans__header" data-tour="profile-plans">
         <div className="plans__intro">
-          <h1 className="plans__title">Mes plans</h1>
-          <p className="section__hint">
-            Le plan actif est celui affiché dans l&rsquo;aperçu, les dépenses et le budget.
-          </p>
+          <h2 className="plans__title">Mes plans</h2>
+          <p className="section__hint">Le plan actif est celui affiché dans l&rsquo;aperçu, les dépenses et le budget.</p>
         </div>
 
         <div className="plans__toolbar">
@@ -97,14 +92,14 @@ export default function PlanPicker({
 
       {!!currentPlan && (
         <section className="plans__group">
-          <h2 className="plans__group-title">Plan actif</h2>
+          <h3 className="plans__group-title">Plan actif</h3>
           {renderCard(currentPlan, true)}
         </section>
       )}
 
       {!!otherPlans.length && (
         <section className="plans__group">
-          <h2 className="plans__group-title">Autres plans</h2>
+          <h3 className="plans__group-title">Autres plans</h3>
 
           <ul className="plans__list">
             {otherPlans.map((plan, index) => (

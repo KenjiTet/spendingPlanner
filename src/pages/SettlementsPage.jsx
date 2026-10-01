@@ -70,7 +70,7 @@ function SettlementSummary({ data, members, slotId, busy, onDeclare, onValidate,
   const isDebtor = current.debtorId === slotId
 
   return (
-    <section className="card settlement-summary" aria-label="Remboursement" data-tour="settlement-summary">
+    <section className="card settlement-summary" aria-label="Remboursement">
       <div className="settlement-summary__figures">
         {!!current.amount && <MemberPair debtorId={current.debtorId} creditorId={current.creditorId} members={members} />}
 
@@ -140,7 +140,7 @@ function byDate(left, right) {
  */
 function OpenSequence({ expenses, members, lines, slotId, onRemove }) {
   return (
-    <section className="card settlement" data-tour="settlement-open">
+    <section className="card settlement">
       <header className="settlement__head">
         <h2 className="settlement__title">Dépenses communes en cours</h2>
         <span className="settlement__count">{expenseCountOf(expenses.length)}</span>
@@ -270,8 +270,8 @@ export default function SettlementsPage() {
 
       {!!error && <p className="actions__error">{error}</p>}
 
-      {/* Nothing owed, nothing to show: the expenses in progress come first */}
-      {settlementPhaseOf(data) !== 'even' && (
+      {/* Nothing owed nor declared, nothing to show: the expenses in progress come first */}
+      {(!!data.pending || !!data.open.amount) && (
         <SettlementSummary
           data={data}
           members={members}

@@ -120,7 +120,7 @@ src/lib/appUpdate.js           reloads the page when a new deploy is detected (h
 src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the onboarding's starter plan
 src/pages/                     LoginPage, OnboardingPage (first questions of a new account, then its starter plan),
                                DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
-                               PlanPicker (plans list, active plan), ProfilePage, SettlementsPage (repayments)
+                               ProfilePage (account, plans list and active plan), SettlementsPage (repayments)
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
                                useSettlements, useExchangeRates, useDailySpending, usePullToRefresh, useTourTarget)

@@ -29,21 +29,36 @@ function copyLabelOf(copied) {
  * @param {boolean} props.isCreator
  * @param {(id: string) => void} props.onActivate
  * @param {(id: string) => void} props.onEdit
+ * @param {(planId: string, name: string) => Promise<string | undefined>} props.onRename
  * @param {(planId: string, isTemplate: boolean) => Promise<string | undefined>} props.onPublishTemplate
  * @param {(planId: string) => Promise<string | undefined>} props.onExport
  * @param {(planId: string) => Promise<string | undefined>} props.onDelete
  */
-export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdit, onPublishTemplate, onExport, onDelete }) {
+export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdit, onRename, onPublishTemplate, onExport, onDelete }) {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [name, setName] = useState(plan.name)
   const [error, setError] = useState('')
 
-  // Closing the sheet also drops a pending deletion, so it is never confirmed by surprise later
+  // Opening the sheet starts from the current name, closing it drops a pending deletion so it is never confirmed by surprise
+  function openSheet() {
+    setName(plan.name)
+    setOpen(true)
+  }
+
   function closeSheet() {
     setOpen(false)
     setConfirming(false)
     setError('')
+  }
+
+  async function handleRename(event) {
+    event.preventDefault()
+
+    const failure = await onRename(plan.id, name.trim())
+
+    setError(failure ?? '')
   }
 
   async function handleCopy() {
@@ -105,7 +120,7 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
         <button
           type="button"
           className="plan-card__more"
-          onClick={() => setOpen(true)}
+          onClick={openSheet}
           aria-label={`Options de ${plan.name}`}
         >
           <Icon name="more" className="icon" />
@@ -114,6 +129,21 @@ export default function PlanCard({ plan, isCurrent, isCreator, onActivate, onEdi
 
       <Sheet open={open} title={plan.name} onClose={closeSheet}>
         <div className="plan-card__sheet">
+          {isCreator && (
+            <form className="plan-card__group" onSubmit={handleRename}>
+              <h3 className="plan-card__group-title">Nom</h3>
+
+              <label className="form__field">
+                <span>Nom du plan</span>
+                <input value={name} onChange={(event) => setName(event.target.value)} required />
+              </label>
+
+              <button type="submit" className="plan-card__button" disabled={!name.trim() || name.trim() === plan.name}>
+                Renommer
+              </button>
+            </form>
+          )}
+
           {isCreator && (
             <section className="plan-card__group">
               <h3 className="plan-card__group-title">Modèle</h3>

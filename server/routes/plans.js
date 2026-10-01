@@ -61,6 +61,7 @@ const updateFigures = db.prepare(
   "update plan_slots set label = coalesce(nullif(?, ''), label), net_monthly = ?, annual_tax = ?, tax_timing = ? where id = ? and plan_id = ?"
 )
 const updateTemplate = db.prepare('update plans set is_template = ? where id = ?')
+const updateName = db.prepare('update plans set name = ? where id = ?')
 const listGroups = db.prepare('select * from plan_groups where plan_id = ? order by position')
 const listLines = db.prepare('select * from plan_lines where plan_id = ? order by position')
 const listSharedGroups = db.prepare(
@@ -513,6 +514,23 @@ router.patch('/:planId/template', (req, res) => {
   }
 
   updateTemplate.run(Number(!!req.body.is_template), planId)
+  res.json({})
+})
+
+// Renaming the plan, for every member
+router.patch('/:planId/name', (req, res) => {
+  const { planId } = req.params
+  const name = String(req.body.name ?? '').trim()
+
+  if (!isPlanCreator(planId, req.userId)) {
+    fail(403, 'Seul le créateur du plan peut le renommer.')
+  }
+
+  if (!name) {
+    fail(400, 'Le nom du plan est obligatoire.')
+  }
+
+  updateName.run(name, planId)
   res.json({})
 })
 

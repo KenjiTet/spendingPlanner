@@ -1422,27 +1422,15 @@ input.subgroup__name,
 }
 
 .sidebar__nav,
-.sidebar__list,
-.sidebar__sublist {
+.sidebar__list {
   display: grid;
   gap: 4px;
 }
 
-.sidebar__list,
-.sidebar__sublist {
+.sidebar__list {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-
-.sidebar__sublist {
-  margin: 4px 0 0 21px;
-  padding-left: 10px;
-  border-left: 1px solid var(--border);
-}
-
-.sidebar__sublist.is-collapsed {
-  display: none;
 }
 
 .sidebar__link {
@@ -1469,20 +1457,6 @@ input.subgroup__name,
 .sidebar__link.is-active {
   background: var(--success-tint);
   color: var(--accent);
-}
-
-.sidebar__toggle .chevron {
-  margin-left: auto;
-}
-
-.sidebar__link--sub {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-}
-
-/* The sub-entries only need their icon in the phone bar */
-.sidebar__link--sub .sidebar__icon {
-  display: none;
 }
 
 .sidebar__icon {
@@ -1987,32 +1961,7 @@ input.subgroup__name,
   gap: 4px;
 }
 
-.profile__panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.profile__more {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.profile__more:hover {
-  text-decoration: underline;
-}
-
-.profile__more .icon {
-  width: 14px;
-  height: 14px;
-}
-
-/* Rows of the plans and account panels: an icon, a label, an optional marker at the end */
+/* Rows of the account panel: an icon, a label, an optional marker at the end */
 .profile__menu {
   list-style: none;
   margin: 0;
@@ -2021,7 +1970,6 @@ input.subgroup__name,
   gap: 4px;
 }
 
-.profile__plan,
 .profile__action {
   width: 100%;
   display: flex;
@@ -2038,17 +1986,10 @@ input.subgroup__name,
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.profile__plan:hover,
 .profile__action:hover {
   background: var(--neutral-tint);
 }
 
-.profile__plan.is-active {
-  border-color: var(--accent);
-  background: var(--success-tint);
-}
-
-.profile__plan:focus-visible,
 .profile__action:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -2061,18 +2002,6 @@ input.subgroup__name,
   color: var(--muted);
 }
 
-.profile__plan.is-active .profile__menu-icon,
-.profile__check {
-  color: var(--accent);
-}
-
-.profile__menu-text {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
 .profile__menu-label {
   flex: 1;
   min-width: 0;
@@ -2082,7 +2011,6 @@ input.subgroup__name,
   white-space: nowrap;
 }
 
-.profile__menu .profile__check,
 .profile__menu .profile__chevron {
   flex: none;
   width: 16px;
@@ -2117,7 +2045,7 @@ input.subgroup__name,
   justify-self: start;
 }
 
-/* Plans page: a title explaining what "active" means, the two ways into a new plan beside it */
+/* Plans of the profile: a title explaining what "active" means, the two ways into a new plan beside it */
 .plans__header {
   display: flex;
   flex-wrap: wrap;
@@ -2133,7 +2061,7 @@ input.subgroup__name,
 
 .plans__title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
 }
 
 .plans__toolbar {
@@ -2485,6 +2413,11 @@ input.subgroup__name,
   display: grid;
   justify-items: start;
   gap: 8px;
+}
+
+/* The name field takes the whole width of the sheet */
+.plan-card__group > .form__field {
+  justify-self: stretch;
 }
 
 .plan-card__group-title {
@@ -5047,28 +4980,20 @@ html:has(.pull) {
 
   /* The plan is switched from "Mes plans", signing out from the profile page */
   .switcher,
-  .sidebar__toggle,
   .sidebar__signout,
   .sidebar__who {
     display: none;
   }
 
-  /* Every entry, the "Plan" ones included, becomes one cell of the bar */
+  /* Every entry becomes one cell of the bar */
   .sidebar__list {
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
     height: 100%;
   }
 
-  .sidebar__group,
-  .sidebar__sublist,
-  .sidebar__sublist.is-collapsed {
-    display: contents;
-  }
-
   /* Icon above a one-line name, the profile shaped like the other cells */
   .sidebar__link,
-  .sidebar__link--sub,
   .sidebar__profile {
     height: 100%;
     flex-direction: column;
@@ -5094,10 +5019,6 @@ html:has(.pull) {
   .sidebar__profile.is-active {
     background: var(--success-tint);
     color: var(--accent);
-  }
-
-  .sidebar__link--sub .sidebar__icon {
-    display: block;
   }
 
   .sidebar__label {
@@ -5132,7 +5053,7 @@ html:has(.pull) {
     order: 1;
   }
 
-  .sidebar__sublist > li:first-child {
+  .sidebar__item--trailing {
     order: 2;
   }
 
@@ -5155,11 +5076,6 @@ html:has(.pull) {
   .sidebar__item--featured .sidebar__link {
     gap: 2px;
     padding: 0 2px;
-  }
-
-  /* Five cells stay around the centred "+": "Mes plans" gives its cell to the repayments, reached from the profile */
-  .sidebar__item--desktop {
-    display: none;
   }
 
   .sidebar__link {
