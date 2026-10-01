@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { formatAmount, formatAmountIn, formatShortDay, parseAmount } from '../utils/format.js'
+import { formatAmount, formatAmountIn, formatDay, parseAmount } from '../utils/format.js'
 import { toDateValue } from '../utils/tracking.js'
 import CategoryGroups from './CategoryGroups.jsx'
 import CurrencySelect from './CurrencySelect.jsx'
@@ -44,7 +44,25 @@ function shownGroupsOf(groups, offeredIds, selected) {
 }
 
 /**
- * The viewer's expenses of the month in a sheet, latest entry first, each one correctable or removable
+ * Groups the expenses, already sorted by day, into one entry per day carrying its total
+ * @param {{ amount: number, spent_on: string }[]} expenses
+ */
+function groupByDay(expenses) {
+  return expenses.reduce((days, expense) => {
+    const last = days[days.length - 1]
+
+    if (last?.day === expense.spent_on) {
+      last.items.push(expense)
+      last.total += expense.amount
+      return days
+    }
+
+    return [...days, { day: expense.spent_on, total: expense.amount, items: [expense] }]
+  }, [])
+}
+
+/**
+ * The viewer's expenses of the month in a sheet, grouped by day, latest day first, each one correctable or removable
  * @param {object} props
  * @param {{ id: string, line_id: string, amount: number, spent_on: string }[]} props.history
  * @param {Record<string, { label: string }>} props.lines - from indexLines
@@ -69,42 +87,51 @@ function ExpenseHistorySheet({ history, lines, onEdit, onRemove }) {
       <Sheet
         open={open}
         title="Historique"
-        description="Vos dépenses de ce mois, les dernières saisies en premier."
+        description="Vos dépenses de ce mois, jour par jour, le plus récent en premier."
         tall
         onClose={() => setOpen(false)}
       >
         {!history.length && <p className="section__hint">Aucune dépense ce mois-ci.</p>}
 
         {!!history.length && (
-          <ul className="recent__list">
-            {history.map((expense, index) => (
-              <li key={`history-${expense.id}-${index}`} className="recent__item">
-                <span className="recent__label">
-                  {lines[expense.line_id]?.label ?? 'Ligne supprimée'}
-                  <span className="recent__date"> · {formatShortDay(expense.spent_on)}</span>
-                </span>
-                <span className="recent__amount">{formatAmount(expense.amount)}</span>
+          <ol className="recent__days">
+            {groupByDay(history).map((group, dayIndex) => (
+              <li key={`history-day-${group.day}-${dayIndex}`} className="recent__day">
+                {/* Each day opens on its date and what was spent that day */}
+                <header className="recent__day-header">
+                  <h3 className="recent__day-title">{formatDay(group.day)}</h3>
+                  <span className="recent__day-total">{formatAmount(group.total)}</span>
+                </header>
 
-                {/* Correcting removes the entry first, so neither is offered once a repayment covers it */}
-                {!!lines[expense.line_id] && !expense.settlement_id && (
-                  <button type="button" className="recent__action" onClick={() => edit(expense)}>
-                    Modifier
-                  </button>
-                )}
+                <ul className="recent__list">
+                  {group.items.map((expense, index) => (
+                    <li key={`history-${expense.id}-${index}`} className="recent__item">
+                      <span className="recent__label">{lines[expense.line_id]?.label ?? 'Ligne supprimée'}</span>
+                      <span className="recent__amount">{formatAmount(expense.amount)}</span>
 
-                {!expense.settlement_id && (
-                  <button
-                    type="button"
-                    className="recent__action recent__action--delete"
-                    onClick={() => onRemove(expense.id)}
-                    aria-label={`Supprimer ${lines[expense.line_id]?.label ?? ''} ${formatAmount(expense.amount)}`}
-                  >
-                    ×
-                  </button>
-                )}
+                      {/* Correcting removes the entry first, so neither is offered once a repayment covers it */}
+                      {!!lines[expense.line_id] && !expense.settlement_id && (
+                        <button type="button" className="recent__action" onClick={() => edit(expense)}>
+                          Modifier
+                        </button>
+                      )}
+
+                      {!expense.settlement_id && (
+                        <button
+                          type="button"
+                          className="recent__action recent__action--delete"
+                          onClick={() => onRemove(expense.id)}
+                          aria-label={`Supprimer ${lines[expense.line_id]?.label ?? ''} ${formatAmount(expense.amount)}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
       </Sheet>
     </>
@@ -241,12 +268,12 @@ export default function QuickAddExpense({
   return (
     <form className="card quick-add" onSubmit={handleSubmit}>
       {/* The date sits on top beside the history, leaving the whole bottom row to the amount */}
-      <header className="quick-add__header">
+      <header className="quick-add__header" data-tour="expense-date">
         <DatePicker plan={plan} slotId={slotId} value={spentOn} onChange={setSpentOn} />
         <ExpenseHistorySheet history={history} lines={lines} onEdit={edit} onRemove={onRemove} />
       </header>
 
-      <section className="quick-add__categories" aria-label="Catégorie">
+      <section className="quick-add__categories" aria-label="Catégorie" data-tour="expense-category">
         {/* The filter sits beside the title, outside the scrolling part so it stays in sight */}
         <header className="quick-add__heading">
           <h3 className="quick-add__title">Catégorie</h3>
@@ -275,7 +302,7 @@ export default function QuickAddExpense({
       </section>
 
       {/* One tap books a shortcut; the last pill opens the sheet where they are created and removed */}
-      <section className="quick-add__block" aria-label="Raccourcis">
+      <section className="quick-add__block" aria-label="Raccourcis" data-tour="expense-shortcuts">
         <h3 className="quick-add__title">Raccourcis</h3>
 
         <ul className="chips">
@@ -308,7 +335,7 @@ export default function QuickAddExpense({
         )}
 
         {/* Amount and button on one row at the bottom, within reach of the thumb */}
-        <div className="quick-add__amount">
+        <div className="quick-add__amount" data-tour="expense-amount">
           {/* Not a label: tapping the field would open the currency list, the first control inside it */}
           <div className="quick-add__field">
             {/* Another currency than the reference one is converted into it when the expense is added */}

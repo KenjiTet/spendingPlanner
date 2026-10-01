@@ -117,15 +117,16 @@ src/main.jsx                   React entry point, router
 src/App.jsx                    routing: login, then every page inside the sidebar layout
 src/lib/api.js                 the single API client
 src/lib/appUpdate.js           reloads the page when a new deploy is detected (home-screen apps never reload on their own)
-src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the example plan of new accounts
-src/pages/                     LoginPage, DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
+src/lib/planImport.js          filling a plan from the JSON plan shape: file imports and the onboarding's starter plan
+src/pages/                     LoginPage, OnboardingPage (first questions of a new account, then its starter plan),
+                               DashboardPage (landing), ExpensesPage (tracking), PlanPage (budget editor),
                                PlanPicker (plans list, active plan), ProfilePage, SettlementsPage (repayments)
 src/components/                UI pieces (Layout/Sidebar, plan sections, Gauge, QuickAddExpense, DatePicker, Sheet…)
 src/hooks/                     stateful logic (useAuth, usePlans, usePlan, useExpenses, useYearExpenses, useExpenseSuggestions,
-                               useSettlements, useExchangeRates, useDailySpending, usePullToRefresh)
-src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences
+                               useSettlements, useExchangeRates, useDailySpending, usePullToRefresh, useTourTarget)
+src/utils/                     pure logic: plan maths, DB ↔ plan mapping, tracking maths, formatting, preferences,
+                               starter plans by income tier (starterPlan.js)
 src/data/plan.json             sample plan, importable from the Plan page
-src/data/example-plan.json     solo plan created at sign-up, walked through by the guided tour (components/Tour)
 src/styles/                    global stylesheet and design tokens
 public/                        static assets served as-is
 ```

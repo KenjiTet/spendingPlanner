@@ -1768,6 +1768,196 @@ input.subgroup__name,
   color: var(--muted);
 }
 
+/* ------------------------------------------------------------------ */
+/* Onboarding: the first questions, then the starter plan proposed      */
+/* ------------------------------------------------------------------ */
+
+/* The proposal lists a whole plan: the card grows wider than the sign-in one */
+.onboarding__card {
+  max-width: 480px;
+}
+
+.onboarding__header {
+  display: grid;
+  gap: 6px;
+}
+
+.onboarding__count {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.onboarding__progress {
+  width: 100%;
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--neutral-tint);
+  appearance: none;
+  overflow: hidden;
+}
+
+.onboarding__progress::-webkit-progress-bar {
+  background: var(--neutral-tint);
+}
+
+.onboarding__progress::-webkit-progress-value {
+  background: var(--progress);
+  border-radius: 999px;
+}
+
+.onboarding__progress::-moz-progress-bar {
+  background: var(--progress);
+  border-radius: 999px;
+}
+
+.onboarding__form {
+  display: grid;
+  gap: 14px;
+}
+
+.onboarding__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* The proposal stacks its actions, the main one first */
+.onboarding__footer--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.onboarding__back {
+  color: var(--text);
+}
+
+.onboarding__choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding__choice {
+  font: inherit;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.onboarding__choice.is-active {
+  border-color: var(--accent);
+  background: var(--savings-tint);
+}
+
+.onboarding__choice-title {
+  font-weight: 600;
+}
+
+.onboarding__link {
+  font: inherit;
+  font-size: 0.85rem;
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.onboarding__footer--stacked .onboarding__link {
+  justify-self: center;
+  align-self: center;
+}
+
+/* Income brackets: short labels, two per row */
+.onboarding__choices--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding__choices--compact .onboarding__choice {
+  height: 100%;
+  padding: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Last screen: the tick, the message and the way in, centred */
+.onboarding__ready {
+  justify-items: center;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.onboarding__ready .onboarding__footer {
+  width: 100%;
+}
+
+.success-tick {
+  width: 72px;
+  height: 72px;
+}
+
+.success-tick__disc {
+  fill: var(--savings-tint);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.success-tick__mark {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The disc pops in, then the mark is drawn stroke by stroke */
+  .success-tick__disc {
+    transform-origin: center;
+    animation: success-tick-pop 0.4s ease-out both;
+  }
+
+  .success-tick__mark {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: success-tick-draw 0.35s 0.3s ease-out forwards;
+  }
+}
+
+@keyframes success-tick-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes success-tick-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .plans,
 .profile {
   display: grid;
@@ -3499,8 +3689,47 @@ html:has(.pull) {
   white-space: nowrap;
 }
 
-.recent__date {
+/* Days of the history sheet, each one a block apart */
+.recent__days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+/* Date and total of the day on a tinted band, setting the days apart at a glance */
+.recent__day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--neutral-tint);
+}
+
+.recent__day-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* "Mercredi 1 octobre": only the weekday takes a capital */
+.recent__day-title::first-letter {
+  text-transform: uppercase;
+}
+
+.recent__day-total {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+
+/* The band already separates the day, its first row needs no line */
+.recent__day .recent__item:first-child {
+  border-top: 0;
 }
 
 .recent__amount {
@@ -4112,138 +4341,144 @@ html:has(.pull) {
   overflow: hidden;
 }
 
-/* Guided tour: one sheet per page, each feature led by the mark the page itself shows */
+/* Guided tour: the page stays in sight, dimmed around the element explained, a bubble beside it */
 .tour {
-  display: grid;
-  gap: 16px;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
 }
 
-.tour__menu {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+/* A shadow spread over the whole screen dims everything but the box; a zero box in the middle dims it all */
+.tour__spotlight {
+  position: fixed;
+  top: var(--spot-top, 50%);
+  left: var(--spot-left, 50%);
+  width: var(--spot-width, 0);
+  height: var(--spot-height, 0);
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 200vmax var(--overlay);
+  pointer-events: none;
+}
+
+.tour.is-centered .tour__spotlight {
+  box-shadow: 0 0 0 200vmax var(--overlay);
+}
+
+.tour__bubble {
+  position: fixed;
+  top: var(--bubble-top, 50%);
+  left: var(--bubble-left, 50%);
+  width: min(340px, calc(100vw - 32px));
+  display: grid;
   gap: 8px;
-  margin: 0;
-  font-size: 0.8rem;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+.tour.is-searching .tour__bubble {
+  visibility: hidden;
+}
+
+/* The arrow points at the element, from the side of the bubble facing it */
+.tour__bubble::before {
+  content: '';
+  position: absolute;
+  left: var(--bubble-arrow, 50%);
+  display: none;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.tour__bubble[data-placement='below']::before {
+  display: block;
+  top: -6px;
+}
+
+.tour__bubble[data-placement='above']::before {
+  display: block;
+  bottom: -6px;
+}
+
+/* Beside the element, the arrow offset is measured from the top */
+.tour__bubble[data-placement='right']::before,
+.tour__bubble[data-placement='left']::before {
+  display: block;
+  top: var(--bubble-arrow, 50%);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tour__bubble[data-placement='right']::before {
+  left: -6px;
+}
+
+.tour__bubble[data-placement='left']::before {
+  left: auto;
+  right: -6px;
+}
+
+.tour__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.tour__chapter {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tour__count {
   color: var(--muted);
 }
 
-.tour__entry {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--neutral-tint);
-  color: var(--text);
-  font-weight: 600;
-}
-
-.tour__features {
-  list-style: none;
+.tour__title {
   margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 10px;
+  font-size: 1.05rem;
 }
 
-.tour__feature {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
+.tour__text {
+  margin: 0;
   font-size: 0.9rem;
-}
-
-/* Long words wrap rather than widen the sheet on narrow phones */
-.tour__feature > span:last-child {
-  overflow-wrap: anywhere;
-}
-
-.tour__mark {
-  display: grid;
-  place-items: center;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.tour__mark .onoff__track {
-  width: 28px;
-  height: 16px;
-}
-
-.tour__mark .onoff__track::after {
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-}
-
-/* The three gauge states stacked, as on the overview: within budget, close to the limit, over it */
-.tour__gauges {
-  display: grid;
-  gap: 3px;
-}
-
-.tour__gauge {
-  --gauge-color: var(--success);
-  --gauge-fill: 50%;
-  width: 24px;
-  height: 5px;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--gauge-color) var(--gauge-fill), var(--neutral-tint) var(--gauge-fill));
-}
-
-.tour__gauge--warning {
-  --gauge-color: var(--warning);
-  --gauge-fill: 85%;
-}
-
-.tour__gauge--over {
-  --gauge-color: var(--danger);
-  --gauge-fill: 100%;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .tour__footer {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  padding-top: 8px;
 }
 
-/* The progress takes its own row, the buttons sitting under it on the right */
-.tour__dots {
-  list-style: none;
-  flex-basis: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin: 0 0 4px;
-  padding: 0;
-}
-
-.tour__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--border);
-}
-
-.tour__dot.is-active {
-  width: 16px;
-  border-radius: 999px;
-  background: var(--accent);
+/* Leaving the tour is offered quietly, on the left */
+.tour__skip {
+  margin-right: auto;
+  padding-inline: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
 }
 
 .tour__back {
-  margin-left: auto;
   color: var(--text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The spotlight and the bubble glide from one element to the next */
+  .tour__spotlight,
+  .tour__bubble {
+    transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

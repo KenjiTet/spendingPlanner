@@ -9,7 +9,10 @@ const MAX_USERNAME_LENGTH = 32
 
 const router = Router()
 
-const findByUsername = db.prepare('select * from users where username = ?')
+// Usernames match whatever their case; accounts that predate this and differ only by case resolve to the exact spelling first
+const findByUsername = db.prepare(
+  'select * from users where username = @username collate nocase order by username = @username desc limit 1'
+)
 const findById = db.prepare(
   'select id, username, display_name, net_monthly, main_currency, show_savings, show_taxes, tutorial_done from users where id = ?'
 )
@@ -63,7 +66,7 @@ router.post('/signup', (req, res) => {
     return
   }
 
-  if (!!findByUsername.get(username)) {
+  if (!!findByUsername.get({ username })) {
     res.status(409).json({ error: 'Ce nom d’utilisateur est déjà pris.' })
     return
   }
@@ -79,7 +82,7 @@ router.post('/signup', (req, res) => {
 router.post('/login', (req, res) => {
   const username = String(req.body.username ?? '').trim()
   const password = String(req.body.password ?? '')
-  const user = findByUsername.get(username)
+  const user = findByUsername.get({ username })
 
   // The same message either way, so the form never reveals which accounts exist
   if (!user || !verifyPassword(password, user.password)) {

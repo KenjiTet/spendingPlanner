@@ -91,7 +91,7 @@ export default function ProfilePage({ user, plans, currentPlanId, onSelectPlan, 
 
             <ul className="profile__menu">
               <li>
-                <button type="button" className="profile__action" onClick={onReplayTutorial}>
+                <button type="button" className="profile__action" onClick={onReplayTutorial} data-tour="tour-replay">
                   <Icon name="history" className="icon profile__menu-icon" />
                   <span className="profile__menu-label">Revoir le tutoriel</span>
                   <Icon name="arrow-right" className="icon profile__chevron" />

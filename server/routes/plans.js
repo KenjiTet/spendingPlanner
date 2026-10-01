@@ -19,7 +19,8 @@ router.use(requireUser)
 
 const listPlans = db.prepare(`
   select p.id, p.name, p.created_by, p.share_code, p.is_template,
-         (select count(*) from plan_slots f where f.plan_id = p.id and f.user_id is null) as free_slots
+         (select count(*) from plan_slots f where f.plan_id = p.id and f.user_id is null) as free_slots,
+         (select count(*) from plan_slots c where c.plan_id = p.id) as slot_count
   from plans p join plan_slots s on s.plan_id = p.id
   where s.user_id = ? order by p.created_at
 `)
@@ -55,8 +56,9 @@ const claimSlot = db.prepare(
 )
 const updateTax = db.prepare('update plan_slots set annual_tax = ? where id = ? and plan_id = ?')
 const updateTaxTiming = db.prepare('update plan_slots set tax_timing = ? where id = ? and plan_id = ?')
+// A file without a name for the place keeps the one it has
 const updateFigures = db.prepare(
-  'update plan_slots set net_monthly = ?, annual_tax = ?, tax_timing = ? where id = ? and plan_id = ?'
+  "update plan_slots set label = coalesce(nullif(?, ''), label), net_monthly = ?, annual_tax = ?, tax_timing = ? where id = ? and plan_id = ?"
 )
 const updateTemplate = db.prepare('update plans set is_template = ? where id = ?')
 const listGroups = db.prepare('select * from plan_groups where plan_id = ? order by position')
@@ -336,7 +338,7 @@ const importPlan = db.transaction((planId, payload, slotIds) => {
   payload.slots.forEach((slot) => {
     const slotId = readImportedOwner(slotIds, slot.slot_id)
 
-    updateFigures.run(readAmount(slot.net_monthly), readAmount(slot.annual_tax), readTaxTiming(slot.tax_timing), slotId, planId)
+    updateFigures.run(String(slot.label ?? '').trim(), readAmount(slot.net_monthly), readAmount(slot.annual_tax), readTaxTiming(slot.tax_timing), slotId, planId)
   })
 })
 

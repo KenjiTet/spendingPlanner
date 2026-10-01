@@ -1,104 +1,178 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Icon from './Icon.jsx'
-import Sheet from './Sheet.jsx'
+import useTourTarget from '../hooks/useTourTarget.js'
 
-// One step per page, opened behind the sheet; a feature is marked with the icon, symbol or control the page itself shows
+// Room around the element lit, between it and the bubble, and along the screen edges
+const SPOTLIGHT_PADDING = 6
+const BUBBLE_GAP = 12
+const GUTTER = 16
+// The arrow never leaves the rounded corners of the bubble
+const ARROW_INSET = 20
+
+// One element per step, on the page it lives on; a step without target, or whose element is missing, is explained
+// in the middle of the screen. `only` keeps a step to a plan for two ('duo') or with a free place ('invite'),
+// a text worded for each kind of plan carries both versions
 const STEPS = [
   {
+    chapter: 'Bienvenue',
     to: '/',
-    title: 'Bienvenue !',
-    intro: 'Un plan d’exemple, rempli pour une personne, vous attend. Petit tour des pages en une minute.',
-    features: [
-      { icon: 'clipboard', text: 'Un plan, c’est votre budget du mois : revenu, budget, épargne et impôts.' },
-      { icon: 'receipt', text: 'Au quotidien, vous notez vos dépenses et l’app les compare au plan.' },
-      { icon: 'layers', text: 'Personnalisez l’exemple à votre guise, ou créez autant de plans que vous voulez, seul ou à deux.' },
-    ],
+    title: 'Un petit tour pour commencer',
+    text: {
+      solo: 'Votre budget est prêt ! Faisons un petit tour de l’app pour le prendre en main.',
+      duo: 'Votre budget à deux est prêt ! Faisons un petit tour de l’app pour le prendre en main ensemble.',
+    },
   },
   {
+    chapter: 'Vue d’ensemble',
     to: '/',
-    menu: { icon: 'dashboard', label: 'Vue d’ensemble' },
-    title: 'Vue d’ensemble',
-    intro: 'Où en est le mois par rapport au plan, en un coup d’œil.',
-    features: [
-      { icon: 'wallet', text: 'Dépensé, budget restant et jours restants avant la fin du mois.' },
-      { icon: 'calendar', text: 'Le calendrier colore chaque jour selon votre budget quotidien ; touchez un jour pour voir ses dépenses.' },
-      { visual: 'gauge', text: 'Une jauge par catégorie, sur le mois ou cumulée sur l’année, qui passe à l’orange à 80 % du budget et au rouge au-delà.' },
-      { symbol: '↓', text: 'Tirez la page vers le bas pour l’actualiser, par exemple après une modification de l’autre personne du plan.' },
-    ],
+    target: '.sidebar a[href="/"]',
+    title: 'Le mois en un coup d’œil',
+    text: 'Votre page d’accueil : où en est le mois par rapport au budget prévu.',
   },
   {
-    to: '/depenses',
-    menu: { icon: 'receipt', label: 'Dépenses' },
-    title: 'Dépenses',
-    intro: 'Notez une dépense en quelques secondes.',
-    features: [
-      { icon: 'check', text: 'Choisissez la catégorie, puis saisissez le montant en bas de l’écran et ajoutez la dépense.' },
-      { icon: 'calendar', text: 'La date est celle du jour, modifiable à gauche du montant pour un oubli.' },
-      { icon: 'user', text: 'Dans un plan à deux, le filtre du haut n’affiche que les catégories communes ou personnelles.' },
-      { symbol: '+', text: 'Les raccourcis enregistrent une dépense fréquente, comme un billet de bus, en un geste.' },
-      { icon: 'history', text: 'L’historique des dépenses, en haut, liste celles du mois pour les corriger ou les supprimer, sauf celles déjà remboursées.' },
-    ],
+    chapter: 'Vue d’ensemble',
+    to: '/',
+    target: '[data-tour="month-budget"]',
+    title: 'Le reste à dépenser',
+    text: 'Ce qu’il vous reste à dépenser ce mois, et combien par jour jusqu’à la fin.',
   },
   {
+    chapter: 'Vue d’ensemble',
+    to: '/',
+    target: '[data-tour="gauges"]',
+    title: 'Les jauges',
+    text: 'Une jauge par catégorie pour savoir où vous en êtes dans chaque dépense !',
+  },
+  {
+    chapter: 'Budget',
     to: '/plan',
-    menu: { icon: 'wallet', label: 'Budget' },
-    title: 'Budget',
-    intro: 'Le plan lui-même : ce que vous prévoyez chaque mois.',
-    features: [
-      { visual: 'swatch', text: 'Les lignes sont rangées en groupes colorés ; touchez un nom ou un montant pour le changer.' },
-      { symbol: '↻', text: 'Auto marque un prélèvement automatique (loyer, abonnements) : compté dès le 1er du mois, sans saisie.' },
-      { icon: 'clipboard', text: 'Épargne, impôts, graphiques et récapitulatif suivent, avec ce qu’il vous reste chaque mois.' },
-    ],
+    target: '.sidebar a[href="/plan"]',
+    title: 'Ce que vous prévoyez',
+    text: {
+      solo: 'Le plan lui-même : ce que vous prévoyez de dépenser et d’épargner chaque mois. Les montants proposés sont un point de départ.',
+      duo: 'Le plan lui-même : ce que vous prévoyez de dépenser et d’épargner chaque mois, ensemble et chacun de votre côté.',
+    },
   },
   {
+    chapter: 'Budget',
+    to: '/plan',
+    target: '#plan-expenses',
+    title: 'Les lignes de dépense',
+    text: {
+      solo: 'Rangées en groupes colorés. Touchez un nom ou un montant pour l’ajuster à votre réalité.',
+      duo: 'Rangées en groupes colorés, communes ou personnelles. Touchez un nom ou un montant pour le modifier.',
+    },
+  },
+  {
+    chapter: 'Budget',
+    to: '/plan',
+    target: '#plan-expenses .line__auto',
+    title: 'Saisie automatique',
+    text: 'Permet de comptabiliser automatiquement la dépense sans la saisir, dès le 1er du mois.',
+  },
+  {
+    chapter: 'Budget',
+    to: '/plan',
+    target: '#plan-summary',
+    title: 'Le récapitulatif',
+    text: 'Ici, la synthèse de votre budget avec ce qu’il vous reste à la fin du mois et de l’année.',
+  },
+  {
+    chapter: 'Dépenses',
+    to: '/depenses',
+    target: '.sidebar a[href="/depenses"]',
+    title: 'Noter une dépense',
+    text: 'Au quotidien, c’est ici que vous notez vos dépenses, en quelques secondes.',
+  },
+  {
+    chapter: 'Dépenses',
+    to: '/depenses',
+    target: '[data-tour="expense-category"]',
+    title: 'D’abord, la catégorie',
+    text: 'Choisissez où ranger la dépense. Les plus utilisées remontent en haut.',
+  },
+  {
+    chapter: 'Dépenses',
+    to: '/depenses',
+    target: '[data-tour="expense-amount"]',
+    title: 'Puis le montant',
+    text: 'Saisissez le montant, dans une autre devise si besoin, il sera converti. Ajouter l’enregistre.',
+  },
+  {
+    chapter: 'Dépenses',
+    to: '/depenses',
+    target: '[data-tour="expense-shortcuts"]',
+    title: 'Les raccourcis',
+    text: 'Une dépense fréquente, comme un billet de bus, s’enregistre ici en un geste. « + Ajouter » en crée un.',
+  },
+  {
+    chapter: 'Dépenses',
+    to: '/depenses',
+    target: '[data-tour="expense-date"]',
+    title: 'La date et l’historique',
+    text: 'La date est celle du jour, modifiable pour un oubli. L’historique liste les dépenses du mois pour les corriger ou les supprimer.',
+  },
+  {
+    chapter: 'Remboursements',
+    only: 'duo',
     to: '/remboursements',
-    menu: { icon: 'transfer', label: 'Remboursements' },
-    title: 'Remboursements',
-    intro: 'Dans un plan à deux, qui a avancé quoi sur les dépenses communes, et qui rembourse qui.',
-    features: [
-      { icon: 'transfer', text: 'En haut, qui rembourse qui et combien : les dépenses des catégories communes sont partagées à parts égales.' },
-      { icon: 'history', text: 'L’historique garde chaque remboursement reçu, sa date et, en le dépliant, les dépenses qu’il couvrait.' },
-    ],
+    target: '.sidebar a[href="/remboursements"]',
+    title: 'Les comptes à deux',
+    text: 'Les dépenses communes sont partagées à parts égales : cette page fait les comptes entre vous deux.',
   },
   {
+    chapter: 'Remboursements',
+    only: 'duo',
+    to: '/remboursements',
+    target: '[data-tour="settlement-summary"]',
+    title: 'Qui rembourse qui',
+    text: 'Le montant à rembourser et dans quel sens. Une fois le virement fait, l’autre personne valide.',
+  },
+  {
+    chapter: 'Remboursements',
+    only: 'duo',
+    to: '/remboursements',
+    target: '[data-tour="settlement-open"]',
+    title: 'Les dépenses en cours',
+    text: 'Les dépenses communes depuis le dernier remboursement. Une fois remboursées, elles passent dans l’historique.',
+  },
+  {
+    chapter: 'À deux',
+    only: 'invite',
     to: '/plans',
-    menu: { icon: 'layers', label: 'Mes plans' },
-    title: 'Mes plans',
-    intro: 'Tous vos plans, dont celui qui est actif sur les autres pages. Sur téléphone, ils s’ouvrent depuis le profil.',
-    features: [
-      { icon: 'pencil', text: 'Éditer ouvre le budget du plan.' },
-      { icon: 'copy', text: 'Le code de partage invite une deuxième personne dans un plan à deux.' },
-      { icon: 'more', text: 'Les options publient le plan comme modèle, l’exportent ou le suppriment.' },
-      { icon: 'plus', text: 'Nouveau plan : partez de zéro, d’un modèle ou d’un fichier.' },
-    ],
+    target: '.plan-card__share',
+    title: 'Invitez votre partenaire',
+    text: 'Envoyez-lui ce code : en créant son compte, il ou elle rejoint le plan et prend sa place, avec son propre revenu.',
   },
   {
+    chapter: 'Profil',
     to: '/profil',
-    menu: { icon: 'user', label: 'Profil' },
-    title: 'Profil',
-    intro: 'Vos informations, communes à tous vos plans.',
-    features: [
-      { icon: 'layers', text: 'Sur téléphone, « Mes plans » s’ouvre d’ici : sa place dans la barre va aux remboursements.' },
-      { icon: 'user', text: 'Nom affiché et revenu net mensuel : remplacez ceux de l’exemple par les vôtres.' },
-      { visual: 'switch', text: 'Désactivez l’épargne ou les impôts s’ils ne vous servent pas : ils disparaissent du budget.' },
-      { icon: 'history', text: 'Ce tutoriel se relance à tout moment depuis cette page.' },
-    ],
+    target: '.sidebar a[href="/profil"]',
+    title: 'Votre compte',
+    text: 'Vos informations, communes à tous vos plans.',
+  },
+  {
+    chapter: 'Profil',
+    to: '/profil',
+    target: '[data-tour="profile-info"]',
+    title: 'Prénom et revenu',
+    text: 'Repris de vos réponses : remplacez l’estimation par votre revenu exact, il vaut pour tous vos plans.',
+  },
+  {
+    chapter: 'Profil',
+    to: '/profil',
+    target: '[data-tour="profile-currency"]',
+    title: 'La devise principale',
+    text: 'Tous les montants sont tenus dans cette devise. Une dépense saisie dans une autre devise y est convertie au taux du jour.',
+  },
+  {
+    chapter: 'Profil',
+    to: '/profil',
+    target: '[data-tour="tour-replay"]',
+    title: 'À vous de jouer',
+    text: 'Le tour est terminé ! Vous pouvez le relancer à tout moment depuis ici.',
   },
 ]
-
-// Miniatures of the page controls that have no icon, drawn with their own classes
-const VISUALS = {
-  swatch: <span className="swatch swatch--3" />,
-  gauge: (
-    <span className="tour__gauges">
-      <span className="tour__gauge" />
-      <span className="tour__gauge tour__gauge--warning" />
-      <span className="tour__gauge tour__gauge--over" />
-    </span>
-  ),
-  switch: <span className="onoff__track" />,
-}
 
 // The last step closes the tour
 function nextLabelOf(isLast) {
@@ -109,62 +183,179 @@ function nextLabelOf(isLast) {
   return 'Suivant'
 }
 
-// The current step's dot stands out from the others
-function dotClassOf(isCurrent) {
-  if (isCurrent) {
-    return 'tour__dot is-active'
+// The bubble stays hidden while the element is looked for, then sits beside it or, without one, in the middle
+function rootClassOf(status) {
+  if (status === 'searching') {
+    return 'tour is-searching'
   }
 
-  return 'tour__dot'
+  if (status === 'none') {
+    return 'tour is-centered'
+  }
+
+  return 'tour'
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
 }
 
 /**
- * Mark in front of a feature, the same icon, symbol or control as on the page
- * @param {object} props
- * @param {{ icon?: string, symbol?: string, visual?: keyof VISUALS }} props.feature
+ * The steps that apply to the plan, each with the text worded for it
+ * @param {{ duo: boolean, invite: boolean }} context
  */
-function FeatureMark({ feature }) {
-  if (!!feature.icon) {
-    return (
-      <span className="tour__mark" aria-hidden="true">
-        <Icon name={feature.icon} className="icon" />
-      </span>
-    )
+function stepsOf(context) {
+  return STEPS.filter((step) => !step.only || context[step.only]).map((step) => {
+    if (typeof step.text === 'string') {
+      return step
+    }
+
+    if (context.duo) {
+      return { ...step, text: step.text.duo }
+    }
+
+    return { ...step, text: step.text.solo }
+  })
+}
+
+// The element's box grown by the spotlight padding
+function paddedBoxOf(rect) {
+  if (!rect) {
+    return undefined
   }
 
-  if (!!feature.visual) {
-    return (
-      <span className="tour__mark" aria-hidden="true">
-        {VISUALS[feature.visual]}
-      </span>
-    )
+  return {
+    top: rect.top - SPOTLIGHT_PADDING,
+    left: rect.left - SPOTLIGHT_PADDING,
+    width: rect.width + SPOTLIGHT_PADDING * 2,
+    height: rect.height + SPOTLIGHT_PADDING * 2,
   }
-
-  return (
-    <span className="tour__mark" aria-hidden="true">
-      {feature.symbol}
-    </span>
-  )
 }
 
 /**
- * Guided tour of the app, opening each page behind a sheet that explains it
+ * Where the bubble goes: under the element, above it, then beside it, and over its bottom when nothing else fits
+ * @param {{ top: number, left: number, width: number, height: number }} [box] - undefined to centre the bubble
+ * @param {{ width: number, height: number }} size - of the bubble
+ * @returns {{ placement: 'below' | 'above' | 'right' | 'left' | 'over' | 'center', top: number, left: number, arrow: number }}
+ */
+function bubblePositionOf(box, size) {
+  const viewportWidth = document.documentElement.clientWidth
+  const viewportHeight = window.innerHeight
+
+  if (!box) {
+    return { placement: 'center', top: (viewportHeight - size.height) / 2, left: (viewportWidth - size.width) / 2, arrow: 0 }
+  }
+
+  const centreX = box.left + box.width / 2
+  const left = clamp(centreX - size.width / 2, GUTTER, viewportWidth - size.width - GUTTER)
+  const arrow = clamp(centreX - left, ARROW_INSET, size.width - ARROW_INSET)
+  const bottom = box.top + box.height
+
+  if (bottom + BUBBLE_GAP + size.height <= viewportHeight - GUTTER) {
+    return { placement: 'below', top: bottom + BUBBLE_GAP, left, arrow }
+  }
+
+  if (box.top - BUBBLE_GAP - size.height >= GUTTER) {
+    return { placement: 'above', top: box.top - BUBBLE_GAP - size.height, left, arrow }
+  }
+
+  // Beside the element, the arrow then pointing sideways at its visible middle
+  const visibleCentreY = (Math.max(box.top, 0) + Math.min(bottom, viewportHeight)) / 2
+  const sideTop = clamp(visibleCentreY - size.height / 2, GUTTER, viewportHeight - size.height - GUTTER)
+  const sideArrow = clamp(visibleCentreY - sideTop, ARROW_INSET, size.height - ARROW_INSET)
+  const right = box.left + box.width
+
+  if (right + BUBBLE_GAP + size.width <= viewportWidth - GUTTER) {
+    return { placement: 'right', top: sideTop, left: right + BUBBLE_GAP, arrow: sideArrow }
+  }
+
+  if (box.left - BUBBLE_GAP - size.width >= GUTTER) {
+    return { placement: 'left', top: sideTop, left: box.left - BUBBLE_GAP - size.width, arrow: sideArrow }
+  }
+
+  return { placement: 'over', top: viewportHeight - size.height - GUTTER, left, arrow }
+}
+
+// Positions are handed to the stylesheet as custom properties, the only styles written from script
+function setProperties(element, properties) {
+  Object.entries(properties).forEach(([name, value]) => element.style.setProperty(name, value))
+}
+
+// Lights the element's box; a zero box in the middle of the screen dims it all
+function placeSpotlight(element, box) {
+  if (!box) {
+    setProperties(element, { '--spot-top': '50%', '--spot-left': '50%', '--spot-width': '0px', '--spot-height': '0px' })
+    return
+  }
+
+  setProperties(element, {
+    '--spot-top': `${box.top}px`,
+    '--spot-left': `${box.left}px`,
+    '--spot-width': `${box.width}px`,
+    '--spot-height': `${box.height}px`,
+  })
+}
+
+// Measures the bubble, then moves it beside the element, its arrow facing it
+function placeBubble(element, box) {
+  const position = bubblePositionOf(box, { width: element.offsetWidth, height: element.offsetHeight })
+
+  element.dataset.placement = position.placement
+  setProperties(element, {
+    '--bubble-top': `${position.top}px`,
+    '--bubble-left': `${position.left}px`,
+    '--bubble-arrow': `${position.arrow}px`,
+  })
+}
+
+/**
+ * Guided tour of the app: each step opens its page, dims it around one element and explains it in a bubble beside it.
+ * The steps follow the active plan: alone, or for two with the repayments, and the invitation while a place is free
  * @param {object} props
+ * @param {boolean} props.isDuo - the active plan has two places
+ * @param {boolean} props.canInvite - one of them is still free
  * @param {() => void} props.onClose - finished or skipped
  */
-export default function Tour({ onClose }) {
+export default function Tour({ isDuo, canInvite, onClose }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [index, setIndex] = useState(0)
-  const step = STEPS[index]
-  const isLast = index === STEPS.length - 1
+  // Fixed for the whole tour, so a plan changing behind it never shifts the steps under the viewer
+  const [steps] = useState(() => stepsOf({ duo: isDuo, invite: canInvite }))
+  const spotlightRef = useRef(undefined)
+  const bubbleRef = useRef(undefined)
+  const nextRef = useRef(undefined)
+  const titleId = useId()
+  const step = steps[index]
+  const isLast = index === steps.length - 1
+  const target = useTourTarget(step.target, pathname === step.to)
+  const shown = target.status !== 'searching'
 
-  // The page explained is the one open behind the sheet; navigating only when it differs avoids a loop, navigate changing with the location
+  // The page explained is the one open behind; navigating only when it differs avoids a loop, navigate changing with the location
   useEffect(() => {
     if (pathname !== step.to) {
       navigate(step.to)
     }
   }, [navigate, pathname, step.to])
+
+  // Every render may follow a move of the element, so both layers are placed again before the paint
+  useLayoutEffect(() => {
+    if (!shown) {
+      return
+    }
+
+    const box = paddedBoxOf(target.rect)
+
+    placeSpotlight(spotlightRef.current, box)
+    placeBubble(bubbleRef.current, box)
+  })
+
+  // The keyboard lands on the main button of each bubble, without scrolling the page to it
+  useEffect(() => {
+    if (shown) {
+      nextRef.current.focus({ preventScroll: true })
+    }
+  }, [index, shown])
 
   function next() {
     if (isLast) {
@@ -175,52 +366,68 @@ export default function Tour({ onClose }) {
     setIndex(index + 1)
   }
 
-  return (
-    <Sheet open title={step.title} description={step.intro} onClose={onClose}>
-      <article className="tour">
-        {!!step.menu && (
-          <p className="tour__menu">
-            <span>Dans le menu</span>
-            <span className="tour__entry">
-              <Icon name={step.menu.icon} className="icon" />
-              {step.menu.label}
-            </span>
-          </p>
-        )}
+  function previous() {
+    if (index > 0) {
+      setIndex(index - 1)
+    }
+  }
 
-        <ul className="tour__features">
-          {step.features.map((feature, featureIndex) => (
-            <li key={`tour-feature-${index}-${featureIndex}`} className="tour__feature">
-              <FeatureMark feature={feature} />
-              <span>{feature.text}</span>
-            </li>
-          ))}
-        </ul>
+  // Arrows walk through the steps, Escape leaves the tour
+  useEffect(() => {
+    function handleKey(event) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+
+      if (event.key === 'ArrowRight') {
+        next()
+      }
+
+      if (event.key === 'ArrowLeft') {
+        previous()
+      }
+    }
+
+    document.addEventListener('keydown', handleKey)
+
+    return () => document.removeEventListener('keydown', handleKey)
+  })
+
+  return (
+    <div className={rootClassOf(target.status)}>
+      <div ref={spotlightRef} className="tour__spotlight" aria-hidden="true" />
+
+      <section ref={bubbleRef} className="tour__bubble" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <header className="tour__header">
+          <span className="tour__chapter">{step.chapter}</span>
+          <span className="tour__count">
+            {index + 1} / {steps.length}
+          </span>
+        </header>
+
+        <h2 id={titleId} className="tour__title">
+          {step.title}
+        </h2>
+        <p className="tour__text">{step.text}</p>
 
         <footer className="tour__footer">
-          <ol className="tour__dots" aria-label={`Étape ${index + 1} sur ${STEPS.length}`}>
-            {STEPS.map((candidate, stepIndex) => (
-              <li key={`tour-dot-${candidate.to}-${stepIndex}`} className={dotClassOf(stepIndex === index)} />
-            ))}
-          </ol>
+          {!isLast && (
+            <button type="button" className="actions__reset tour__skip" onClick={onClose}>
+              Ignorer
+            </button>
+          )}
 
           {index > 0 && (
-            <button type="button" className="actions__reset tour__back" onClick={() => setIndex(index - 1)}>
+            <button type="button" className="actions__reset tour__back" onClick={previous}>
               Précédent
             </button>
           )}
 
-          {index === 0 && (
-            <button type="button" className="actions__reset tour__back" onClick={onClose}>
-              Passer
-            </button>
-          )}
-
-          <button type="button" className="form__submit" onClick={next}>
+          <button ref={nextRef} type="button" className="form__submit" onClick={next}>
             {nextLabelOf(isLast)}
           </button>
         </footer>
-      </article>
-    </Sheet>
+      </section>
+    </div>
   )
 }

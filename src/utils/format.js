@@ -70,7 +70,7 @@ export function parseAmount(value) {
 
 const axisFormatter = new Intl.NumberFormat('fr-CH', { maximumFractionDigits: 0 })
 
-// Formats an amount without currency nor cents, for chart axes
+// Formats an amount without currency nor cents, for chart axes and round figures
 export function formatAxisAmount(amount) {
   const value = Number(amount)
 

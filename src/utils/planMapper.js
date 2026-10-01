@@ -155,6 +155,8 @@ export function toImportPayload(source, scopeByPerson) {
     .filter((person) => !!scopeByPerson[person.id] && scopeByPerson[person.id] !== SHARED)
     .map((person) => ({
       slot_id: scopeByPerson[person.id],
+      // Names the place while it is free, a taken one showing its member's profile name
+      label: person.label,
       net_monthly: toAmount(person.netMonthly),
       annual_tax: toAmount(person.annualTax),
       // Files saved before the timing moved to each person carry a single one for the whole plan

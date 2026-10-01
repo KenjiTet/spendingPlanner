@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
-import { createExamplePlan, EXAMPLE_INCOME } from '../lib/planImport.js'
 import { setMainCurrency } from '../utils/format.js'
 
 // Session of the signed-in person, held by the server in an http-only cookie
@@ -37,7 +36,7 @@ export default function useAuth() {
   }
 
   /**
-   * Creates the account and opens the session on a filled-in example plan, ready for the guided tour
+   * Creates the account and opens the session, the onboarding then setting up the profile and the first plan
    * @param {string} username
    * @param {string} password
    * @returns {Promise<string | undefined>} an error message, if any
@@ -45,18 +44,11 @@ export default function useAuth() {
   async function signUp(username, password) {
     const { data, error } = await api.post('/auth/signup', { username, password })
 
-    if (error) {
-      return error.message
+    if (!error) {
+      applyUser(data.user)
     }
 
-    // Set up before the session is exposed, so the plans list loads with the example already in it
-    const profile = await api.patch('/auth/profile', { display_name: data.user.display_name, net_monthly: EXAMPLE_INCOME, main_currency: data.user.main_currency })
-
-    // A failed example leaves a working, empty account: the sign-up itself succeeded
-    await createExamplePlan()
-    applyUser(profile.data?.user ?? data.user)
-
-    return undefined
+    return error?.message
   }
 
   /**

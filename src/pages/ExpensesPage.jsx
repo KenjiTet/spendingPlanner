@@ -30,9 +30,9 @@ function scopeOptionsOf(plan, slotId) {
   ]
 }
 
-// Latest entries first, whatever day they were dated
-function byCreation(left, right) {
-  return right.created_at.localeCompare(left.created_at)
+// Latest days first, then latest entries first within a day
+function byDayThenCreation(left, right) {
+  return right.spent_on.localeCompare(left.spent_on) || right.created_at.localeCompare(left.created_at)
 }
 
 // Entry of the expenses as they happen, the monitoring living on the overview
@@ -108,7 +108,7 @@ export default function ExpensesPage() {
         currencies={exchange.currencies}
         likelyCurrencyCount={exchange.likelyCount}
         toMainCurrency={exchange.toBase}
-        history={expenses.filter((expense) => expense.slot_id === slotId).sort(byCreation)}
+        history={expenses.filter((expense) => expense.slot_id === slotId).sort(byDayThenCreation)}
         onAdd={handleAdd}
         onRemove={removeExpense}
       />

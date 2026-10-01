@@ -41,7 +41,7 @@ export default function JoinPlanForm({ onPreview, onJoin, onJoined }) {
     <div className="plans__join">
       <form className="plan-card__form" onSubmit={handlePreview}>
         <label className="form__field form__field--grow">
-          <span>Code de partage</span>
+          <span>Code pour rejoindre le plan</span>
           <input
             value={code}
             onChange={(event) => setCode(event.target.value.toUpperCase())}

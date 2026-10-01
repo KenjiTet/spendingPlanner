@@ -121,7 +121,7 @@ export default function PlanPicker({
       <Sheet
         open={joining}
         title="Rejoindre un plan"
-        description="Saisissez le code de partage reçu d’un autre membre du plan."
+        description="Saisissez le code pour rejoindre le plan, reçu d’un autre membre."
         onClose={() => setJoining(false)}>
         <JoinPlanForm onPreview={onPreviewJoin} onJoin={onJoin} onJoined={() => navigate('/')} />
       </Sheet>

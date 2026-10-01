@@ -67,7 +67,7 @@ export default function BudgetGauges({ tracking, actions, note }) {
   return (
     <>
       {scopes.map((scope, scopeIndex) => (
-        <section key={`budget-${scope.id}-${scopeIndex}`} className="budget">
+        <section key={`budget-${scope.id}-${scopeIndex}`} className="budget" data-tour="gauges">
           <header className="budget__head">
             <h2 className="budget__title">{scope.label}</h2>
             {scopeIndex === 0 && actions}

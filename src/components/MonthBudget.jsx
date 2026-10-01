@@ -31,7 +31,7 @@ export default function MonthBudget({ spent, budget, daysLeft }) {
   const { fill, status } = toGauge(spent, budget)
 
   return (
-    <section className={cardClassOf(remaining)} aria-label="Budget du mois">
+    <section className={cardClassOf(remaining)} aria-label="Budget du mois" data-tour="month-budget">
       <header className="month-budget__head">
         <p className="month-budget__main">
           <span className="kpi__label">Reste à dépenser</span>
