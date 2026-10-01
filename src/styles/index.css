@@ -650,18 +650,38 @@ body {
     align-items: center;
   }
 
-  .spent-breakdown .chart__title {
+  .spent-breakdown .chart__head {
     grid-column: 1 / -1;
-    justify-self: start;
   }
 
   .spent-breakdown .chart__svg {
     grid-area: 2 / 2;
+    align-self: end;
+  }
+
+  .spent-breakdown .chart__total {
+    grid-area: 3 / 2;
+    align-self: start;
   }
 
   .spent-breakdown .chart__legends {
-    grid-area: 2 / 1;
+    grid-column: 1;
+    grid-row: 2 / 4;
   }
+}
+
+.chart__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+}
+
+/* Dashboard breakdown: the title in the top-left corner, the period switch on the right */
+.spent-breakdown .chart__head {
+  justify-self: stretch;
+  justify-content: space-between;
 }
 
 .chart__title {
@@ -674,6 +694,19 @@ body {
 .chart__svg {
   width: 180px;
   height: 180px;
+}
+
+.chart__total {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.chart__total-value {
+  margin-left: 4px;
+  font-size: 1.05rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .chart__track {
@@ -2913,7 +2946,7 @@ a.form__submit {
 /* Both figures always share one line: the amounts scale with the screen, the daily caption wraps under its amount */
 .month-budget__head {
   display: flex;
-  align-items: end;
+  align-items: start;
   justify-content: space-between;
   gap: 12px;
 }

@@ -19,14 +19,17 @@ function autoNoteOf(slice) {
  * @param {object} props
  * @param {{ id: string, label: string, value: number, committed: number, tone: string, group: string }[]} props.slices - from spentSlicesOf
  * @param {number} props.shareCount - how many people split the common part
+ * @param {import('react').ReactNode} [props.actions] - controls beside the title
  */
-export default function SpentBreakdown({ slices, shareCount }) {
+export default function SpentBreakdown({ slices, shareCount, actions }) {
   return (
     <section className="card spent-breakdown" aria-label="Détail des dépenses">
       <PieChart
         title="Détail des dépenses"
         slices={slices.map((slice) => ({ ...slice, note: autoNoteOf(slice) }))}
         groups={legendGroupsOf(shareCount)}
+        showTotal
+        actions={actions}
       />
     </section>
   )

@@ -47,15 +47,25 @@ function legendsOf(segments, groups) {
  * @param {string} props.title
  * @param {{ id: string, label: string, value: number, tone: string, group?: string, note?: string }[]} props.slices - note: one short line under the label
  * @param {{ id: string, label: string }[]} [props.groups] - headings splitting the legend, matched on each slice's group
+ * @param {boolean} [props.showTotal] - the sum of the slices written under the donut
+ * @param {import('react').ReactNode} [props.actions] - controls beside the title
  */
-export default function PieChart({ title, slices, groups }) {
+export default function PieChart({ title, slices, groups, showTotal, actions }) {
   const visible = slices.filter((slice) => slice.value > 0)
   const total = visible.reduce((sum, slice) => sum + slice.value, 0)
+
+  // The title, with its controls when the chart has some
+  const caption = (
+    <figcaption className="chart__head">
+      <span className="chart__title">{title}</span>
+      {actions}
+    </figcaption>
+  )
 
   if (!total) {
     return (
       <figure className="chart">
-        <figcaption className="chart__title">{title}</figcaption>
+        {caption}
         <p className="section__hint">Rien à afficher pour le moment.</p>
       </figure>
     )
@@ -75,7 +85,7 @@ export default function PieChart({ title, slices, groups }) {
 
   return (
     <figure className="chart">
-      <figcaption className="chart__title">{title}</figcaption>
+      {caption}
 
       <svg className="chart__svg" viewBox="0 0 200 200" role="img" aria-label={title}>
         <g transform="rotate(-90 100 100)">
@@ -94,6 +104,12 @@ export default function PieChart({ title, slices, groups }) {
           ))}
         </g>
       </svg>
+
+      {showTotal && (
+        <p className="chart__total">
+          Total <strong className="chart__total-value">{formatAmount(total)}</strong>
+        </p>
+      )}
 
       <div className="chart__legends">
         {legendsOf(segments, groups).map((legend, legendIndex) => (
