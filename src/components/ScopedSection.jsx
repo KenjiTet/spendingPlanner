@@ -93,6 +93,7 @@ function toggleIn(ids, id) {
  * @param {string[]} [props.editableScopes] - scopes the viewer may change, all of them when omitted
  * @param {number} [props.shareCount] - people the common scope is split between, its per-person amounts shown above one
  * @param {boolean} [props.flat] - a single scope shown without its header, as in a solo plan
+ * @param {boolean} [props.groupless] - the scope takes lines directly instead of new groups, the section being a group already
  * @param {{ id: string, label: string, color: string, scope: string }[]} props.subgroups
  * @param {{ id: string, label: string, amount: number, autoBook?: boolean, parent: string }[]} props.items
  * @param {(line: object) => void} props.onAddLine
@@ -113,6 +114,7 @@ export default function ScopedSection({
   editableScopes,
   shareCount = 1,
   flat = false,
+  groupless = false,
   subgroups,
   items,
   onAddLine,
@@ -434,11 +436,19 @@ export default function ScopedSection({
 
                 <ul className="lines">{scope.items.map(lineRenderer(editable))}</ul>
 
-                {/* A scope only takes groups: new lines are added inside one of them */}
-                {editable && (
+                {/* A scope takes groups, new lines going inside one of them, unless the section is groupless */}
+                {editable && !groupless && (
                   <footer className="scope__actions">
                     <button type="button" className="add" onClick={() => addSubgroup(scope.id)}>
                       + Groupe
+                    </button>
+                  </footer>
+                )}
+
+                {editable && groupless && (
+                  <footer className="scope__actions">
+                    <button type="button" className="add" onClick={() => addLine(scope.id)}>
+                      + {addLabel}
                     </button>
                   </footer>
                 )}

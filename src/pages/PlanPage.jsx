@@ -148,7 +148,8 @@ export default function PlanPage() {
             title="Épargne et investissements"
             anchor="savings"
             tone="savings"
-            addLabel="Ligne d’épargne"
+            addLabel="Ligne de budget"
+            groupless
             total={totals.monthlySavings}
             scopes={visibleSavingScopes}
             editableScopes={editableScopes}
